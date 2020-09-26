@@ -18,8 +18,8 @@ public class Ball extends Actor
     }
     
     public void act() {
-        double realVx = vx * Math.cos(Math.toRadians(rotation));
-        double realVy = vy * Math.sin(Math.toRadians(rotation));
+        double realVx = getRealVx();
+        double realVy = getRealVy();
         
         if ((x + realVx) <= 0 || (x + realVx) >= getWorld().getWidth()) {
             vx *= -1;
@@ -29,6 +29,7 @@ public class Ball extends Actor
             vy *= -1;
         }
         
+        // System.out.println("VX: "  + vx + "  |  VY:  "  + vy + "  |  Rotation: " + rotation);
         changeLocation(realVx, realVy);
     }
     
@@ -51,6 +52,14 @@ public class Ball extends Actor
          rotation = Greenfoot.getRandomNumber(361);
     }
     
+    public void correctCollissionX(double correctionAmount) {
+        x += correctionAmount * Math.cos(Math.toRadians(rotation));
+    }
+    
+    public void correctCollissionY(double correctionAmount) {
+        y += correctionAmount * Math.cos(Math.toRadians(rotation));
+    }
+    
     public void changeDirectionX() {
         vx *= -1;
     }
@@ -63,6 +72,14 @@ public class Ball extends Actor
         x += vx;
         y += vy;
         setLocation((int) x, (int) y);
+    }
+    
+    public double getRealVx() {
+        return (vx * Math.cos(Math.toRadians(rotation)));
+    }
+    
+    public double getRealVy() {
+        return (vy * Math.sin(Math.toRadians(rotation)));
     }
     
     public void draw() {
