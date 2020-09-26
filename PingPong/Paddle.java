@@ -5,10 +5,6 @@ public abstract class Paddle extends Actor
     public static final int WIDTH = 60;
     public static final int HEIGHT = 20;
     
-    public enum controlScheme {
-        
-    }
-    
     public Paddle() {
         draw();
         setRotation(90);

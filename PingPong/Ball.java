@@ -29,9 +29,7 @@ public class Ball extends Actor
             vy *= -1;
         }
         
-        x += realVx;
-        y += realVy;
-        setLocation((int) x, (int) y);
+        changeLocation(realVx, realVy);
     }
     
     public void handleScore(double realVx, double realVy) {
@@ -59,6 +57,12 @@ public class Ball extends Actor
     
     public void changeDirectionY() {
         vy *= -1;
+    }
+    
+    public void changeLocation(double vx, double vy) {
+        x += vx;
+        y += vy;
+        setLocation((int) x, (int) y);
     }
     
     public void draw() {
