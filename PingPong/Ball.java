@@ -29,7 +29,6 @@ public class Ball extends Actor
             vy *= -1;
         }
         
-        // System.out.println("VX: "  + vx + "  |  VY:  "  + vy + "  |  Rotation: " + rotation);
         changeLocation(realVx, realVy);
     }
     
@@ -53,11 +52,11 @@ public class Ball extends Actor
     }
     
     public void correctCollissionX(double correctionAmount) {
-        x += correctionAmount * Math.cos(Math.toRadians(rotation));
+        x += correctionAmount * Math.cos(Math.toRadians(rotation)) * Math.signum(vx);
     }
     
     public void correctCollissionY(double correctionAmount) {
-        y += correctionAmount * Math.cos(Math.toRadians(rotation));
+        y += correctionAmount * Math.sin(Math.toRadians(rotation));
     }
     
     public void changeDirectionX() {
@@ -72,6 +71,33 @@ public class Ball extends Actor
         x += vx;
         y += vy;
         setLocation((int) x, (int) y);
+        if (y >= getWorld().getHeight() - HEIGHT / 2) {
+            changeDirectionY();
+        } else if (y <= 0 + HEIGHT / 2) {
+            changeDirectionY();
+        }
+        
+        if (x >= getWorld().getWidth() - WIDTH / 2) {
+            changeDirectionX();
+        } else if (x <= 0 + WIDTH / 2) {
+            changeDirectionX();
+        }
+    }
+    
+    public boolean isRotationInXDirection() {
+        if ((rotation >= 0 && rotation <= 45) || (rotation >= 315 && rotation <= 360) || (rotation >= 135 && rotation <= 225)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    public boolean isRotationInYDirection() {
+        if ((rotation >= 45 && rotation <= 135) || (rotation >= 225 && rotation <= 315)) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     public double getRealVx() {
@@ -86,5 +112,15 @@ public class Ball extends Actor
         GreenfootImage img = new GreenfootImage("ball.png");
         img.scale(WIDTH, HEIGHT);
         setImage(img);
+    }
+    
+    public double getSimulationRotation()
+    {
+        return this.rotation;
+    }
+    
+    public void setRotation(double rotation)
+    {
+        this.rotation = rotation;
     }
 }
