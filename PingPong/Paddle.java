@@ -4,6 +4,10 @@ public abstract class Paddle extends Actor
 {
     public static final int WIDTH = 20;
     public static final int HEIGHT = 60;
+    public static final double ALPHA_I = Math.atan((60/2)/(20.0/2));
+    public static final double ALPHA_II = 180 - ALPHA_I;
+    public static final double ALPHA_III = 180 + ALPHA_I;
+    public static final double ALPHA_IV = 360 - ALPHA_I;
     
     public Paddle() {
         draw();
@@ -29,18 +33,18 @@ public abstract class Paddle extends Actor
             double angle = calculateAngle(ball.getX(), ball.getY(), getX(), getY());
             boolean rotationXDirection = ball.isRotationInXDirection();
             boolean rotationYDirection = ball.isRotationInYDirection();
-            if (angle <= 71.6 && angle >= 0) {
+            if (angle <= ALPHA_I && angle >= 0) {
                 collideX(ball, 1.5);
-            } else if (angle <= 108.4 && angle > 71.6){
+            } else if (angle <= ALPHA_II && angle > ALPHA_I){
                 collideY(ball, 1.5);
                 if (rotationXDirection) {
                     collideX(ball, 1);
                 }
-            } else if (angle <= 251.6 && angle > 108.4) {
+            } else if (angle <= ALPHA_III && angle > ALPHA_II) {
                 collideX(ball, 1.5);
-            } else if (angle <= 288.4 && angle > 251.6) {
+            } else if (angle <= ALPHA_IV && angle > ALPHA_III) {
                 collideY(ball, 1.5);
-            } else if (angle <= 360 && angle >= 288.4) {
+            } else if (angle <= 360 && angle >= ALPHA_IV) {
                 collideX(ball, 1.5);
             }
             
