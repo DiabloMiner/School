@@ -34,18 +34,21 @@ public abstract class Paddle extends Actor
             boolean rotationXDirection = ball.isRotationInXDirection();
             boolean rotationYDirection = ball.isRotationInYDirection();
             if (angle <= ALPHA_I && angle >= 0) {
-                collideX(ball, 1.5);
+                collideX(ball, 2);
             } else if (angle <= ALPHA_II && angle > ALPHA_I){
-                collideY(ball, 1.5);
+                collideY(ball, 2);
                 if (rotationXDirection) {
                     collideX(ball, 1);
                 }
             } else if (angle <= ALPHA_III && angle > ALPHA_II) {
-                collideX(ball, 1.5);
+                collideX(ball, 2);
             } else if (angle <= ALPHA_IV && angle > ALPHA_III) {
-                collideY(ball, 1.5);
+                collideY(ball, 2);
+                if (rotationXDirection) {
+                    collideX(ball, 1);
+                }
             } else if (angle <= 360 && angle >= ALPHA_IV) {
-                collideX(ball, 1.5);
+                collideX(ball, 2);
             }
             
         }

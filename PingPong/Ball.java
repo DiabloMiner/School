@@ -56,7 +56,7 @@ public class Ball extends Actor
     }
     
     public void correctCollissionY(double correctionAmount) {
-        y += correctionAmount * Math.sin(Math.toRadians(rotation));
+        y += correctionAmount * Math.sin(Math.toRadians(rotation)) * Math.signum(vy);
     }
     
     public void changeDirectionX() {
@@ -71,20 +71,10 @@ public class Ball extends Actor
         x += vx;
         y += vy;
         setLocation((int) x, (int) y);
-        if (y >= getWorld().getHeight() - HEIGHT / 2) {
-            changeDirectionY();
-        } else if (y <= 0 + HEIGHT / 2) {
-            changeDirectionY();
-        }
-        
-        if (x >= getWorld().getWidth() - WIDTH / 2) {
-            changeDirectionX();
-        } else if (x <= 0 + WIDTH / 2) {
-            changeDirectionX();
-        }
     }
     
     public boolean isRotationInXDirection() {
+        System.out.println(Math.atan(vy / vx));
         if ((rotation >= 0 && rotation <= 45) || (rotation >= 315 && rotation <= 360) || (rotation >= 135 && rotation <= 225)) {
             return true;
         } else {
