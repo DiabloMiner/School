@@ -22,10 +22,12 @@ public class Ball extends Actor
         double realVy = getRealVy();
         
         if ((x + realVx) <= 0 || (x + realVx) >= getWorld().getWidth()) {
+            // System.out.println(realVx + "  |  "  + realVy);
             vx *= -1;
             handleScore(realVx, realVy);
         }
         if ((y + realVy) <= 0 || (y + realVy) >= getWorld().getHeight()) {
+            // System.out.println(realVx + "  |  "  + realVy);
             vy *= -1;
         }
         
@@ -48,15 +50,36 @@ public class Ball extends Actor
     }
     
     public void randomizeRotation() {
-         rotation = Greenfoot.getRandomNumber(361);
+         // rotation = Greenfoot.getRandomNumber(361);
+         rotation = 330;
     }
     
-    public void correctCollissionX(double correctionAmount) {
-        x += correctionAmount * Math.cos(Math.toRadians(rotation)) * Math.signum(vx);
+    public void correctCollissionX(Paddle paddle) {
+        boolean isIntersecting = intersects(paddle);
+        while (isIntersecting) {
+            double realVx = getRealVx();
+            this.x += 0.1 * realVx;
+            changeLocation(realVx, getRealVy());
+            if (!intersects(paddle)) {
+                isIntersecting = false;
+                break;
+            }
+        }
     }
     
-    public void correctCollissionY(double correctionAmount) {
-        y += correctionAmount * Math.sin(Math.toRadians(rotation)) * Math.signum(vy);
+    public void correctCollissionY(Paddle paddle) {
+        boolean isIntersecting = intersects(paddle);
+        while (isIntersecting) {
+            double realVy = getRealVy();
+            this.y += 2 * realVy;
+            changeLocation(getRealVx(), realVy);
+            if (!intersects(paddle)) {
+                isIntersecting = false;
+                this.y += 4 * realVy;
+                changeLocation(getRealVx(), realVy);
+                break;
+            }
+        }
     }
     
     public void changeDirectionX() {
@@ -68,13 +91,38 @@ public class Ball extends Actor
     }
     
     public void changeLocation(double vx, double vy) {
+        /*double realVx = getRealVx();
+        double realVy = getRealVy();
+        if ((x + realVx) <= 0 && Math.signum(vy) == -1.0) {
+            vx = 3;
+            changeDirectionY();
+            x += vx + 10;
+            y += vy + 10;
+        } else if ((x + realVx) >= getWorld().getWidth() && Math.signum(vy) == -1.0) {
+            vx = -3;
+            changeDirectionY();
+            x += vx + 10;
+            y += vy + 10;
+        }
+        
+        if ((y + realVy) <= 0 && Math.signum(vx) == -1.0) {
+            vy = 3;
+            changeDirectionX();
+            x += vx + 10;
+            y += vy + 10;
+        } else if ((y + realVy) >= getWorld().getHeight() && Math.signum(vx) == -1.0) {
+            vx = -3;
+            changeDirectionX();
+            x += vx + 10;
+            y += vy + 10;
+        }*/
+        
         x += vx;
         y += vy;
         setLocation((int) x, (int) y);
     }
     
     public boolean isRotationInXDirection() {
-        System.out.println(Math.atan(vy / vx));
         if ((rotation >= 0 && rotation <= 45) || (rotation >= 315 && rotation <= 360) || (rotation >= 135 && rotation <= 225)) {
             return true;
         } else {
@@ -112,5 +160,13 @@ public class Ball extends Actor
     public void setRotation(double rotation)
     {
         this.rotation = rotation;
+    }
+    
+    public double getVx() {
+        return vx;
+    }
+    
+    public double getVy() {
+        return vy;
     }
 }
