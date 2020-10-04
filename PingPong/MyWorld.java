@@ -13,8 +13,8 @@ public class MyWorld extends World
         Score score = new Score();
         
         addObject(ball, getWidth()/2, getHeight()/2);
-        addObject(leftPaddle, Paddle.WIDTH, getHeight()/2);
-        addObject(rightPaddle, getWidth() - Paddle.WIDTH, getHeight()/2);
+        addObject(leftPaddle, 60, getHeight()/2);
+        addObject(rightPaddle, getWidth() - 60, getHeight()/2);
         addObject(score, getWidth()/2, score.FONT_SIZE);
     }
 
