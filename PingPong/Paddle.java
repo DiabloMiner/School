@@ -35,13 +35,11 @@ public abstract class Paddle extends Actor
     }
     
     private void collideX(Ball ball, double angle) {
-        System.out.println("X-Collision: " + angle);
         ball.changeDirectionX();
         ball.correctCollissionX(this);
     }
     
     private void collideY(Ball ball, double angle) {
-        System.out.println("Y-Collision: " + angle);
         double realVy = ball.getRealVy();
         if (Math.signum(realVy) == 1 && (angle <= ALPHA_II && angle > ALPHA_I)) {
             ball.changeDirectionY();
@@ -59,7 +57,6 @@ public abstract class Paddle extends Actor
     private double calculateAngle(double x1, double y1, double x2, double y2) {
         double distanceX = x2 - x1;
         double distanceY = y2 - y1;
-        System.out.println("distanceX: " + distanceX + "  |distanceY:  " + distanceY);
         double angle = Math.toDegrees(Math.atan(distanceY / distanceX));
         if (x2 > x1 && y2 > y1) {
             angle = angle;

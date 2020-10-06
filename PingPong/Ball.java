@@ -16,7 +16,7 @@ public class Ball extends Actor
     public Ball(int x, int y) {
         this.x = x;
         this.y = y;
-        randomizeRotation();
+        randomizeRotation(361);
         draw();
     }
     
@@ -25,12 +25,10 @@ public class Ball extends Actor
         double realVy = getRealVy();
         
         if ((x + realVx) <= 0 || (x + realVx) >= getWorld().getWidth()) {
-            // System.out.println("X: " + realVx + "  |Y: " + realVy);
             vx *= -1;
             handleScore(realVx, realVy);
         }
         if ((y + realVy) <= 0 || (y + realVy) >= getWorld().getHeight()) {
-            // System.out.println("X: " + realVx + "  |Y: " + realVy);
             vy *= -1;
         }
         
@@ -46,8 +44,11 @@ public class Ball extends Actor
         }
     }
     
-    public void randomizeRotation() {
-         rotation = Greenfoot.getRandomNumber(361);
+    public void randomizeRotation(int upperLimit) {
+        rotation = 0;
+        while (rotation == 0 || rotation == 90 || rotation == 180 || rotation == 270 || rotation == 360) {
+            rotation = Greenfoot.getRandomNumber(upperLimit);
+        }
     }
     
     public void correctCollissionX(Paddle paddle) {
@@ -90,20 +91,15 @@ public class Ball extends Actor
         this.x = getWorld().getWidth()/2;
         this.y = getWorld().getHeight()/2;
         setLocation((int) x, (int) y);
+        randomizeRotation(361);
     }
     
     public void changeLocation(double vx, double vy) {
         double realVx = getRealVx();
         double realVy = getRealVy();
-        if ((getRealLastVx() == realVx && getRealLastVy() == realVy * (-1))) {
-            if((y + realVy) <= 0) {
-                System.out.println("testHigh");
-                vy = SPEED;
-                y = 10;
-            } else if ((y + realVy) >= getWorld().getHeight()) {
-                System.out.println("testLow");
-                vy = -SPEED;
-                y = getWorld().getHeight() - 10;
+        if((y + realVy) <= 0 || (y + realVy) >= getWorld().getHeight()) {
+            if ((getRealLastVx() == realVx && getRealLastVy() == realVy)) {
+                resetPosition();
             }
         }
         
