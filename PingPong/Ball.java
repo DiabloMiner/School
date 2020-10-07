@@ -98,7 +98,7 @@ public class Ball extends Actor
         double realVx = getRealVx();
         double realVy = getRealVy();
         if((y + realVy) <= 0 || (y + realVy) >= getWorld().getHeight()) {
-            if ((getRealLastVx() == realVx && getRealLastVy() == realVy)) {
+            if (((getRealLastVx() == realVx || getRealLastVx() == realVx * (-1)) && getRealLastVy() == realVy)) {
                 resetPosition();
             }
         }
