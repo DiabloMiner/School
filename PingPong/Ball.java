@@ -95,13 +95,13 @@ public class Ball extends Actor
     }
     
     public void changeLocation(double vx, double vy) {
-        double realVx = getRealVx();
+        /*double realVx = getRealVx();
         double realVy = getRealVy();
         if((y + realVy) <= 0 || (y + realVy) >= getWorld().getHeight()) {
             if (((getRealLastVx() == realVx || getRealLastVx() == realVx * (-1)) && getRealLastVy() == realVy)) {
                 resetPosition();
             }
-        }
+        }*/
         
         x += vx;
         y += vy;
