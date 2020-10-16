@@ -72,7 +72,7 @@ public class Ball extends Actor
         boolean isIntersecting = intersects(paddle);
         while (isIntersecting) {
             double realVy = getRealVy();
-            this.y += 2 * realVy;
+            this.y += 3 * realVy;
             changeLocation(getRealVx(), realVy);
             if (!intersects(paddle)) {
                 isIntersecting = false;
@@ -113,5 +113,9 @@ public class Ball extends Actor
         GreenfootImage img = new GreenfootImage("ball.png");
         img.scale(WIDTH, HEIGHT);
         setImage(img);
+    }
+    
+    public void addToSimulationRotation(double rotation) {
+        this.rotation += rotation;
     }
 }

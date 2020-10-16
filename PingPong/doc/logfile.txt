@@ -1,0 +1,43 @@
+Class documentation
+<---- javadoc command: ---->
+/home/shares/optProgs/Informatik/jdk1.8.0_112/bin/javadoc
+-author
+-version
+-nodeprecated
+-protected
+-Xdoclint:none
+-noindex
+-notree
+-nohelp
+-nonavbar
+-source
+1.8
+-classpath
+/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/extensions/greenfoot.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/bluejcore.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/bluejeditor.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/bluejext.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/AppleJavaExtensions.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/junit-4.11.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/hamcrest-core-1.3.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/bluej.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/diffutils-1.2.1.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/commons-logging-api-1.1.2.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/jl1.0.1.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/opencsv-2.3.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/xom-1.2.9.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/lang-stride.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/nsmenufx-2.1.4.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/richtextfx-fat-0.9.0.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/guava-17.0.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/javassist-3.18.0.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/commons-vfs2-2.0.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/httpclient-4.1.1.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/httpcore-4.1.jar:/home/shares/optProgs/Informatik/greenfoot-3.5.3/lib/httpmime-4.1.1.jar:/home/user/Schreibtisch/Zeug/School/PingPong
+-d
+/home/user/Schreibtisch/Zeug/School/PingPong/doc
+-encoding
+UTF-8
+-charset
+UTF-8
+/home/user/Schreibtisch/Zeug/School/PingPong/Score.java
+<---- end of javadoc command ---->
+Loading source file /home/user/Schreibtisch/Zeug/School/PingPong/Score.java...
+Constructing Javadoc information...
+warning: unknown enum constant Tag.Any
+  reason: class file for threadchecker.Tag not found
+warning: unknown enum constant Tag.Any
+Standard Doclet version 1.8.0_112
+Building tree for all the packages and classes...
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/Score.html...
+warning: unknown enum constant Tag.Simulation
+warning: unknown enum constant Tag.Simulation
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/package-frame.html...
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/package-summary.html...
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/constant-values.html...
+Building index for all the packages and classes...
+Building index for all classes...
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/allclasses-frame.html...
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/allclasses-noframe.html...
+Generating /home/user/Schreibtisch/Zeug/School/PingPong/doc/index.html...
+4 warnings
