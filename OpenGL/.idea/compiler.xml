@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="14">
-      <module name="OpenGL" target="1.5" />
+      <module name="OpenGL" target="14" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
