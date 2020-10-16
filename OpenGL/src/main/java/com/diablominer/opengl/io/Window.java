@@ -120,12 +120,4 @@ public class Window {
         return this.hasResized;
     }
 
-    public void setWIDTH(int wIDTH) {
-        WIDTH = wIDTH;
-    }
-
-    public void setHEIGHT(int hEIGHT) {
-        HEIGHT = hEIGHT;
-    }
-
 }
