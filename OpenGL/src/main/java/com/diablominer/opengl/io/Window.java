@@ -34,8 +34,8 @@ public class Window {
         };
     }
 
-    public Window() {
-        setSize(1280, 720);
+    public Window(int width, int height) {
+        setSize(width, height);
         this.fullscreen = false;
         this.hasResized = false;
     }

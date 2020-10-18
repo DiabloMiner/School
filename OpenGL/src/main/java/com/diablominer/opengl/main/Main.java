@@ -3,12 +3,13 @@ package com.diablominer.opengl.main;
 import com.diablominer.opengl.io.Timer;
 import com.diablominer.opengl.io.Window;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.*;
+
+import java.nio.IntBuffer;
 
 public class Main {
 
+    private static final double FRAMELIMIT = 60.0;
     private Window window;
 
     public static void main(String[] args) {
@@ -24,14 +25,15 @@ public class Main {
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
-        window = new Window();
+        window = new Window(1280, 720);
         window.createWindow("Hello world");
 
         GL.createCapabilities();
+        GL13.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
     }
 
     private void run() {
-        double frameCap = 1.0/60.0;
+        double frameCap = 1.0/FRAMELIMIT;
         double time = Timer.getTime();
         double unprocessed = 0;
 
