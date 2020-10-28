@@ -1,6 +1,5 @@
 Test/
 modern-crab/
 AltesPingPong/
-OpenGL/hs_err_pid584.log
-OpenGL/hs_err_pid9760.log
+OpenGL/.idea/
 *.class

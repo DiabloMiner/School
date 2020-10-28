@@ -2,7 +2,7 @@ package com.diablominer.opengl.render;
 
 import java.io.*;
 
-import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL33;
 
 public class ShaderProgram {
 
@@ -11,69 +11,69 @@ public class ShaderProgram {
     private int fragmentShaderId;
 
     public ShaderProgram() throws Exception {
-        programId = GL20.glCreateProgram();
+        programId = GL33.glCreateProgram();
         if (programId == 0) {
             throw new Exception("Could not create Shader");
         }
     }
 
     public void createVertexShader(String shaderFile) throws Exception {
-        vertexShaderId = createShader(shaderFile, GL20.GL_VERTEX_SHADER);
+        vertexShaderId = createShader(shaderFile, GL33.GL_VERTEX_SHADER);
     }
 
     public void createFragmentShader(String shaderFile) throws Exception {
-        fragmentShaderId = createShader(shaderFile, GL20.GL_FRAGMENT_SHADER);
+        fragmentShaderId = createShader(shaderFile, GL33.GL_FRAGMENT_SHADER);
     }
 
     protected int createShader(String shaderFile, int shaderType) throws Exception {
-        int shaderId = GL20.glCreateShader(shaderType);
+        int shaderId = GL33.glCreateShader(shaderType);
         if (shaderId == 0) {
             throw new Exception("Error creating shader. Type: " + shaderType);
         }
 
-        GL20.glShaderSource(shaderId, readFile(shaderFile));
-        GL20.glCompileShader(shaderId);
+        GL33.glShaderSource(shaderId, readFile(shaderFile));
+        GL33.glCompileShader(shaderId);
 
-        if (GL20.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS) == 0) {
-            throw new Exception("Error compiling Shader code: " + GL20.glGetShaderInfoLog(shaderId, 1024));
+        if (GL33.glGetShaderi(shaderId, GL33.GL_COMPILE_STATUS) == 0) {
+            throw new Exception("Error compiling Shader code: " + GL33.glGetShaderInfoLog(shaderId, 1024));
         }
 
-        GL20.glAttachShader(programId, shaderId);
+        GL33.glAttachShader(programId, shaderId);
 
         return shaderId;
     }
 
     public void link() throws Exception {
-        GL20.glLinkProgram(programId);
-        if (GL20.glGetProgrami(programId, GL20.GL_LINK_STATUS) == 0) {
-            throw new Exception("Error linking Shader code: " + GL20.glGetProgramInfoLog(programId, 1024));
+        GL33.glLinkProgram(programId);
+        if (GL33.glGetProgrami(programId, GL33.GL_LINK_STATUS) == 0) {
+            throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(programId, 1024));
         }
 
         if (vertexShaderId != 0) {
-            GL20.glDetachShader(programId, vertexShaderId);
+            GL33.glDetachShader(programId, vertexShaderId);
         }
         if (fragmentShaderId != 0) {
-            GL20.glDetachShader(programId, fragmentShaderId);
+            GL33.glDetachShader(programId, fragmentShaderId);
         }
 
-        GL20.glValidateProgram(programId);
-        if (GL20.glGetProgrami(programId, GL20.GL_VALIDATE_STATUS) == 0) {
-            System.err.println("Warning validating Shader code: " + GL20.glGetProgramInfoLog(programId, 1024));
+        GL33.glValidateProgram(programId);
+        if (GL33.glGetProgrami(programId, GL33.GL_VALIDATE_STATUS) == 0) {
+            System.err.println("Warning validating Shader code: " + GL33.glGetProgramInfoLog(programId, 1024));
         }
     }
 
     public void bind() {
-        GL20.glUseProgram(programId);
+        GL33.glUseProgram(programId);
     }
 
     public void unbind() {
-        GL20.glUseProgram(0);
+        GL33.glUseProgram(0);
     }
 
     public void cleanup() {
         unbind();
         if (programId != 0) {
-            GL20.glDeleteProgram(programId);
+            GL33.glDeleteProgram(programId);
         }
     }
 
@@ -95,5 +95,26 @@ public class ShaderProgram {
         return string.toString();
     }
 
+    public int getProgramId() {
+        return programId;
+    }
+
+    public void setUniformI(String name, int value) {
+        bind();
+        GL33.glUniform1i(GL33.glGetUniformLocation(programId, name), value);
+        unbind();
+    }
+
+    public void setUniformF(String name, float value) {
+        bind();
+        GL33.glUniform1f(GL33.glGetUniformLocation(programId, name), value);
+        unbind();
+    }
+
+    public void setUniform4F(String name, float val1, float val2, float val3, float val4) {
+        bind();
+        GL33.glUniform4f(GL33.glGetUniformLocation(programId, name), val1, val2, val3, val4);
+        unbind();
+    }
 
 }
