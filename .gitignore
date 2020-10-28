@@ -2,4 +2,5 @@ Test/
 modern-crab/
 AltesPingPong/
 OpenGL/.idea/
+OpenGL/target/
 *.class
