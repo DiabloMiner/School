@@ -117,4 +117,10 @@ public class ShaderProgram {
         unbind();
     }
 
+    public void setUniform4Fv(String name, float[] data) {
+        bind();
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name), false, data);
+        unbind();
+    }
+
 }

@@ -4,25 +4,27 @@ import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.BufferUtil;
 import com.diablominer.opengl.render.ShaderProgram;
 import com.diablominer.opengl.render.Texture;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
+import org.w3c.dom.Text;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 public class Main {
 
-    private ShaderProgram shaderProgram;
+    private ShaderProgram shaderProgram, shaderProgram2;
     private int vbo;
     private int vao;
     private int ebo;
-    private int vbo2, vao2;
+    private int vbo2, vao2, ebo2;
     private Texture texture;
     private Texture texture2;
-    private IntBuffer indicesBuffer;
+    private IntBuffer indicesBuffer, indicesBuffer2;
     private Window window;
-
-    private float mixValue = 0.2f;
 
     public static void main(String[] args) {
         new Main();
@@ -51,10 +53,8 @@ public class Main {
         shaderProgram.link();
 
         // Texture uniforms are set
-        shaderProgram.bind();
         shaderProgram.setUniformI("texture1", 0);
         shaderProgram.setUniformI("texture2", 1);
-        shaderProgram.unbind();
 
         // The vertices and the indices are set up and put into a FloatBuffer, also the EBO is set up and a buffer is created for it
         float[] vertices = {
@@ -105,15 +105,27 @@ public class Main {
         // The memory allocated to the vertices buffer is freed
         BufferUtil.destroyBuffer(verticesBuffer);
 
+        shaderProgram2 = new ShaderProgram();
+        shaderProgram2.createVertexShader("VertexShader");
+        shaderProgram2.createFragmentShader("FragmentShader");
+        shaderProgram2.link();
+        shaderProgram2.setUniformI("texture1", 0);
+        shaderProgram2.setUniformI("texture2", 1);
 
         // TODO: Delete again
-        float[] vertices2 = new float[] {
-                // positions         // colors
-                0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-                -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-                0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top
+        float[] vertices2 = {
+                // positions          // colors           // texture coords
+                0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,   // top right
+                0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,   // bottom right
+                -0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,   // bottom left
+                -0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 0.0f,    0.0f, 0.0f    // top left
+        };
+        int[] indices2 = new int[] {  // note that we start from 0!
+                0, 1, 3,   // first triangle
+                1, 2, 3    // second triangle
         };
         FloatBuffer verticesBuffer2 = BufferUtil.createBuffer(vertices2);
+        indicesBuffer2 = BufferUtil.createBuffer(indices2);
 
         vao2 = GL33.glGenVertexArrays();
         GL33.glBindVertexArray(vao2);
@@ -122,10 +134,16 @@ public class Main {
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, vbo2);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, verticesBuffer2, GL33.GL_STATIC_DRAW);
 
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (6 * Float.BYTES), 0);
-        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, (6 * Float.BYTES), (3 * Float.BYTES));
+        ebo2 = GL33.glGenBuffers();
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, ebo2);
+        GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer2, GL33.GL_STATIC_DRAW);
+
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (8 * Float.BYTES), 0);
+        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, (8 * Float.BYTES), (3 * Float.BYTES));
+        GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, (8 * Float.BYTES), (6 * Float.BYTES));
 
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL33.glBindVertexArray(0);
 
         BufferUtil.destroyBuffer(verticesBuffer2);
@@ -146,11 +164,6 @@ public class Main {
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
 
         shaderProgram.bind();
-        shaderProgram.setUniformF("mixValue", mixValue);
-        System.out.println("mixValue: " + mixValue);
-        shaderProgram.unbind();
-
-        shaderProgram.bind();
 
         // Bind to the VAO
         GL33.glBindVertexArray(vao);
@@ -162,7 +175,6 @@ public class Main {
 
         // Draw the vertices
         GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);
-        /*GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 3);*/
 
         // Restore state
         GL33.glDisableVertexAttribArray(0);
@@ -171,6 +183,24 @@ public class Main {
         GL33.glBindVertexArray(0);
 
         shaderProgram.unbind();
+
+        Texture.unbindAll();
+
+        shaderProgram2.bind();
+
+        GL33.glBindVertexArray(vao2);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glEnableVertexAttribArray(1);
+        GL33.glEnableVertexAttribArray(2);
+        texture.bind();
+
+        GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer2);
+
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glDisableVertexAttribArray(1);
+        GL33.glDisableVertexAttribArray(2);
+        GL33.glBindVertexArray(0);
+        shaderProgram2.unbind();
 
         window.swapBuffers();
     }
@@ -182,6 +212,20 @@ public class Main {
 
         handleInputs();
 
+        Matrix4f trans = new Matrix4f().identity();
+        trans.translate(new Vector3f(0.5f, -0.5f, 0.0f), trans);
+        trans.rotate((float) GLFW.glfwGetTime(), new Vector3f(0.0f, 0.0f, 1.0f), trans);
+        float[] data = new float[4 * 4];
+        trans.get(data);
+        shaderProgram.setUniform4Fv("transform", data);
+
+        Matrix4f transformation = new Matrix4f().identity();
+        transformation.translate(new Vector3f(-0.5f, 0.5f, 0.0f), transformation);
+        transformation.scale((float) Math.sin(GLFW.glfwGetTime()), transformation);
+        float[] result = new float[4 * 4];
+        transformation.get(result);
+        shaderProgram2.setUniform4Fv("transform", result);
+
         window.update();
     }
 
@@ -189,20 +233,6 @@ public class Main {
         if (window.getInput().isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
             GLFW.glfwSetWindowShouldClose(window.getWindow(), true);
             GLFW.glfwDestroyWindow(window.getWindow());
-        }
-
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_UP)) {
-            mixValue += 0.01;
-            if (mixValue > 1) {
-                mixValue = 1;
-            }
-        }
-
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_DOWN)) {
-            mixValue -= 0.01;
-            if (mixValue < 0) {
-                mixValue = 0;
-            }
         }
     }
 

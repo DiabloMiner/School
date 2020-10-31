@@ -50,6 +50,11 @@ public class Texture {
         }
     }
 
+    public static void unbindAll() {
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        alreadyBound.clear();
+    }
+
     public int getTextureID() {
         return id;
     }
