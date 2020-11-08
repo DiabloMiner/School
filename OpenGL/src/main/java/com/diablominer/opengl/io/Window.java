@@ -1,9 +1,6 @@
 package com.diablominer.opengl.io;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.*;
-
-import java.nio.DoubleBuffer;
 
 public class Window {
 
@@ -13,34 +10,53 @@ public class Window {
     private boolean fullscreen;
     private boolean hasResized;
     private Input input;
-    private GLFWWindowSizeCallback windowsizecallback;
+    private Mouse mouse;
+    private boolean firstMouse = true;
 
-    public static void setCallbacks() {
+    private void setCallbacks(Camera camera) {
         GLFW.glfwSetErrorCallback(new GLFWErrorCallback() {
             @Override
             public void invoke(int error, long description) {
                 throw new IllegalStateException(GLFWErrorCallback.getDescription(description));
             }
         });
-    }
 
-    private void setLocalCallbacks() {
-        windowsizecallback = new GLFWWindowSizeCallback() {
+        GLFWWindowSizeCallback windowsizecallback = new GLFWWindowSizeCallback() {
             @Override
             public void invoke(long window, int width, int height) {
                 setSize(width, height);
                 hasResized = true;
             }
         };
+        GLFW.glfwSetWindowSizeCallback(window, windowsizecallback);
+
+        GLFWCursorPosCallback cursorPosCallback = new GLFWCursorPosCallback() {
+            @Override
+            public void invoke(long window, double xpos, double ypos) {
+                if (firstMouse) {
+                    mouse.setPosition((float) xpos,(float) ypos);
+                    firstMouse = false;
+                }
+                mouse.updatePosition((float) xpos,(float) ypos);
+                camera.update(mouse);
+            }
+        };
+        GLFW.glfwSetCursorPosCallback(window, cursorPosCallback);
+
+        GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
+            @Override
+            public void invoke(long window, double xoffset, double yoffset) {
+                camera.updateZoom((float) yoffset);
+            }
+        };
+        GLFW.glfwSetScrollCallback(window, scrollCallback);
     }
 
-    public Window(int width, int height) {
+    public Window(int width, int height, String title, Camera camera) {
         setSize(width, height);
         this.fullscreen = false;
         this.hasResized = false;
-    }
 
-    public void createWindow(String title) {
         window = GLFW.glfwCreateWindow(WIDTH, HEIGHT, title, fullscreen ? GLFW.glfwGetPrimaryMonitor() : 0, 0);
         if (window == 0) {
             throw new IllegalStateException("Failed to create window");
@@ -53,13 +69,11 @@ public class Window {
         }
 
         GLFW.glfwMakeContextCurrent(window);
+        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
 
         input = new Input(window);
-        setLocalCallbacks();
-    }
-
-    public void cleanUp() {
-        windowsizecallback.close();
+        mouse = new Mouse(WIDTH, HEIGHT);
+        setCallbacks(camera);
     }
 
     public boolean shouldClose() {
@@ -78,18 +92,6 @@ public class Window {
     public void setSize(int width, int height) {
         this.WIDTH = width;
         this.HEIGHT = height;
-    }
-
-    public double getCursorPosX() {
-        DoubleBuffer posX = BufferUtils.createDoubleBuffer(1);
-        GLFW.glfwGetCursorPos(window, posX, null);
-        return posX.get(0);
-    }
-
-    public double getCursorPosY() {
-        DoubleBuffer posY = BufferUtils.createDoubleBuffer(1);
-        GLFW.glfwGetCursorPos(window, null, posY);
-        return posY.get(0);
     }
 
     public int getWIDTH() {
@@ -114,6 +116,10 @@ public class Window {
 
     public Input getInput() {
         return input;
+    }
+
+    public Mouse getMouse() {
+        return mouse;
     }
 
     public boolean hasResized() {

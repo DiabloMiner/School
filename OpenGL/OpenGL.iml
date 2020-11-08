@@ -81,5 +81,6 @@
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-xxhash:natives-windows:3.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-yoga:natives-windows:3.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-zstd:natives-windows:3.2.3" level="project" />
+    <orderEntry type="library" name="Maven: org.joml:joml:1.9.25" level="project" />
   </component>
 </module>

@@ -2,6 +2,7 @@ package com.diablominer.opengl.render;
 
 import java.io.*;
 
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
 
 public class ShaderProgram {
@@ -120,6 +121,14 @@ public class ShaderProgram {
     public void setUniform4Fv(String name, float[] data) {
         bind();
         GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name), false, data);
+        unbind();
+    }
+
+    public void setUniform4Fm(String name, Matrix4f data) {
+        bind();
+        float[] value = new float[4 * 4];
+        data.get(value);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name), false, value);
         unbind();
     }
 
