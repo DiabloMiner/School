@@ -3,6 +3,7 @@ package com.diablominer.opengl.render;
 import java.io.*;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33;
 
 public class ShaderProgram {
@@ -112,15 +113,15 @@ public class ShaderProgram {
         unbind();
     }
 
-    public void setUniform4F(String name, float val1, float val2, float val3, float val4) {
+    public void setUniform3F(String name, float val1, float val2, float val3) {
         bind();
-        GL33.glUniform4f(GL33.glGetUniformLocation(programId, name), val1, val2, val3, val4);
+        GL33.glUniform3f(GL33.glGetUniformLocation(programId, name), val1, val2, val3);
         unbind();
     }
 
-    public void setUniform4Fv(String name, float[] data) {
+    public void setUniform3Fv(String name, Vector3f vector) {
         bind();
-        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name), false, data);
+        GL33.glUniform3f(GL33.glGetUniformLocation(programId, name), vector.get(0), vector.get(1), vector.get(2));
         unbind();
     }
 

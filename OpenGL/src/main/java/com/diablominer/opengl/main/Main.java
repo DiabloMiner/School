@@ -11,15 +11,16 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
+import org.lwjgl.system.CallbackI;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 public class Main {
 
-    private ShaderProgram shaderProgram;
+    private ShaderProgram shaderProgram, lightSourceShader;
     private int vbo;
-    private int vao;
+    private int vao, vaoLight;
     private int ebo;
     private Texture texture;
     private Texture texture2;
@@ -57,9 +58,10 @@ public class Main {
         shaderProgram.createFragmentShader("FragmentShader");
         shaderProgram.link();
 
-        // Texture uniforms are set
-        shaderProgram.setUniformI("texture1", 0);
-        shaderProgram.setUniformI("texture2", 1);
+        lightSourceShader = new ShaderProgram();
+        lightSourceShader.createVertexShader("VertexShader");
+        lightSourceShader.createFragmentShader("LightSourceFragmentShader");
+        lightSourceShader.link();
 
         // The vertices and the indices are set up and put into a FloatBuffer, also the EBO is set up and a buffer is created for it
         /*float[] vertices = {
@@ -69,48 +71,48 @@ public class Main {
                 -0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,   // bottom left
                 -0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 0.0f,    0.0f, 0.0f    // top left
         };*/
-        float[] vertices = {
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        float vertices[] = {
+                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
 
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+                0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+                0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+                0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+                0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
         };
         /*int[] indices = new int[] {  // note that we start from 0!
                 0, 1, 3,   // first triangle
@@ -118,8 +120,8 @@ public class Main {
         };
         indicesBuffer = BufferUtil.createBuffer(indices);*/
         FloatBuffer verticesBuffer = BufferUtil.createBuffer(vertices);
-        texture = new Texture("container.png");
-        texture2 = new Texture("awesomeface.png");
+        /*texture = new Texture("container.png");
+        texture2 = new Texture("awesomeface.png");*/
 
         // The VAO is set up and bound
         vao = GL33.glGenVertexArrays();
@@ -141,9 +143,9 @@ public class Main {
         //
         // Stride = Float.BYTES * number of coordinates/size(xyz=3) * number of variables that have so many coordinates(position, color = 2) = 6 * Float.BYTES
         // Pointer = Float.BYTES * number of coordinates/size * number of variables that have so many coordinates * index = Float.BYTES * 3 * 2  * 0/1/2(or any other index that you use)
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (5 * Float.BYTES), 0);
-        GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, (5 * Float.BYTES), (3 * Float.BYTES));
-        /*GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, (8 * Float.BYTES), (6 * Float.BYTES));*/
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (6 * Float.BYTES), 0);
+        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, (6 * Float.BYTES), (3 * Float.BYTES));
+       /* GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, (8 * Float.BYTES), (6 * Float.BYTES));*/
 
         // Unbind the VBO, the VAO and the EBO
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
@@ -152,6 +154,23 @@ public class Main {
 
         // The memory allocated to the vertices buffer is freed
         BufferUtil.destroyBuffer(verticesBuffer);
+
+
+        FloatBuffer verticesBufferLight = BufferUtil.createBuffer(vertices);
+
+        vaoLight = GL33.glGenVertexArrays();
+        GL33.glBindVertexArray(vaoLight);
+
+        int vboLight = GL33.glGenBuffers();
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, vboLight);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, verticesBufferLight, GL33.GL_STATIC_DRAW);
+
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (6 * Float.BYTES), 0);
+
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
+        GL33.glBindVertexArray(0);
+
+        BufferUtil.destroyBuffer(verticesBufferLight);
     }
 
     private void run() {
@@ -169,7 +188,7 @@ public class Main {
     }
 
     private void render() {
-        GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT |GL33.GL_DEPTH_BUFFER_BIT);
 
         /*shaderProgram.bind();*/
@@ -183,40 +202,46 @@ public class Main {
 
         // Draw the vertices
         /*GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);*/
-        for (int i = 0; i < 10; i++) {
-            Vector3f[] cubePositions = {
-                    new Vector3f( 0.0f,  0.0f,  0.0f),
-                    new Vector3f( 2.0f,  5.0f, -15.0f),
-                    new Vector3f(-1.5f, -2.2f, -2.5f),
-                    new Vector3f(-3.8f, -2.0f, -12.3f),
-                    new Vector3f( 2.4f, -0.4f, -3.5f),
-                    new Vector3f(-1.7f,  3.0f, -7.5f),
-                    new Vector3f( 1.3f, -2.0f, -2.5f),
-                    new Vector3f( 1.5f,  2.0f, -2.5f),
-                    new Vector3f( 1.5f,  0.2f, -1.5f),
-                    new Vector3f(-1.3f,  1.0f, -1.5f)
-            };
-            Matrix4f model = new Matrix4f().identity();
-            model.translate(cubePositions[i], model);
-            model.rotate(Math.toRadians(i * 20.0f), Transforms.vectorToUnitVector(new Vector3f(1.0f, 0.3f, 0.5f)), model);
-            shaderProgram.setUniform4Fm("model", model);
+        Vector3f cubePos = new Vector3f(0.0f, 0.0f, 0.0f);
+        Vector3f lightPos = new Vector3f(1.2f, 1.0f, 2.0f).mul(new Vector3f((float) Math.cos(GLFW.glfwGetTime()), (float) Math.sin(GLFW.glfwGetTime()), (float) Math.sin(GLFW.glfwGetTime())));
 
-            shaderProgram.bind();
-            GL33.glBindVertexArray(vao);
-            GL33.glEnableVertexAttribArray(0);
-            GL33.glEnableVertexAttribArray(1);
-            texture.bind();
-            texture2.bind();
+        Matrix4f model = new Matrix4f().identity();
+        model.translate(cubePos, model);
+        shaderProgram.setUniform4Fm("model", model);
+        shaderProgram.setUniform3F("objectColor", 1.0f, 0.5f, 0.31f);
+        shaderProgram.setUniform3F("lightColor",  1.0f, 1.0f, 1.0f);
+        shaderProgram.setUniform3Fv("lightPos", lightPos);
+        shaderProgram.setUniform3Fv("viewPos", camera.cameraPos);
 
-            GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+        // Rendering for non light source objects
+        shaderProgram.bind();
+        GL33.glBindVertexArray(vao);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glEnableVertexAttribArray(1);
 
-            GL33.glDisableVertexAttribArray(0);
-            GL33.glDisableVertexAttribArray(1);
-            GL33.glBindVertexArray(0);
-            shaderProgram.unbind();
-            Texture.unbindAll();
-        }
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
 
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glDisableVertexAttribArray(1);
+        GL33.glBindVertexArray(0);
+        shaderProgram.unbind();
+
+
+        // Rendering for the light source
+        model = new Matrix4f().identity();
+        model.translate(lightPos, model);
+        model.scale(new Vector3f(0.5f), model);
+        lightSourceShader.setUniform4Fm("model", model);
+
+        lightSourceShader.bind();
+        GL33.glBindVertexArray(vaoLight);
+        GL33.glEnableVertexAttribArray(0);
+
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glBindVertexArray(0);
+        lightSourceShader.unbind();
         // Restore state
         /*GL33.glDisableVertexAttribArray(0);
         GL33.glDisableVertexAttribArray(1);
@@ -234,13 +259,13 @@ public class Main {
             GL33.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
         }
 
-        camera.cameraPos.y = 0.0f;
-
         Matrix4f view = new Matrix4f();
         view.lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp);
         shaderProgram.setUniform4Fm("view", view);
+        lightSourceShader.setUniform4Fm("view", view);
 
         shaderProgram.setUniform4Fm("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
+        lightSourceShader.setUniform4Fm("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
 
         handleInputs();
 
