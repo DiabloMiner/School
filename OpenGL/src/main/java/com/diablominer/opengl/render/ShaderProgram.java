@@ -101,31 +101,31 @@ public class ShaderProgram {
         return programId;
     }
 
-    public void setUniformI(String name, int value) {
+    public void setUniform1I(String name, int value) {
         bind();
         GL33.glUniform1i(GL33.glGetUniformLocation(programId, name), value);
         unbind();
     }
 
-    public void setUniformF(String name, float value) {
+    public void setUniform1F(String name, float value) {
         bind();
         GL33.glUniform1f(GL33.glGetUniformLocation(programId, name), value);
         unbind();
     }
 
-    public void setUniform3F(String name, float val1, float val2, float val3) {
+    public void setUniformVec3F(String name, float val1, float val2, float val3) {
         bind();
         GL33.glUniform3f(GL33.glGetUniformLocation(programId, name), val1, val2, val3);
         unbind();
     }
 
-    public void setUniform3Fv(String name, Vector3f vector) {
+    public void setUniformVec3F(String name, Vector3f vector) {
         bind();
         GL33.glUniform3f(GL33.glGetUniformLocation(programId, name), vector.get(0), vector.get(1), vector.get(2));
         unbind();
     }
 
-    public void setUniform4Fm(String name, Matrix4f data) {
+    public void setUniformMat4F(String name, Matrix4f data) {
         bind();
         float[] value = new float[4 * 4];
         data.get(value);

@@ -55,6 +55,12 @@ public class Texture {
         alreadyBound.clear();
     }
 
+    public static int getIndexForTexture(Texture texture) {
+        // For this method to work the texture from which the index is requested has to be bound already,
+        // if this is not the case then just -1 will be returned
+        return alreadyBound.indexOf(texture.getTextureID());
+    }
+
     public int getTextureID() {
         return id;
     }

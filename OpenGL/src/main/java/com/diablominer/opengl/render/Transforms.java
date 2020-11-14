@@ -11,6 +11,17 @@ public class Transforms {
         vector.div(vector.length(), unitVector);
         return unitVector;
     }
+    public static Vector3f vectorToUnitVector(float x, float y, float z) {
+        Vector3f unitVector = new Vector3f(x, y, z);
+        unitVector.div(unitVector.length(), unitVector);
+        return unitVector;
+    }
+
+    public static Vector3f getSumOf2Vectors(Vector3f vec1, Vector3f vec2) {
+        Vector3f sum = new Vector3f();
+        vec1.add(vec2, sum);
+        return sum;
+    }
 
     public static Matrix4f createProjectionMatrix(float fovy, boolean givenInDegrees, double width, double height, float zNear, float zFar) {
         // If givenInDegrees is true fovy has to be given in degrees else it has to be given in radians
