@@ -188,7 +188,7 @@ public class Main {
     }
 
     private void render() {
-        GL33.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT |GL33.GL_DEPTH_BUFFER_BIT);
 
         /*shaderProgram.bind();*/
@@ -202,43 +202,23 @@ public class Main {
 
         // Draw the vertices
         /*GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);*/
-        Vector3f cubePos = new Vector3f(0.0f, 0.0f, 0.0f);
-        Vector3f lightPos = new Vector3f(1.2f, 1.0f, 2.0f).mul(new Vector3f((float) Math.cos(GLFW.glfwGetTime()), (float) Math.sin(GLFW.glfwGetTime()), (float) Math.sin(GLFW.glfwGetTime())));
 
         // Normal model matrix for non light source objects
-        Matrix4f model = new Matrix4f().identity();
-        model.translate(cubePos, model);
+        Matrix4f model;
 
         // Model matrix for the light source object
-        Matrix4f modelLightSource = new Matrix4f().identity();
-        modelLightSource.translate(lightPos, modelLightSource);
-        modelLightSource.scale(new Vector3f(0.5f), modelLightSource);
+        Matrix4f modelLightSource;
 
         // Textures are bound
         texture.bind();
         texture2.bind();
 
-        // Here Uniforms for non light source objects are set
-        shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
-
-        shaderProgram.setUniformVec3F("light.ambient", 0.2f, 0.2f, 0.2f);
-        shaderProgram.setUniformVec3F("light.diffuse", 0.5f, 0.5f, 0.5f);
-        shaderProgram.setUniformVec3F("light.specular", 1.0f, 1.0f, 1.0f);
-        shaderProgram.setUniformVec3F("light.position", camera.cameraPos);
-        shaderProgram.setUniformVec3F("light.direction", camera.cameraFront);
-        shaderProgram.setUniform1F("light.cutOff", Math.cos(Math.toRadians(12.5f)));
-        shaderProgram.setUniform1F("light.outerCutOff", Math.cos(Math.toRadians(17.5f)));
-
-        shaderProgram.setUniform1F("light.constant",  1.0f);
-        shaderProgram.setUniform1F("light.linear",    0.09f);
-        shaderProgram.setUniform1F("light.quadratic", 0.032f);
-
-        shaderProgram.setUniform1F("material.shininess", 32.0f);
-        shaderProgram.setUniform1I("material.diffuse", Texture.getIndexForTexture(texture));
-        shaderProgram.setUniform1I("material.specular", Texture.getIndexForTexture(texture2));
-
-        // Uniforms for the light source are set here
-        lightSourceShader.setUniformMat4F("model", modelLightSource);
+        Vector3f[] pointLightPositions = {
+            new Vector3f( 0.7f,  0.2f,  2.0f),
+            new Vector3f( 2.3f, -3.3f, -4.0f),
+            new Vector3f(-4.0f,  2.0f, -12.0f),
+            new Vector3f( 0.0f,  0.0f, -3.0f)
+        };
 
         Vector3f[] cubePositions = {
                 new Vector3f( 0.0f,  0.0f,  0.0f),
@@ -253,11 +233,51 @@ public class Main {
                 new Vector3f(-1.3f,  1.0f, -1.5f)
         };
 
-        for (int i = 1; i <= 10; i++) {
+        // Here Uniforms for non light source objects are set
+        shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
+
+        // Direction light
+        shaderProgram.setUniformVec3F("dirLight.direction", Transforms.vectorToUnitVector(0.3f, 0.8f, 1.5f));
+        shaderProgram.setUniformVec3F("dirLight.ambient", 0.2f, 0.2f, 0.2f);
+        shaderProgram.setUniformVec3F("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
+        shaderProgram.setUniformVec3F("dirLight.specular", 1.0f, 1.0f, 1.0f);
+
+        // Point lights
+        Vector3f diffColor = new Vector3f(1.0f, 1.0f, 1.0f);
+        lightSourceShader.setUniformVec3F("color", diffColor);
+        for (int i = 0; i < pointLightPositions.length; i++) {
+            shaderProgram.setUniformVec3F("pointLights[" + i + "].position", pointLightPositions[i]);
+            shaderProgram.setUniformVec3F("pointLights[" + i + "].ambient", 0.2f, 0.2f, 0.2f);
+            shaderProgram.setUniformVec3F("pointLights[" + i + "].diffuse", diffColor);
+            shaderProgram.setUniformVec3F("pointLights[" + i + "].specular", 1.0f, 1.0f, 1.0f);
+            shaderProgram.setUniform1F("pointLights[" + i + "].constant",  1.0f);
+            shaderProgram.setUniform1F("pointLights[" + i + "].linear",    0.35f);
+            shaderProgram.setUniform1F("pointLights[" + i + "].quadratic", 0.44f);
+            shaderProgram.setUniform1F("pointLights[" + i + "].cutOff", Math.cos(Math.toRadians(12.5f)));
+            shaderProgram.setUniform1F("pointLights[" + i + "].outerCutOff", Math.cos(Math.toRadians(17.5f)));
+        }
+
+        // Spot light
+        shaderProgram.setUniformVec3F("spotLight.position", camera.cameraPos);
+        shaderProgram.setUniformVec3F("spotLight.direction", camera.cameraFront);
+        shaderProgram.setUniformVec3F("spotLight.ambient", 0.2f, 0.2f, 0.2f);
+        shaderProgram.setUniformVec3F("spotLight.diffuse", 0.5f, 0.5f, 0.5f);
+        shaderProgram.setUniformVec3F("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        shaderProgram.setUniform1F("spotLight.constant",  1.0f);
+        shaderProgram.setUniform1F("spotLight.linear",    0.22f);
+        shaderProgram.setUniform1F("spotLight.quadratic", 0.20f);
+        shaderProgram.setUniform1F("spotLight.cutOff", Math.cos(Math.toRadians(12.5f)));
+        shaderProgram.setUniform1F("spotLight.outerCutOff", Math.cos(Math.toRadians(17.5f)));
+
+        shaderProgram.setUniform1F("material.shininess", 32.0f);
+        shaderProgram.setUniform1I("material.diffuse", Texture.getIndexForTexture(texture));
+        shaderProgram.setUniform1I("material.specular", Texture.getIndexForTexture(texture2));
+
+        for (int i = 0; i < cubePositions.length; i++) {
             // Rendering for non light source objects
             model = new Matrix4f().identity();
-            model.translate(cubePositions[i - 1], model);
-            model.rotate(Math.toRadians(i * 20.0f), Transforms.vectorToUnitVector(1.0f, 0.3f, 0.5f));
+            model.translate(cubePositions[i], model);
+            model.rotate(Math.toRadians(i * 20.0f + 3.0f), Transforms.vectorToUnitVector(1.0f, 0.3f, 0.5f));
             shaderProgram.setUniformMat4F("model", model);
 
             shaderProgram.bind();
@@ -277,17 +297,23 @@ public class Main {
 
         Texture.unbindAll();
 
+        for (int i = 0; i < pointLightPositions.length; i++) {
+            modelLightSource = new Matrix4f().identity();
+            modelLightSource.translate(pointLightPositions[i]);
+            modelLightSource.scale(new Vector3f(0.5f), modelLightSource);
+            lightSourceShader.setUniformMat4F("model", modelLightSource);
 
-        // Rendering for the light source
-        lightSourceShader.bind();
-        GL33.glBindVertexArray(vaoLight);
-        GL33.glEnableVertexAttribArray(0);
+            // Rendering for the light source
+            lightSourceShader.bind();
+            GL33.glBindVertexArray(vaoLight);
+            GL33.glEnableVertexAttribArray(0);
 
-        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+            GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
 
-        GL33.glDisableVertexAttribArray(0);
-        GL33.glBindVertexArray(0);
-        lightSourceShader.unbind();
+            GL33.glDisableVertexAttribArray(0);
+            GL33.glBindVertexArray(0);
+            lightSourceShader.unbind();
+        }
         // Restore state
         /*GL33.glDisableVertexAttribArray(0);
         GL33.glDisableVertexAttribArray(1);
@@ -344,8 +370,6 @@ public class Main {
         if (shaderProgram != null) {
             shaderProgram.cleanup();
         }
-
-        GL33.glDisableVertexAttribArray(0);
 
         // Delete the indices buffer
         BufferUtil.destroyBuffer(indicesBuffer);

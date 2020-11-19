@@ -13,9 +13,10 @@ import javax.imageio.ImageIO;
 
 public class Texture {
 
-    private int id;
+    public int id;
+    public String type;
 
-    private static List<Integer> alreadyBound = new ArrayList<>();
+    public static List<Integer> alreadyBound = new ArrayList<>();
 
     public Texture(String filename) throws IOException {
         // The image is loaded and read out into a ByteBuffer
@@ -58,11 +59,7 @@ public class Texture {
     public static int getIndexForTexture(Texture texture) {
         // For this method to work the texture from which the index is requested has to be bound already,
         // if this is not the case then just -1 will be returned
-        return alreadyBound.indexOf(texture.getTextureID());
-    }
-
-    public int getTextureID() {
-        return id;
+        return alreadyBound.indexOf(texture.id);
     }
 
 }
