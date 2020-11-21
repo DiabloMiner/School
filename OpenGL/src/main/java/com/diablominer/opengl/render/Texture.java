@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 
 import javax.imageio.ImageIO;
@@ -15,12 +16,13 @@ public class Texture {
 
     public int id;
     public String type;
+    public String path;
 
     public static List<Integer> alreadyBound = new ArrayList<>();
 
     public Texture(String filename) throws IOException {
         // The image is loaded and read out into a ByteBuffer
-        BufferedImage bi = ImageIO.read(new File("./src/main/resources/textures/" + filename));
+        BufferedImage bi = ImageIO.read(new File(filename));
         ByteBuffer buffer = BufferUtil.createImageBuffer(bi.getRGB(0, 0, bi.getWidth(), bi.getHeight(), null, 0, bi.getWidth()), bi.getWidth(), bi.getHeight());
 
         // The texture is generated and bound

@@ -1,9 +1,11 @@
 package com.diablominer.opengl.render;
 
+import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 public class Mesh {
@@ -79,7 +81,7 @@ public class Mesh {
                 number = String.valueOf(specularCounter++);
             }
             currentTexture.bind();
-            if (!number.equals("")) {
+            if (!number.equals("") && Texture.getIndexForTexture(currentTexture) >= 0) {
                 shaderProgram.setUniform1F("material." + name + number, Texture.getIndexForTexture(currentTexture));
             }
         }

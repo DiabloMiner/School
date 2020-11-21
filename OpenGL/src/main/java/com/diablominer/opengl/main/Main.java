@@ -2,16 +2,17 @@ package com.diablominer.opengl.main;
 
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
-import com.diablominer.opengl.render.BufferUtil;
+import com.diablominer.opengl.render.Model;
+import com.diablominer.opengl.utils.BufferUtil;
 import com.diablominer.opengl.render.ShaderProgram;
 import com.diablominer.opengl.render.Texture;
-import com.diablominer.opengl.render.Transforms;
-import org.joml.Math;
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -29,11 +30,11 @@ public class Main {
     private float deltaTime = 0.0f; // Time between current frame and last frame
     private float lastTime = 0.0f; // Time of last frame
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         new Main();
     }
 
-    public Main() {
+    public Main() throws IOException {
         try { init(); } catch (Exception e) { e.printStackTrace(); }
 
         run();
@@ -61,8 +62,8 @@ public class Main {
         lightSourceShader.createFragmentShader("LightSourceFragmentShader");
         lightSourceShader.link();
 
-        texture = new Texture("container2.png");
-        texture2 = new Texture("container2_specular.png");
+        texture = new Texture("./src/main/resources/textures/container2.png");
+        texture2 = new Texture("./src/main/resources/textures/container2_specular.png");
 
         // The vertices and the indices are set up and put into a FloatBuffer, also the EBO is set up and a buffer is created for it
         /*float[] vertices = {
@@ -173,7 +174,7 @@ public class Main {
         BufferUtil.destroyBuffer(verticesBufferLight);
     }
 
-    private void run() {
+    private void run() throws IOException {
         while (!window.shouldClose()) {
             float currentTime = (float) GLFW.glfwGetTime();
             deltaTime = currentTime - lastTime;
@@ -187,8 +188,8 @@ public class Main {
         cleanup();
     }
 
-    private void render() {
-        GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    private void render() throws IOException {
+        GL33.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT |GL33.GL_DEPTH_BUFFER_BIT);
 
         /*shaderProgram.bind();*/
@@ -204,7 +205,7 @@ public class Main {
         /*GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);*/
 
         // Normal model matrix for non light source objects
-        Matrix4f model;
+        /*Matrix4f model;
 
         // Model matrix for the light source object
         Matrix4f modelLightSource;
@@ -303,7 +304,7 @@ public class Main {
             modelLightSource.scale(new Vector3f(0.5f), modelLightSource);
             lightSourceShader.setUniformMat4F("model", modelLightSource);
 
-            // Rendering for the light source
+            // Rendering for the light sources
             lightSourceShader.bind();
             GL33.glBindVertexArray(vaoLight);
             GL33.glEnableVertexAttribArray(0);
@@ -313,7 +314,25 @@ public class Main {
             GL33.glDisableVertexAttribArray(0);
             GL33.glBindVertexArray(0);
             lightSourceShader.unbind();
-        }
+        }*/
+        lightSourceShader.setUniformMat4F("model", new Matrix4f().identity());
+        lightSourceShader.bind();
+        GL33.glBindVertexArray(vaoLight);
+        GL33.glEnableVertexAttribArray(0);
+
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glBindVertexArray(0);
+        lightSourceShader.unbind();
+
+        Model model = new Model("./src/main/resources/models/cube/cube.obj");
+        shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
+        shaderProgram.setUniformVec3F("dirLight.direction", Transforms.vectorToUnitVector(0.3f, 0.8f, 1.5f));
+        shaderProgram.setUniformVec3F("dirLight.ambient", 0.2f, 0.2f, 0.2f);
+        shaderProgram.setUniformVec3F("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
+        shaderProgram.setUniformVec3F("dirLight.specular", 1.0f, 1.0f, 1.0f);
+        model.draw(shaderProgram);
         // Restore state
         /*GL33.glDisableVertexAttribArray(0);
         GL33.glDisableVertexAttribArray(1);
