@@ -2,27 +2,17 @@ package com.diablominer.opengl.main;
 
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
-import com.diablominer.opengl.render.BufferUtil;
-import com.diablominer.opengl.render.ShaderProgram;
-import com.diablominer.opengl.render.Texture;
-import com.diablominer.opengl.render.Transforms;
-import org.joml.Math;
+import com.diablominer.opengl.render.*;
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
 
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-
 public class Main {
 
     private ShaderProgram shaderProgram, lightSourceShader;
-    private int vbo;
-    private int vao, vaoLight;
-    private int ebo;
-    private Texture texture, texture2;
-    private IntBuffer indicesBuffer;
+    private Model model;
     private Window window;
     private Camera camera;
 
@@ -40,12 +30,15 @@ public class Main {
     }
 
     private void init() throws Exception {
+        // Initialize GLFW
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
+        // Crete a camera and a window
         camera = new Camera(45.0f, new Vector3f(0.0f, 0.0f, 3.0f), new Vector3f(0.0f, 0.0f, -1.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         window = new Window(1280, 720, "Hello World",camera);
 
+        // Set up OpenGL
         GL.createCapabilities();
         GL33.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
         GL33.glEnable(GL33.GL_DEPTH_TEST);
@@ -61,116 +54,7 @@ public class Main {
         lightSourceShader.createFragmentShader("LightSourceFragmentShader");
         lightSourceShader.link();
 
-        texture = new Texture("container2.png");
-        texture2 = new Texture("container2_specular.png");
-
-        // The vertices and the indices are set up and put into a FloatBuffer, also the EBO is set up and a buffer is created for it
-        /*float[] vertices = {
-                // positions          // colors           // texture coords
-                 0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,   // top right
-                 0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,   // bottom right
-                -0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,   // bottom left
-                -0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 0.0f,    0.0f, 0.0f    // top left
-        };*/
-        float[] vertices = {
-                // positions          // normals           // texture coords
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-                0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-                0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-                0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-                0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-                0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-                0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-                -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-                -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-                0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-                0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-                0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-                0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-                0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-                0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-                0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-                0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-                0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
-        };
-        /*int[] indices = new int[] {  // note that we start from 0!
-                0, 1, 3,   // first triangle
-                1, 2, 3    // second triangle
-        };
-        indicesBuffer = BufferUtil.createBuffer(indices);*/
-        FloatBuffer verticesBuffer = BufferUtil.createBuffer(vertices);
-
-        // The VAO is set up and bound
-        vao = GL33.glGenVertexArrays();
-        GL33.glBindVertexArray(vao);
-
-        // The VBO is set up and data is provided for the VBO
-        vbo = GL33.glGenBuffers();
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, vbo);
-        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, verticesBuffer, GL33.GL_STATIC_DRAW);
-
-        // The EBO is set up and data is provided for the EBO
-        /*ebo = GL33.glGenBuffers();
-        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, ebo);
-        GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL33.GL_STATIC_DRAW);*/
-
-        // The structure of the data is defined and stored in the VAO
-        //
-        // https://learnopengl.com/Getting-started/Textures has a very good graph at the chapter applying textures
-        //
-        // Stride = Float.BYTES * number of coordinates/size(xyz=3) * number of variables that have so many coordinates(position, color = 2) = 6 * Float.BYTES
-        // Pointer = Float.BYTES * number of coordinates/size * number of variables that have so many coordinates * index = Float.BYTES * 3 * 2  * 0/1/2(or any other index that you use)
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (8 * Float.BYTES), 0);
-        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, (8 * Float.BYTES), (3 * Float.BYTES));
-        GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, (8 * Float.BYTES), (6 * Float.BYTES));
-
-        // Unbind the VBO, the VAO and the EBO
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
-        /*GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);*/
-        GL33.glBindVertexArray(0);
-
-        // The memory allocated to the vertices buffer is freed
-        BufferUtil.destroyBuffer(verticesBuffer);
-
-
-        FloatBuffer verticesBufferLight = BufferUtil.createBuffer(vertices);
-
-        vaoLight = GL33.glGenVertexArrays();
-        GL33.glBindVertexArray(vaoLight);
-
-        int vboLight = GL33.glGenBuffers();
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, vboLight);
-        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, verticesBufferLight, GL33.GL_STATIC_DRAW);
-
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, (8 * Float.BYTES), 0);
-
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
-        GL33.glBindVertexArray(0);
-
-        BufferUtil.destroyBuffer(verticesBufferLight);
+        model = new Model("./src/main/resources/models/backpack/backpack.obj");
     }
 
     private void run() {
@@ -191,20 +75,18 @@ public class Main {
         GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT |GL33.GL_DEPTH_BUFFER_BIT);
 
-        /*shaderProgram.bind();*/
+        shaderProgram.setUniformVec3F("dirLight.direction", Transforms.vectorToUnitVector(0.3f, 0.8f, 1.5f));
+        shaderProgram.setUniformVec3F("dirLight.ambient", 0.2f, 0.2f, 0.2f);
+        shaderProgram.setUniformVec3F("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
+        shaderProgram.setUniformVec3F("dirLight.specular", 1.0f, 1.0f, 1.0f);
+        shaderProgram.setUniform1F("material.shininess", 32.0f);
 
-        // Bind to the VAO
-        /*GL33.glBindVertexArray(vao);
-        GL33.glEnableVertexAttribArray(0);
-        GL33.glEnableVertexAttribArray(1);
-        texture.bind();
-        texture2.bind();*/
+        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(new Vector3f(1.0f, 2.0f, -3.0f)));
 
-        // Draw the vertices
-        /*GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);*/
+        model.draw(shaderProgram);
 
         // Normal model matrix for non light source objects
-        Matrix4f model;
+        /*Matrix4f model;
 
         // Model matrix for the light source object
         Matrix4f modelLightSource;
@@ -313,15 +195,7 @@ public class Main {
             GL33.glDisableVertexAttribArray(0);
             GL33.glBindVertexArray(0);
             lightSourceShader.unbind();
-        }
-        // Restore state
-        /*GL33.glDisableVertexAttribArray(0);
-        GL33.glDisableVertexAttribArray(1);
-        GL33.glBindVertexArray(0);
-
-        shaderProgram.unbind();
-
-        Texture.unbindAll();*/
+        }*/
 
         window.swapBuffers();
     }
@@ -367,25 +241,14 @@ public class Main {
     }
 
     private void cleanup() {
-        if (shaderProgram != null) {
-            shaderProgram.cleanup();
-        }
+        // Clean up all shaders
+        shaderProgram.cleanup();
+        lightSourceShader.cleanup();
 
-        // Delete the indices buffer
-        BufferUtil.destroyBuffer(indicesBuffer);
+        // Clean up all models
+        Model.cleanUpAllModels();
 
-        // Delete the VBO
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
-        GL33.glDeleteBuffers(vbo);
-
-        // Delete EBO
-        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
-        GL33.glDeleteBuffers(ebo);
-
-        // Delete the VAO
-        GL33.glBindVertexArray(0);
-        GL33.glDeleteVertexArrays(vao);
-
+        // Terminate GLFW
         GLFW.glfwTerminate();
     }
 
