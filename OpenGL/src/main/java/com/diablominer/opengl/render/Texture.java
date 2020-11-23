@@ -17,7 +17,6 @@ public class Texture {
     public int id;
     public String path;
     public String type;
-    public String path;
 
     public static List<Integer> alreadyBound = new ArrayList<>();
 

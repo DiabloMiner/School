@@ -75,6 +75,8 @@ public class Main {
         GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT |GL33.GL_DEPTH_BUFFER_BIT);
 
+        shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
+
         shaderProgram.setUniformVec3F("dirLight.direction", Transforms.vectorToUnitVector(0.3f, 0.8f, 1.5f));
         shaderProgram.setUniformVec3F("dirLight.ambient", 0.2f, 0.2f, 0.2f);
         shaderProgram.setUniformVec3F("dirLight.diffuse", 0.5f, 0.5f, 0.5f);

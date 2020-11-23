@@ -48,21 +48,15 @@ public class Model {
             System.err.println("An Assimp loading error has been encountered: " + Assimp.aiGetErrorString());
         }
 
-        // Process the nodes of the scene
-        processNode(aiScene.mRootNode(), aiScene);
+        // Process the scene
+        processScene(aiScene);
     }
 
-    private void processNode(AINode node, AIScene scene) {
-        // Process all meshes in this node
-        for (int i = 0; i < node.mNumMeshes(); i++) {
+    private void processScene(AIScene scene) {
+        // Process all meshes in this scene
+        for (int i = 0; i < scene.mNumMeshes(); i++) {
             AIMesh mesh = AIMesh.create(scene.mMeshes().get(i));
             meshes.add(processMesh(mesh, scene));
-        }
-
-        // Process all child nodes
-        for (int i = 0; i < node.mNumChildren(); i++) {
-            AINode childNode = AINode.create(node.mChildren().get(i));
-            processNode(childNode, scene);
         }
     }
 
