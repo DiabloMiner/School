@@ -4,11 +4,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.imageio.ImageIO;
 
@@ -26,8 +29,10 @@ public class Texture {
 
     private Texture(String filename) throws IOException {
         // The image is loaded and read out into a ByteBuffer
-        BufferedImage bi = ImageIO.read(new File(filename));
-        ByteBuffer buffer = BufferUtil.createImageBuffer(bi.getRGB(0, 0, bi.getWidth(), bi.getHeight(), null, 0, bi.getWidth()), bi.getWidth(), bi.getHeight());
+        IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
+        IntBuffer yBuffer = MemoryUtil.memAllocInt(1);
+        IntBuffer channelsBuffer = MemoryUtil.memAllocInt(1);
+        ByteBuffer buffer = STBImage.stbi_load(filename, xBuffer, yBuffer, channelsBuffer, 4);
 
         // The texture is generated and bound
         id = GL33.glGenTextures();
@@ -35,7 +40,7 @@ public class Texture {
         GL33.glPixelStorei(GL33.GL_UNPACK_ALIGNMENT, 1);
 
         // The imageData for the texture is given and a mipmap is generated with this data
-        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, bi.getWidth(), bi.getHeight(), 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, buffer);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, xBuffer.get(), yBuffer.get(), 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, buffer);
         GL33.glGenerateMipmap(GL33.GL_TEXTURE_2D);
 
         // A few parameters for texture wrapping/filtering are set
