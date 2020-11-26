@@ -1,7 +1,5 @@
 package com.diablominer.opengl.render;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -12,8 +10,6 @@ import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.imageio.ImageIO;
 
 public class Texture {
 

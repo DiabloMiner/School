@@ -5,7 +5,6 @@ import org.lwjgl.opengl.GL33;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.List;
 
 public class Mesh {

@@ -12,7 +12,6 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -41,13 +40,17 @@ public class Main {
     }
 
     private void init() throws Exception {
-        // Initialize GLFW
+        // Initialize GLFW and tell GLFW we use only the core profile functionalities of OpenGL Version 3.3
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
-        // Crete a camera and a window
-        camera = new Camera(45.0f, new Vector3f(0.0f, 0.0f, 3.0f), new Vector3f(0.0f, 0.0f, -1.0f), new Vector3f(0.0f, 1.0f, 0.0f));
-        window = new Window(1280, 720, "Hello World",camera);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+
+        // Create a camera and a window
+        camera = new Camera(45.0f, new Vector3f(0.0f, 0.0f, 20.0f), new Vector3f(0.0f, 0.0f, -1.0f), new Vector3f(0.0f, 1.0f, 0.0f));
+        window = new Window(1280, 720, "Hello World", camera);
 
         // Set up OpenGL
         GL.createCapabilities();
@@ -112,7 +115,7 @@ public class Main {
 
         shaderProgram.setUniform1F("material.shininess", 32.0f);
 
-        // The model matrices are set
+        // The model matrix for shaderProgram is set
         shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
 
         model.draw(shaderProgram);

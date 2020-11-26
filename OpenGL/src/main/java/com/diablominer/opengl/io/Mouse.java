@@ -8,9 +8,9 @@ public class Mouse {
     public float xOffset = 0;
     public float yOffset = 0;
 
-    public Mouse(float width, float height) {
-        mouseX = width / 2;
-        mouseY = height / 2;
+    public Mouse(float screenWidth, float screenHeight) {
+        mouseX = screenWidth / 2;
+        mouseY = screenHeight / 2;
     }
 
     public void updatePosition(float x, float y) {

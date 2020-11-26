@@ -1,5 +1,6 @@
 package com.diablominer.opengl.io;
 
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Math;
 import org.joml.Vector3f;
 
@@ -46,9 +47,7 @@ public class Camera {
     }
 
     public Vector3f getLookAtPosition() {
-        Vector3f sum = new Vector3f();
-        cameraPos.add(cameraFront, sum);
-        return sum;
+        return Transforms.getSumOf2Vectors(cameraPos, cameraFront);
     }
 
     public void moveForwards(float cameraSpeed) {

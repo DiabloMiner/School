@@ -1,6 +1,7 @@
 package com.diablominer.opengl.io;
 
 import org.lwjgl.glfw.*;
+import org.lwjgl.opengl.GL33;
 
 public class Window {
 
@@ -26,6 +27,7 @@ public class Window {
             public void invoke(long window, int width, int height) {
                 setSize(width, height);
                 hasResized = true;
+                GL33.glViewport(0, 0, width, height);
             }
         };
         GLFW.glfwSetWindowSizeCallback(window, windowsizecallback);
