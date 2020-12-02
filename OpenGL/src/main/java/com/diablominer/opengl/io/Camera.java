@@ -6,6 +6,7 @@ import org.joml.Vector3f;
 
 public class Camera {
 
+    private static final Vector3f zeroDegreeVector = new Vector3f(1.0f, 0.0f, 0.0f);
     public float fov;
     public float yaw;
     public float pitch;
@@ -18,7 +19,7 @@ public class Camera {
         cameraPos = pos;
         cameraFront = front;
         cameraUp = up;
-        yaw = -90.0f;
+        yaw = (float) -Math.toDegrees(zeroDegreeVector.angle(front));
         pitch = 0.0f;
     }
 
