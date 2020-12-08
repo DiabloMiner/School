@@ -17,11 +17,10 @@ import java.util.List;
 public class Main {
 
     private ShaderProgram shaderProgram, lightSourceShader, oneColorShader;
-    private Model model, model2;
+    private Model model, model2, model3;
     private Window window;
     private Camera camera;
     private DirectionalLightSource dirLight;
-    private PointLightSource pointLight;
     private SpotLightSource spotLight;
     private List<PointLightSource> pointLights;
     private Vector3f[] pointLightPositions;
@@ -73,13 +72,9 @@ public class Main {
         oneColorShader.createFragmentShader("OneColorShader");
         oneColorShader.link();
 
-        // Projection matrices are set
-        shaderProgram.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
-        oneColorShader.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
-        lightSourceShader.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
-
         model = new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj");
-        model2 = new Model("./src/main/resources/models/HelloWorld/TheGreatBox.obj");
+        model2 = new Model("./src/main/resources/models/HelloWorld/cube.obj");
+        model3 = new Model("./src/main/resources/models/HelloWorld/biggerCube.obj");
         dirLight = new DirectionalLightSource();
         spotLight = new SpotLightSource("./src/main/resources/models/cube/cube.obj");
         pointLights = PointLightSource.createMultiplePointLights(new String[] {
@@ -111,11 +106,12 @@ public class Main {
     private void render() {
         GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
+
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
 
         dirLight.setUniforms(Transforms.vectorToUnitVector(-2.0f, -2.0f, -2.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(0.8f, 0.8f, 0.8f), shaderProgram);
-        spotLight.setUniforms(camera.cameraPos, camera.cameraFront, new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.5f, 0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.11f, 0.10f, 12.5f, 17.5f, shaderProgram);
+        spotLight.setUniforms(camera.cameraPos, camera.cameraFront, new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.5f, 0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.09f, 0.05f, 12.5f, 17.5f, shaderProgram);
         for (int i = 0; i < pointLights.size(); i++) {
             pointLights.get(i).setUniforms(Transforms.getProductOf2Vectors(pointLightPositions[i], new Vector3f((float)Math.cos(GLFW.glfwGetTime()), (float)Math.sin(GLFW.glfwGetTime()), (float)Math.tan(GLFW.glfwGetTime()))), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(0.7f, 0.7f, 0.7f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f, i, shaderProgram);
         }
@@ -124,26 +120,19 @@ public class Main {
 
         // The model matrix for shaderProgram is set
         shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
+        oneColorShader.setUniformMat4F("model", new Matrix4f().identity());
 
-        GL33.glStencilMask(0x00);
-        // Stencil test functions are set and Hello World and light sources are rendered
         GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
         GL33.glStencilMask(0xFF);
         model.draw(shaderProgram);
-        for (PointLightSource pointLight : pointLights) {
-            pointLight.draw(lightSourceShader);
-        }
         model2.draw(shaderProgram);
+        for (PointLightSource lightSource : pointLights) {
+            lightSource.draw(lightSourceShader);
+        }
 
-        // More Stencil test functions are set and a outline is rendered
         GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
-        GL33.glStencilMask(0x00);
         GL33.glDisable(GL33.GL_DEPTH_TEST);
-        oneColorShader.setUniformMat4F("model", new Matrix4f().identity().scale(1.1f));
-        model2.draw(oneColorShader);
-        GL33.glStencilMask(0xFF);
-        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        model3.draw(oneColorShader);
 
         window.swapBuffers();
     }
@@ -152,6 +141,11 @@ public class Main {
         if (window.hasResized()) {
             GL33.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
         }
+
+        // Projection matrices are set
+        shaderProgram.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
+        oneColorShader.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
+        lightSourceShader.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
 
         // View matrices and matrices that do something with the camera are set
         Matrix4f view = new Matrix4f();

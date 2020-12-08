@@ -1,23 +1,27 @@
-package com.diablominer.opengl.examples;
+package com.diablominer.opengl.examples.hellotexture;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-public class HelloTriangle {
+public class HelloTexture {
 
     private static long window;
     private static int shaderProgram;
     private static int VAO;
+    private static int texture1;
+    private static int texture2;
     private static IntBuffer indices;
 
     public static void main(String[] args) throws Exception {
@@ -63,8 +67,8 @@ public class HelloTriangle {
         });
 
 
-        int vertexShader = createShader("HW_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("HW_FS", GL33.GL_FRAGMENT_SHADER);
+        int vertexShader = createShader("HT_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("HT_FS", GL33.GL_FRAGMENT_SHADER);
         shaderProgram = GL33.glCreateProgram();
         GL33.glAttachShader(shaderProgram, vertexShader);
         GL33.glAttachShader(shaderProgram, fragmentShader);
@@ -76,11 +80,31 @@ public class HelloTriangle {
         GL33.glDeleteShader(fragmentShader);
 
 
+        texture1 = createTexture("./src/main/java/com/diablominer/opengl/examples/hellotexture/container.png");
+        texture2 = createTexture("./src/main/java/com/diablominer/opengl/examples/hellotexture/christmas_tree.png");
+        GL33.glUseProgram(shaderProgram);
+        GL33.glUniform1i(GL33.glGetUniformLocation(shaderProgram, "inputtedTexture1"), 0);
+        GL33.glUniform1i(GL33.glGetUniformLocation(shaderProgram, "inputtedTexture2"), 1);
+        GL33.glUseProgram(0);
+
+
         float[] vertices = {
                 0.5f,  0.5f, 0.0f,
                 0.5f, -0.5f, 0.0f,
                 -0.5f, -0.5f, 0.0f,
                 -0.5f,  0.5f, 0.0f
+        };
+        float[] textures = {
+                1.0f, 1.0f,
+                1.0f, 0.0f,
+                0.0f, 0.0f,
+                0.0f, 1.0f
+        };
+        float[] colors = {
+                1.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 1.0f,
+                1.0f, 1.0f, 0.0f
         };
         int[] indicesArray = {
                 0, 1, 3,
@@ -88,6 +112,8 @@ public class HelloTriangle {
         };
         indices = createIntBuffer(indicesArray);
         int VBO = GL33.glGenBuffers();
+        int TBO = GL33.glGenBuffers();
+        int CBO = GL33.glGenBuffers();
         int EBO = GL33.glGenBuffers();
         VAO = GL33.glGenVertexArrays();
 
@@ -100,6 +126,16 @@ public class HelloTriangle {
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, vertices, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
         GL33.glEnableVertexAttribArray(0);
+
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, CBO);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, colors, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
+        GL33.glEnableVertexAttribArray(1);
+
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, TBO);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, textures, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, 2 * Float.BYTES, 0);
+        GL33.glEnableVertexAttribArray(2);
 
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
@@ -118,6 +154,12 @@ public class HelloTriangle {
 
         GL33.glUseProgram(shaderProgram);
         GL33.glBindVertexArray(VAO);
+
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture1);
+        GL33.glActiveTexture(GL33.GL_TEXTURE1);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture2);
+
         GL33.glDrawElements(GL33.GL_TRIANGLES, indices);
         GL33.glBindVertexArray(0);
     }
@@ -136,7 +178,7 @@ public class HelloTriangle {
         StringBuilder string = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/" + filename + ".glsl")));
+            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/hellotexture/" + filename + ".glsl")));
             String line;
             while ((line = reader.readLine()) != null) {
                 string.append(line);
@@ -152,6 +194,33 @@ public class HelloTriangle {
         IntBuffer buffer = MemoryUtil.memAllocInt(data.length);
         buffer.put(data).flip();
         return buffer;
+    }
+
+    private static int createTexture(String path) {
+        int texture = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture);
+
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_REPEAT);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_REPEAT);
+
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_NEAREST);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_NEAREST);
+
+        int[] width = new int[1];
+        int[] height = new int[1];
+        int[] channels = new int[1];
+        STBImage.stbi_set_flip_vertically_on_load(true);
+        ByteBuffer data = STBImage.stbi_load(path, width, height, channels, 4);
+        if (data != null) {
+            GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, width[0], height[0], 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, data);
+            GL33.glGenerateMipmap(GL33.GL_TEXTURE_2D);
+
+            STBImage.stbi_image_free(data);
+        } else {
+            System.err.println("Texture loading has failed");
+        }
+
+        return texture;
     }
 
 }

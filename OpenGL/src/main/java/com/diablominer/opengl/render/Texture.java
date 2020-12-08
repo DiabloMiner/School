@@ -45,13 +45,13 @@ public class Texture {
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_NEAREST);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_NEAREST);
 
-        // The TEXTURE_2D constant is unbound again and the buffer is destroyed
+        // The TEXTURE_2D constant is unbound again
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
-        BufferUtil.destroyBuffer(buffer);
 
-        // Add to the TextureCache and set the path
+        // Add to the TextureCache, set the path and free the allocated memory for buffer
         this.path = filename;
         TextureCache.getInstance().registerTexture(this.path, this);
+        STBImage.stbi_image_free(buffer);
     }
 
     public void bind() {

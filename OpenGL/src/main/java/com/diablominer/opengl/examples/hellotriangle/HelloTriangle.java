@@ -1,21 +1,24 @@
-package com.diablominer.opengl.examples;
+package com.diablominer.opengl.examples.hellotriangle;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.system.MemoryUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.IntBuffer;
 
-public class LineTest {
+public class HelloTriangle {
 
     private static long window;
     private static int shaderProgram;
     private static int VAO;
+    private static IntBuffer indices;
 
     public static void main(String[] args) throws Exception {
         init();
@@ -29,6 +32,7 @@ public class LineTest {
         }
         GLFW.glfwTerminate();
         GL33.glDeleteProgram(shaderProgram);
+        MemoryUtil.memFree(indices);
     }
 
     public static void init() throws Exception {
@@ -59,8 +63,8 @@ public class LineTest {
         });
 
 
-        int vertexShader = createShader("LT_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("LT_FS", GL33.GL_FRAGMENT_SHADER);
+        int vertexShader = createShader("HT_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("HT_FS", GL33.GL_FRAGMENT_SHADER);
         shaderProgram = GL33.glCreateProgram();
         GL33.glAttachShader(shaderProgram, vertexShader);
         GL33.glAttachShader(shaderProgram, fragmentShader);
@@ -71,23 +75,36 @@ public class LineTest {
         GL33.glDeleteShader(vertexShader);
         GL33.glDeleteShader(fragmentShader);
 
+        GL33.glUseProgram(shaderProgram);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "color"), 1.0f, 0.5f, 0.7f);
+        GL33.glUseProgram(0);
 
         float[] vertices = {
-                0.0f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-                0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+                0.5f,  0.5f, 0.0f,
+                0.5f, -0.5f, 0.0f,
+                -0.5f, -0.5f, 0.0f,
+                -0.5f,  0.5f, 0.0f
         };
+        int[] indicesArray = {
+                0, 1, 3,
+                1, 2, 3
+        };
+        indices = createIntBuffer(indicesArray);
         int VBO = GL33.glGenBuffers();
+        int EBO = GL33.glGenBuffers();
         VAO = GL33.glGenVertexArrays();
 
         GL33.glBindVertexArray(VAO);
 
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, EBO);
+        GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, indices, GL33.GL_STATIC_DRAW);
+
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, vertices, GL33.GL_STATIC_DRAW);
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 6 * Float.BYTES, 0);
-        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, 6 * Float.BYTES, 3 * Float.BYTES);
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
         GL33.glEnableVertexAttribArray(0);
-        GL33.glEnableVertexAttribArray(1);
 
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
         GL33.glBindVertexArray(0);
     }
@@ -102,11 +119,9 @@ public class LineTest {
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
 
-        GL33.glLineWidth(10.0f);
-
         GL33.glUseProgram(shaderProgram);
         GL33.glBindVertexArray(VAO);
-        GL33.glDrawArrays(GL33.GL_LINES, 0, 2);
+        GL33.glDrawElements(GL33.GL_TRIANGLES, indices);
         GL33.glBindVertexArray(0);
     }
 
@@ -124,7 +139,7 @@ public class LineTest {
         StringBuilder string = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/" + filename + ".glsl")));
+            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/hellotriangle/" + filename + ".glsl")));
             String line;
             while ((line = reader.readLine()) != null) {
                 string.append(line);
@@ -135,4 +150,11 @@ public class LineTest {
 
         return string.toString();
     }
+
+    private static IntBuffer createIntBuffer(int[] data) {
+        IntBuffer buffer = MemoryUtil.memAllocInt(data.length);
+        buffer.put(data).flip();
+        return buffer;
+    }
+
 }
