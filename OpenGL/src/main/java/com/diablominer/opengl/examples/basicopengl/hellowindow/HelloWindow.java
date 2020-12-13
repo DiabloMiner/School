@@ -1,4 +1,4 @@
-package com.diablominer.opengl.examples.hellowindow;
+package com.diablominer.opengl.examples.basicopengl.hellowindow;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;

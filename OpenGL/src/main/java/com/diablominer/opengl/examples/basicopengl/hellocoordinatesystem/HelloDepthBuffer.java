@@ -1,4 +1,4 @@
-package com.diablominer.opengl.examples.hellomatrix;
+package com.diablominer.opengl.examples.basicopengl.hellocoordinatesystem;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -17,13 +17,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-public class HelloMatrix {
+public class HelloDepthBuffer {
 
     private static long window;
     private static int shaderProgram;
     private static int VAO;
     private static int texture1;
-    private static IntBuffer indices;
 
     public static void main(String[] args) throws Exception {
         init();
@@ -39,7 +38,6 @@ public class HelloMatrix {
         }
         GLFW.glfwTerminate();
         GL33.glDeleteProgram(shaderProgram);
-        MemoryUtil.memFree(indices);
     }
 
     public static void init() throws Exception {
@@ -50,7 +48,7 @@ public class HelloMatrix {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Hello Triangle",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Hello Depth Buffer",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -70,8 +68,11 @@ public class HelloMatrix {
         });
 
 
-        int vertexShader = createShader("HM_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("HM_FS", GL33.GL_FRAGMENT_SHADER);
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+
+
+        int vertexShader = createShader("HCS_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("HCS_FS", GL33.GL_FRAGMENT_SHADER);
         shaderProgram = GL33.glCreateProgram();
         GL33.glAttachShader(shaderProgram, vertexShader);
         GL33.glAttachShader(shaderProgram, fragmentShader);
@@ -83,46 +84,67 @@ public class HelloMatrix {
         GL33.glDeleteShader(fragmentShader);
 
 
-        texture1 = createTexture("./src/main/java/com/diablominer/opengl/examples/hellomatrix/container.png");
+        texture1 = createTexture("./src/main/java/com/diablominer/opengl/examples/basicopengl/hellocoordinatesystem/container.png");
         GL33.glUseProgram(shaderProgram);
         GL33.glUniform1i(GL33.glGetUniformLocation(shaderProgram, "inputtedTexture"), 0);
         GL33.glUseProgram(0);
 
+
         float[] vertices = {
-                0.5f,  0.5f, 0.0f,
-                0.5f, -0.5f, 0.0f,
-                -0.5f, -0.5f, 0.0f,
-                -0.5f,  0.5f, 0.0f
+                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+                0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
         };
-        float[] textures = {
-                1.0f, 1.0f,
-                1.0f, 0.0f,
-                0.0f, 0.0f,
-                0.0f, 1.0f
-        };
-        int[] indicesArray = {
-                0, 1, 3,
-                1, 2, 3
-        };
-        indices = createIntBuffer(indicesArray);
+
         int VBO = GL33.glGenBuffers();
-        int TBO = GL33.glGenBuffers();
-        int EBO = GL33.glGenBuffers();
         VAO = GL33.glGenVertexArrays();
 
         GL33.glBindVertexArray(VAO);
 
-        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, EBO);
-        GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, indices, GL33.GL_STATIC_DRAW);
-
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, vertices, GL33.GL_STATIC_DRAW);
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
-        GL33.glEnableVertexAttribArray(0);
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 5 * Float.BYTES, 0);
+        GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
 
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, TBO);
-        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, textures, GL33.GL_STATIC_DRAW);
-        GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 2 * Float.BYTES, 0);
+        GL33.glEnableVertexAttribArray(0);
         GL33.glEnableVertexAttribArray(1);
 
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -138,7 +160,7 @@ public class HelloMatrix {
 
     public static void render() {
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
 
         GL33.glUseProgram(shaderProgram);
         GL33.glBindVertexArray(VAO);
@@ -146,18 +168,30 @@ public class HelloMatrix {
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture1);
 
-        GL33.glDrawElements(GL33.GL_TRIANGLES, indices);
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
         GL33.glBindVertexArray(0);
     }
 
     public static void update() {
-        Matrix4f matrix = new Matrix4f().identity();
-        matrix.translate(new Vector3f(0.5f, -0.5f, 0.0f));
-        matrix.rotate((float) GLFW.glfwGetTime(), new Vector3f(0.0f, 0.0f, 1.0f).normalize());
-        float[] data = new float[4 * 4];
-        matrix.get(data);
+        Matrix4f model = new Matrix4f().identity();
+        model.rotate((float) ( Math.toRadians(-55.0f)), new Vector3f(0.5f, 1.0f, 0.0f).normalize());
+        float[] modelData = new float[4 * 4];
+        model.get(modelData);
+
+        Matrix4f view = new Matrix4f().identity();
+        view.translate(new Vector3f(0.0f, 0.0f, -3.0f));
+        float[] viewData = new float[4 * 4];
+        view.get(viewData);
+
+        Matrix4f projection = new Matrix4f().identity();
+        projection.perspective((float) Math.toRadians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f);
+        float[] projectionData = new float[4 * 4];
+        projection.get(projectionData);
+
         GL33.glUseProgram(shaderProgram);
-        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "matrix"), false, data);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "model"), false, modelData);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "view"), false, viewData);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "projection"), false, projectionData);
         GL33.glUseProgram(0);
     }
 
@@ -175,7 +209,7 @@ public class HelloMatrix {
         StringBuilder string = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/hellomatrix/" + filename + ".glsl")));
+            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/basicopengl/hellocoordinatesystem/" + filename + ".glsl")));
             String line;
             while ((line = reader.readLine()) != null) {
                 string.append(line);
@@ -221,3 +255,4 @@ public class HelloMatrix {
     }
 
 }
+

@@ -1,4 +1,4 @@
-package com.diablominer.opengl.examples.hellotexture;
+package com.diablominer.opengl.examples.basicopengl.hellotexture;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
@@ -47,7 +47,7 @@ public class HelloTexture {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Hello Triangle",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Hello Texture",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -80,8 +80,8 @@ public class HelloTexture {
         GL33.glDeleteShader(fragmentShader);
 
 
-        texture1 = createTexture("./src/main/java/com/diablominer/opengl/examples/hellotexture/container.png");
-        texture2 = createTexture("./src/main/java/com/diablominer/opengl/examples/hellotexture/christmas_tree.png");
+        texture1 = createTexture("./src/main/java/com/diablominer/opengl/examples/basicopengl/hellotexture/container.png");
+        texture2 = createTexture("./src/main/java/com/diablominer/opengl/examples/basicopengl/hellotexture/christmas_tree.png");
         GL33.glUseProgram(shaderProgram);
         GL33.glUniform1i(GL33.glGetUniformLocation(shaderProgram, "inputtedTexture1"), 0);
         GL33.glUniform1i(GL33.glGetUniformLocation(shaderProgram, "inputtedTexture2"), 1);
@@ -178,7 +178,7 @@ public class HelloTexture {
         StringBuilder string = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/hellotexture/" + filename + ".glsl")));
+            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/basicopengl/hellotexture/" + filename + ".glsl")));
             String line;
             while ((line = reader.readLine()) != null) {
                 string.append(line);

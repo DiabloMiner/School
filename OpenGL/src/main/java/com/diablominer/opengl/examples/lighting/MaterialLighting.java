@@ -1,4 +1,4 @@
-package com.diablominer.opengl.examples.hellocamera;
+package com.diablominer.opengl.examples.lighting;
 
 import org.joml.Math;
 import org.joml.Matrix4f;
@@ -15,14 +15,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-public class HelloCamera {
+public class MaterialLighting {
 
     private static long window;
-    private static int shaderProgram;
+    private static int shaderProgram, lightSourceShaderProgram;
     private static int VAO;
-    private static int texture1;
     private static float deltaTime = 0.0f, lastFrame = 0.0f;
-    private static boolean firstMouse = true;
+    private static boolean firstMouse = true, constantDirection = false;
     private static float lastX = 400.0f, lastY = 300.0f, yaw, pitch = 0.0f, zoom = 45.0f;
     private static Vector3f cameraPosition, cameraDirection, cameraUp;
 
@@ -47,6 +46,7 @@ public class HelloCamera {
     }
 
     public static void init() throws Exception {
+
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("GLFW could not be initialized");
         }
@@ -54,7 +54,7 @@ public class HelloCamera {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Hello Triangle",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Material Lighting",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -82,23 +82,25 @@ public class HelloCamera {
                     firstMouse = false;
                 }
 
-                float xOffset = (float) (xpos - lastX);
-                float yOffset = (float) (lastY - ypos);
-                lastX = (float) xpos;
-                lastY = (float) ypos;
+                if (!constantDirection) {
+                    float xOffset = (float) (xpos - lastX);
+                    float yOffset = (float) (lastY - ypos);
+                    lastX = (float) xpos;
+                    lastY = (float) ypos;
 
-                float sensitivity = 0.1f;
-                xOffset *= sensitivity;
-                yOffset *= sensitivity;
+                    float sensitivity = 0.1f;
+                    xOffset *= sensitivity;
+                    yOffset *= sensitivity;
 
-                yaw += xOffset;
-                pitch += yOffset;
-                pitch = Math.clamp(-89.0f, 89.0f, pitch);
+                    yaw += xOffset;
+                    pitch += yOffset;
+                    pitch = Math.clamp(-89.0f, 89.0f, pitch);
 
-                cameraDirection.x = Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
-                cameraDirection.y = Math.sin(Math.toRadians(pitch));
-                cameraDirection.z = Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
-                cameraDirection.normalize();
+                    cameraDirection.x = Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
+                    cameraDirection.y = Math.sin(Math.toRadians(pitch));
+                    cameraDirection.z = Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
+                    cameraDirection.normalize();
+                }
             }
         });
         GLFW.glfwSetScrollCallback(window, new GLFWScrollCallback() {
@@ -112,8 +114,8 @@ public class HelloCamera {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
 
 
-        int vertexShader = createShader("HCS_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("HCS_FS", GL33.GL_FRAGMENT_SHADER);
+        int vertexShader = createShader("PL_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("PL_FS_Materials", GL33.GL_FRAGMENT_SHADER);
         shaderProgram = GL33.glCreateProgram();
         GL33.glAttachShader(shaderProgram, vertexShader);
         GL33.glAttachShader(shaderProgram, fragmentShader);
@@ -121,58 +123,62 @@ public class HelloCamera {
         if (GL33.glGetProgrami(shaderProgram, GL33.GL_LINK_STATUS) == 0) {
             throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(shaderProgram, 1024));
         }
-        GL33.glDeleteShader(vertexShader);
         GL33.glDeleteShader(fragmentShader);
 
-
-        texture1 = createTexture("./src/main/java/com/diablominer/opengl/examples/hellocoordinatesystem/container.png");
-        GL33.glUseProgram(shaderProgram);
-        GL33.glUniform1i(GL33.glGetUniformLocation(shaderProgram, "inputtedTexture"), 0);
-        GL33.glUseProgram(0);
+        int fS = createShader("PL_FS_LightSource", GL33.GL_FRAGMENT_SHADER);
+        lightSourceShaderProgram = GL33.glCreateProgram();
+        GL33.glAttachShader(lightSourceShaderProgram, vertexShader);
+        GL33.glAttachShader(lightSourceShaderProgram, fS);
+        GL33.glLinkProgram(lightSourceShaderProgram);
+        if (GL33.glGetProgrami(lightSourceShaderProgram, GL33.GL_LINK_STATUS) == 0) {
+            throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(shaderProgram, 1024));
+        }
+        GL33.glDeleteShader(vertexShader);
+        GL33.glDeleteShader(fS);
 
 
         float[] vertices = {
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
 
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+                0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+                0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+                0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+                0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
         };
 
         int VBO = GL33.glGenBuffers();
@@ -182,8 +188,8 @@ public class HelloCamera {
 
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, vertices, GL33.GL_STATIC_DRAW);
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 5 * Float.BYTES, 0);
-        GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 6 * Float.BYTES, 0);
+        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, 6 * Float.BYTES, 3 * Float.BYTES);
 
         GL33.glEnableVertexAttribArray(0);
         GL33.glEnableVertexAttribArray(1);
@@ -232,6 +238,10 @@ public class HelloCamera {
             product.normalize().mul(cameraSpeed);
             cameraPosition.add(product);
         }
+
+        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) {
+            constantDirection = !constantDirection;
+        }
     }
 
     public static void render() {
@@ -240,10 +250,11 @@ public class HelloCamera {
 
         GL33.glUseProgram(shaderProgram);
         GL33.glBindVertexArray(VAO);
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+        GL33.glBindVertexArray(0);
 
-        GL33.glActiveTexture(GL33.GL_TEXTURE0);
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture1);
-
+        GL33.glUseProgram(lightSourceShaderProgram);
+        GL33.glBindVertexArray(VAO);
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
         GL33.glBindVertexArray(0);
     }
@@ -269,7 +280,29 @@ public class HelloCamera {
         GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "model"), false, modelData);
         GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "view"), false, viewData);
         GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "projection"), false, projectionData);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "material.ambient"), 1.0f, 0.5f, 0.3f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "material.diffuse"), 1.0f, 0.5f, 0.3f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "material.specular"), 0.5f, 0.5f, 0.5f);
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "material.shininess"), 32.0f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "light.ambient"), 0.3f, 0.3f, 0.3f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "light.diffuse"), 1.0f, 0.0f, 0.0f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "light.specular"), 0.0f, 0.0f, 1.0f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "lightPos"), -1.5f, 1.0f, 1.5f);
+        GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "viewPos"), cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+        GL33.glUseProgram(lightSourceShaderProgram);
+        model.translate(new Vector3f(-1.5f, 1.0f, 1.5f));
+        model.scale(0.3f);
+        modelData = new float[4 * 4];
+        model.get(modelData);
+
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(lightSourceShaderProgram, "model"), false, modelData);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(lightSourceShaderProgram, "view"), false, viewData);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(lightSourceShaderProgram, "projection"), false, projectionData);
+        GL33.glUniform3f(GL33.glGetUniformLocation(lightSourceShaderProgram, "lightColor"), 1.0f, 1.0f, 1.0f);
         GL33.glUseProgram(0);
+
+
     }
 
     public static int createShader(String filename, int shaderType) throws Exception {
@@ -286,7 +319,7 @@ public class HelloCamera {
         StringBuilder string = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader("./src/main/java/com/diablominer/opengl/examples/hellocoordinatesystem/" + filename + ".glsl"));
+            reader = new BufferedReader(new FileReader("./src/main/java/com/diablominer/opengl/examples/lighting/" + filename + ".glsl"));
             String line;
             while ((line = reader.readLine()) != null) {
                 string.append(line);

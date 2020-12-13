@@ -17,6 +17,12 @@ public class MyWorld extends World
         addObject(leftPaddle, 60, getHeight()/2);
         addObject(rightPaddle, getWidth() - 60, getHeight()/2);
         addObject(score, getWidth()/2, score.FONT_SIZE);
+        
+        Vector v1 = new Vector(1,2);
+        Vector v2 = new Vector(2,1);
+        
+        System.out.println(v1.getPhiRadians());
+        System.out.println(v1.getPhiDegrees());
     }
 
 }

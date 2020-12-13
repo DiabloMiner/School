@@ -121,15 +121,13 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     return (ambient + diffuse + specular);
 }
 
-vec3 calcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewPos) {
+vec3 calcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     // Diffuse Lighting
-    vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(light.position - FragPos);
-    float diff = max(dot(norm, lightDir), 0.0f);
+    float diff = max(dot(normal, lightDir), 0.0f);
 
     // Specular Lighting
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
+    vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
 
     // Spotlight with soft edges
