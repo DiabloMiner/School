@@ -5,8 +5,7 @@ in vec3 color;
 in vec2 texCoord;
 
 uniform sampler2D inputtedTexture1;
-uniform sampler2D inputtedTexture2;
 
 void main() {
-    fragmentColor = mix(texture(inputtedTexture1, texCoord), texture(inputtedTexture2, texCoord), 0.3f);
+    fragmentColor = texture(inputtedTexture1, texCoord) * vec4(color, 1.0f);
 }
