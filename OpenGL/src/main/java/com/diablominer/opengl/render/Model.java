@@ -1,6 +1,7 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.utils.ListUtil;
+import org.joml.Matrix4f;
 import org.lwjgl.assimp.*;
 
 import java.io.File;
@@ -9,24 +10,16 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Model {
-
-    public static List<Model> models = new ArrayList<>();
+public class Model extends Renderable {
 
     private List<Mesh> meshes;
     private String path;
 
-    public Model(String path) {
+    public Model(String path, EngineUnit engineUnit, Matrix4f position) {
+        super(engineUnit, position);
         meshes = new ArrayList<>();
         this.path = path;
         loadModel(path);
-        models.add(this);
-    }
-
-    public static void cleanUpAllModels() {
-        for (Model model : models) {
-            model.cleanUp();
-        }
     }
 
     public void cleanUp() {
@@ -35,7 +28,9 @@ public class Model {
         }
     }
 
+    @Override
     public void draw(ShaderProgram shaderProgram) {
+        super.setModelMatrix(shaderProgram);
         for (Mesh mesh : meshes) {
             mesh.draw(shaderProgram);
         }

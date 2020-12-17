@@ -72,7 +72,7 @@ public class Main {
         oneColorShader.createFragmentShader("OneColorShader");
         oneColorShader.link();
 
-        model = new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj");
+        /*model = new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj");
         model2 = new Model("./src/main/resources/models/HelloWorld/cube.obj");
         model3 = new Model("./src/main/resources/models/HelloWorld/biggerCube.obj");
         dirLight = new DirectionalLightSource();
@@ -86,7 +86,7 @@ public class Main {
                 new Vector3f(8.0f, 0.2f, -2.0f),
                 new Vector3f(2.3f, -3.3f, -4.0f),
                 new Vector3f(-4.0f, 2.0f, -12.0f)
-        };
+        };*/
     }
 
     private void run() {
@@ -110,11 +110,11 @@ public class Main {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
 
-        dirLight.setUniforms(Transforms.vectorToUnitVector(-2.0f, -2.0f, -2.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(0.8f, 0.8f, 0.8f), shaderProgram);
+        /*dirLight.setUniforms(Transforms.vectorToUnitVector(-2.0f, -2.0f, -2.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(0.8f, 0.8f, 0.8f), shaderProgram);
         spotLight.setUniforms(camera.cameraPos, camera.cameraFront, new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.5f, 0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.09f, 0.05f, 12.5f, 17.5f, shaderProgram);
         for (int i = 0; i < pointLights.size(); i++) {
             pointLights.get(i).setUniforms(Transforms.getProductOf2Vectors(pointLightPositions[i], new Vector3f((float)Math.cos(GLFW.glfwGetTime()), (float)Math.sin(GLFW.glfwGetTime()), (float)Math.tan(GLFW.glfwGetTime()))), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(0.7f, 0.7f, 0.7f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f, i, shaderProgram);
-        }
+        }*/
 
         shaderProgram.setUniform1F("material.shininess", 32.0f);
 
@@ -126,9 +126,9 @@ public class Main {
         GL33.glStencilMask(0xFF);
         model.draw(shaderProgram);
         model2.draw(shaderProgram);
-        for (PointLightSource lightSource : pointLights) {
+        /*for (PointLightSource lightSource : pointLights) {
             lightSource.draw(lightSourceShader);
-        }
+        }*/
 
         GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
         GL33.glDisable(GL33.GL_DEPTH_TEST);
@@ -187,9 +187,6 @@ public class Main {
         // Clean up all shaders
         shaderProgram.cleanup();
         lightSourceShader.cleanup();
-
-        // Clean up all models
-        Model.cleanUpAllModels();
 
         // Terminate GLFW
         GLFW.glfwTerminate();

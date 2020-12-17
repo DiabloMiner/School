@@ -1,5 +1,6 @@
 package com.diablominer.opengl.io;
 
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL33;
 
@@ -61,7 +62,9 @@ public class Window {
 
         window = GLFW.glfwCreateWindow(WIDTH, HEIGHT, title, fullscreen ? GLFW.glfwGetPrimaryMonitor() : 0, 0);
         if (window == 0) {
-            throw new IllegalStateException("Failed to create window");
+            PointerBuffer buffer = PointerBuffer.allocateDirect(1);
+            GLFW.glfwGetError(buffer);
+            throw new IllegalStateException("Failed to create window: " + buffer.getStringASCII());
         }
 
         if (!fullscreen) {

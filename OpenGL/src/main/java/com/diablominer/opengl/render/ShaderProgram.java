@@ -19,6 +19,16 @@ public class ShaderProgram {
         }
     }
 
+    public ShaderProgram(String vertexShaderPath, String fragmentShaderPath) throws Exception {
+        programId = GL33.glCreateProgram();
+        if (programId == 0) {
+            throw new Exception("Could not create Shader");
+        }
+        createVertexShader(vertexShaderPath);
+        createFragmentShader(fragmentShaderPath);
+        link();
+    }
+
     public void createVertexShader(String shaderFile) throws Exception {
         vertexShaderId = createShader(shaderFile, GL33.GL_VERTEX_SHADER);
     }

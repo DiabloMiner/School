@@ -9,9 +9,9 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PointLightSource extends Model {
+public class PointLightSource {
 
-    private Vector3f position = new Vector3f();
+    /*private Vector3f position = new Vector3f();
     private Vector3f color = new Vector3f();
 
     public static List<PointLightSource> createMultiplePointLights(String[] paths) {
@@ -55,5 +55,5 @@ public class PointLightSource extends Model {
         lightSourceShader.setUniformVec3F("color", color);
         lightSourceShader.setUniformMat4F("model", new Matrix4f().identity().translate(position));
         super.draw(lightSourceShader);
-    }
+    }*/
 }
