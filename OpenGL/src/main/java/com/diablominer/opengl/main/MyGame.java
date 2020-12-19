@@ -48,15 +48,34 @@ public class MyGame extends Game {
         GL.createCapabilities();
         GL33.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
         GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glEnable(GL33.GL_STENCIL_TEST);
 
         ShaderProgram shaderProgram = new ShaderProgram("VertexShader", "FragmentShader");
         ShaderProgram lightSourceShaderProgram = new ShaderProgram("VertexShader", "LightSourceFragmentShader");
+        ShaderProgram oneColorShaderProgram = new ShaderProgram("VertexShader", "LightSourceFragmentShader");
         renderingEngine = new MyRenderingEngine();
         logicalEngine = new MyLogicalEngine(true);
         PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
         MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, new DirectionalLight(new Vector3f(1.0f, 0.0f, 1.0f), new Vector3f(0.1f, 0.1f, 0.2f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f)), pointLight, new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f))));
+        RenderingEngineUnit renderingEngineUnit3 = new RenderingEngineUnit(oneColorShaderProgram) {
+            @Override
+            public void updateRenderState(Camera camera, Window window) {
+                this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
+                Matrix4f view = new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp);
+                this.getShaderProgram().setUniformMat4F("view", view);
+                this.getShaderProgram().setUniformVec3F("color", 0.3f, 0.3f, 0.6f);
+            }
+
+            @Override
+            public void render() {
+                GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
+                GL33.glDisable(GL33.GL_DEPTH_TEST);
+                renderAllRenderables();
+            }
+        };
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(0.0f, 0.0f, 0.0f));
         RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, Window window) {
@@ -74,6 +93,7 @@ public class MyGame extends Game {
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
         renderingEngine.addNewEngineUnit(renderingEngineUnit1);
         renderingEngine.addNewEngineUnit(renderingEngineUnit2);
+        renderingEngine.addNewEngineUnit(renderingEngineUnit3);
 
         Runnable logicalEngineRunnable = logicalEngine;
         Thread logicalEngineThread = new Thread(logicalEngineRunnable);

@@ -7,6 +7,7 @@ import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL33;
 
 public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
@@ -62,6 +63,8 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
+        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
+        GL33.glStencilMask(0xFF);
         renderAllRenderables();
     }
 }
