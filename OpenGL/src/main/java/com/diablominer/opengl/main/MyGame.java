@@ -14,7 +14,8 @@ public class MyGame extends Game {
 
     private Camera camera;
     private Window window;
-    private MyEngine engine;
+    private MyRenderingEngine renderingEngine;
+    private MyLogicalEngine logicalEngine;
     private float deltaTime = 0.0f;
     private float lastTime = 0.0f;
 
@@ -25,6 +26,7 @@ public class MyGame extends Game {
     public MyGame() throws Exception {
         init();
         mainLoop();
+        cleanUp();
     }
 
     @Override
@@ -45,18 +47,18 @@ public class MyGame extends Game {
 
         ShaderProgram shaderProgram = new ShaderProgram("VertexShader", "FragmentShader");
         ShaderProgram lightSourceShaderProgram = new ShaderProgram("VertexShader", "LightSourceFragmentShader");
-        engine = new MyEngine();
-        MyEngine.pointLight.setPosition(Transforms.getProductOf2Vectors(MyEngine.pointLight.getPosition(), new Vector3f((float) Math.cos(GLFW.glfwGetTime()), (float) Math.sin(GLFW.glfwGetTime()), (float) Math.cos(GLFW.glfwGetTime()))));
-        EngineUnit engineUnit1 = new MyEngineUnit(shaderProgram, MyEngine.directionLight, MyEngine.pointLight, MyEngine.spotLight);
-        engineUnit1.addNewRenderable(new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", engineUnit1, new Matrix4f().translate(new Vector3f(1.0f, 0.0f, 3.0f))));
-        engineUnit1.addNewRenderable(new Model("./src/main/resources/models/HelloWorld/cube.obj", engineUnit1, new Matrix4f().translate(new Vector3f(2.0f, 1.0f, 0.0f))));
-        EngineUnit engineUnit2 = new EngineUnit(lightSourceShaderProgram) {
+        renderingEngine = new MyRenderingEngine();
+        logicalEngine = new MyLogicalEngine(true);
+        MyRenderingEngine.initializePointLight(logicalEngine);
+        RenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, MyRenderingEngine.directionLight, MyRenderingEngine.pointLight, MyRenderingEngine.spotLight);
+        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(1.0f, 0.0f, 3.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(2.0f, 1.0f, 0.0f));
+        RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, Window window) {
                 this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
                 Matrix4f view = new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp);
                 this.getShaderProgram().setUniformMat4F("view", view);
-                this.getShaderProgram().setUniformVec3F("viewPos", camera.cameraPos);
                 this.getShaderProgram().setUniformVec3F("color", 1.0f, 1.0f, 1.0f);
             }
 
@@ -65,9 +67,13 @@ public class MyGame extends Game {
                 renderAllRenderables();
             }
         };
-        engineUnit2.addNewRenderable(new Model("./src/main/resources/models/HelloWorld/cube.obj", engineUnit1, new Matrix4f().translate(MyEngine.pointLight.getPosition())));
-        engine.addNewEngineUnit(engineUnit1);
-        engine.addNewEngineUnit(engineUnit2);
+        new MoveableModel("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit2, MyRenderingEngine.pointLight.getPosition());
+        renderingEngine.addNewEngineUnit(renderingEngineUnit1);
+        renderingEngine.addNewEngineUnit(renderingEngineUnit2);
+
+        Runnable logicalEngineRunnable = logicalEngine;
+        Thread logicalEngineThread = new Thread(logicalEngineRunnable);
+        logicalEngineThread.start();
     }
 
     @Override
@@ -81,15 +87,14 @@ public class MyGame extends Game {
 
             render();
         }
-        cleanUp();
     }
 
     public void render() {
-        engine.render(window);
+        renderingEngine.render(window);
     }
 
     public void update() {
-        engine.updateAllEngineUnits(camera, window);
+        renderingEngine.updateAllEngineUnits(camera, window);
 
         handleInputs();
 
@@ -120,7 +125,9 @@ public class MyGame extends Game {
 
     @Override
     public void cleanUp() {
-        engine.end();
+        logicalEngine.setShouldRun(false);
+
+        renderingEngine.end();
 
         GLFW.glfwTerminate();
     }

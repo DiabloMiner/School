@@ -8,13 +8,14 @@ import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 
-public class MyEngineUnit extends EngineUnit {
+public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
+    public float shininess = 32.0f;
 
-    public MyEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
+    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
         super(shaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
@@ -26,7 +27,7 @@ public class MyEngineUnit extends EngineUnit {
         this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
         this.getShaderProgram().setUniformMat4F("view", new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp));
         this.getShaderProgram().setUniformVec3F("viewPos", camera.cameraPos);
-        this.getShaderProgram().setUniform1F("material.shininess", 32.0f);
+        this.getShaderProgram().setUniform1F("material.shininess", shininess);
 
         this.getShaderProgram().setUniformVec3F("dirLight.direction", dirLight.getDirection());
         this.getShaderProgram().setUniformVec3F("dirLight.ambient", dirLight.getAmbient());
@@ -55,6 +56,7 @@ public class MyEngineUnit extends EngineUnit {
 
     @Override
     public void render() {
+        this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
         renderAllRenderables();
     }
 }

@@ -6,12 +6,12 @@ import com.diablominer.opengl.io.Window;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class EngineUnit {
+public abstract class RenderingEngineUnit {
 
     private ShaderProgram shaderProgram;
     private List<Renderable> renderables;
 
-    public EngineUnit(ShaderProgram shaderProgram) {
+    public RenderingEngineUnit(ShaderProgram shaderProgram) {
         this.shaderProgram = shaderProgram;
         renderables = new ArrayList<>();
     }

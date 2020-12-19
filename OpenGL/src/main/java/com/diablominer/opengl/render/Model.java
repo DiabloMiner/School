@@ -2,6 +2,7 @@ package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.utils.ListUtil;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
 
 import java.io.File;
@@ -10,13 +11,15 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Model extends Renderable {
+public class Model implements Renderable {
 
     private List<Mesh> meshes;
     private String path;
+    private Vector3f position;
 
-    public Model(String path, EngineUnit engineUnit, Matrix4f position) {
-        super(engineUnit, position);
+    public Model(String path, RenderingEngineUnit renderingEngineUnit, Vector3f position) {
+        renderingEngineUnit.addNewRenderable(this);
+        this.position = position;
         meshes = new ArrayList<>();
         this.path = path;
         loadModel(path);
@@ -30,7 +33,7 @@ public class Model extends Renderable {
 
     @Override
     public void draw(ShaderProgram shaderProgram) {
-        super.setModelMatrix(shaderProgram);
+        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(position));
         for (Mesh mesh : meshes) {
             mesh.draw(shaderProgram);
         }
@@ -127,4 +130,11 @@ public class Model extends Renderable {
         return indices;
     }
 
+    public Vector3f getPosition() {
+        return position;
+    }
+
+    public void setPosition(Vector3f position) {
+        this.position = position;
+    }
 }

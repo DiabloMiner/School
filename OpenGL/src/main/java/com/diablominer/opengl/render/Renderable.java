@@ -1,30 +1,9 @@
 package com.diablominer.opengl.render;
 
-import org.joml.Matrix4f;
+public interface Renderable {
 
-public abstract class Renderable {
+    void draw(ShaderProgram shaderProgram);
 
-    private Matrix4f position;
-
-    public Renderable(EngineUnit engineUnit, Matrix4f matrix) {
-        engineUnit.addNewRenderable(this);
-        position = matrix;
-    }
-
-    public abstract void draw(ShaderProgram shaderProgram);
-
-    public abstract void cleanUp();
-
-    public Matrix4f getPosition() {
-        return position;
-    }
-
-    public void setPosition(Matrix4f matrix) {
-        position = matrix;
-    }
-
-    public void setModelMatrix(ShaderProgram shaderProgram) {
-        shaderProgram.setUniformMat4F("model", position);
-    }
+    void cleanUp();
 
 }

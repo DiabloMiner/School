@@ -311,18 +311,18 @@ public class LightCasters {
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.diffuse"), 0.0f, 0.8f, 0.0f);
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.specular"), 0.0f, 1.0f, 0.0f);
         GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.constant"), 1.0f);
-        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.linear"), 0.7f);
-        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.quadratic"), 1.8f);
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.linear"), 0.14f);
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "myPointLight.quadratic"), 0.07f);
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.position"), cameraPosition.x, cameraPosition.y, cameraPosition.z);
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.direction"), cameraDirection.x, cameraDirection.y, cameraDirection.z);
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.ambient"), 0.4f, 0.0f, 0.0f);
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.diffuse"), 1.0f, 0.0f, 0.0f);
         GL33.glUniform3f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.specular"), 1.0f, 0.0f, 0.0f);
-        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.cutOff"), Math.toRadians(12.5f));
-        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.outerCutOff"), Math.toRadians(17.5f));
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.cutOff"), Math.cos(Math.toRadians(12.5f)));
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.outerCutOff"), Math.cos(Math.toRadians(17.5f)));
         GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.constant"), 1.0f);
-        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.linear"), 0.0014f);
-        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.quadratic"), 0.000007f);
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.linear"), 0.14f);
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.quadratic"), 0.10f);
 
         model.translate(new Vector3f(-1.5f, 1.0f, 1.5f));
         model.scale(0.3f);

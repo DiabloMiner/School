@@ -1,13 +1,18 @@
 package com.diablominer.opengl.render.lightsources;
 
+import com.diablominer.opengl.main.GameObject;
+import com.diablominer.opengl.main.LogicalEngine;
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
 
-public class PointLight {
+public class PointLight implements GameObject {
 
     private Vector3f position, ambient, diffuse, specular;
     private float constant, linear, quadratic;
 
-    public PointLight(Vector3f position, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic) {
+    public PointLight(Vector3f position, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic, LogicalEngine logicalEngine) {
+        logicalEngine.addGameObject(this);
         this.position = position;
         this.ambient = ambient;
         this.diffuse = diffuse;
@@ -15,6 +20,11 @@ public class PointLight {
         this.constant = constant;
         this.linear = linear;
         this.quadratic = quadratic;
+    }
+
+    @Override
+    public void updateObjectState() {
+        setPosition(Transforms.getProductOf2Vectors(position, new Vector3f((float) Math.cos(GLFW.glfwGetTime()), (float) Math.sin(GLFW.glfwGetTime()), (float) Math.cos(GLFW.glfwGetTime()))));
     }
 
     public Vector3f getPosition() {
