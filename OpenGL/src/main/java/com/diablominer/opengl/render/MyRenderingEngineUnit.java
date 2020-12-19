@@ -52,11 +52,16 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         this.getShaderProgram().setUniform1F("spotLight.quadratic", spotLight.getQuadratic());
         this.getShaderProgram().setUniform1F("spotLight.cutOff", spotLight.getCutOff());
         this.getShaderProgram().setUniform1F("spotLight.outerCutOff", spotLight.getOuterCutOff());
+
+        this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
+    }
+
+    public void setPointLight(PointLight pointLight) {
+        this.pointLight = pointLight;
     }
 
     @Override
     public void render() {
-        this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
         renderAllRenderables();
     }
 }

@@ -11,15 +11,14 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Model implements Renderable {
+public class Model extends Renderable {
 
     private List<Mesh> meshes;
     private String path;
-    private Vector3f position;
 
     public Model(String path, RenderingEngineUnit renderingEngineUnit, Vector3f position) {
+        super(position);
         renderingEngineUnit.addNewRenderable(this);
-        this.position = position;
         meshes = new ArrayList<>();
         this.path = path;
         loadModel(path);
@@ -33,7 +32,7 @@ public class Model implements Renderable {
 
     @Override
     public void draw(ShaderProgram shaderProgram) {
-        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(position));
+        super.setPositionAsModelMatrix(shaderProgram);
         for (Mesh mesh : meshes) {
             mesh.draw(shaderProgram);
         }
@@ -128,13 +127,5 @@ public class Model implements Renderable {
             }
         }
         return indices;
-    }
-
-    public Vector3f getPosition() {
-        return position;
-    }
-
-    public void setPosition(Vector3f position) {
-        this.position = position;
     }
 }

@@ -3,6 +3,10 @@ package com.diablominer.opengl.main;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.*;
+import com.diablominer.opengl.render.lightsources.DirectionalLight;
+import com.diablominer.opengl.render.lightsources.PointLight;
+import com.diablominer.opengl.render.lightsources.RenderablePointLight;
+import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -49,10 +53,10 @@ public class MyGame extends Game {
         ShaderProgram lightSourceShaderProgram = new ShaderProgram("VertexShader", "LightSourceFragmentShader");
         renderingEngine = new MyRenderingEngine();
         logicalEngine = new MyLogicalEngine(true);
-        MyRenderingEngine.initializePointLight(logicalEngine);
-        RenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, MyRenderingEngine.directionLight, MyRenderingEngine.pointLight, MyRenderingEngine.spotLight);
-        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(1.0f, 0.0f, 3.0f));
-        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(2.0f, 1.0f, 0.0f));
+        PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
+        MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, new DirectionalLight(new Vector3f(1.0f, 0.0f, 1.0f), new Vector3f(0.1f, 0.1f, 0.2f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f)), pointLight, new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f))));
+        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
         RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, Window window) {
@@ -67,7 +71,7 @@ public class MyGame extends Game {
                 renderAllRenderables();
             }
         };
-        new MoveableModel("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit2, MyRenderingEngine.pointLight.getPosition());
+        new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
         renderingEngine.addNewEngineUnit(renderingEngineUnit1);
         renderingEngine.addNewEngineUnit(renderingEngineUnit2);
 
