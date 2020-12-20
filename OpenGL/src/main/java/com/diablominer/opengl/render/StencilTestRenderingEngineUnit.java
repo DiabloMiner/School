@@ -9,14 +9,14 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
 
-public class MyRenderingEngineUnit extends RenderingEngineUnit {
+public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
 
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
     private float shininess = 32.0f;
 
-    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
+    public StencilTestRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
         super(shaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;

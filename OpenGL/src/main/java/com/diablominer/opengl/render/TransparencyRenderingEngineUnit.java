@@ -9,15 +9,22 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
 
-public class MyRenderingEngineUnit extends RenderingEngineUnit {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
+    private List<Renderable> sortedRenderables;
     private float shininess = 32.0f;
 
-    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
+    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
         super(shaderProgram);
+        sortedRenderables = new ArrayList<>();
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
@@ -55,14 +62,19 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         this.getShaderProgram().setUniform1F("spotLight.outerCutOff", spotLight.getOuterCutOff());
 
         this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
-    }
 
-    public void setPointLight(PointLight pointLight) {
-        this.pointLight = pointLight;
+        this.getRenderables().sort((o1, o2) -> {
+            float distance1 = Math.abs(o1.getPosition().distance(camera.cameraPos));
+            float distance2 = Math.abs(o2.getPosition().distance(camera.cameraPos));
+            return Float.compare(distance1, distance2);
+        });
+        Collections.reverse(this.getRenderables());
     }
 
     @Override
     public void render() {
+        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
+        GL33.glStencilMask(0xFF);
         renderAllRenderables();
     }
 }

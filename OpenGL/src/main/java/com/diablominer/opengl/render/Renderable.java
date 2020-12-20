@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 
 public abstract class Renderable {
 
-    protected Vector3f position;
+    private Vector3f position;
 
     public Renderable(Vector3f position) {
         this.position = position;
