@@ -1,12 +1,10 @@
 package com.diablominer.opengl.render;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
@@ -19,11 +17,11 @@ public class Texture {
 
     public static List<Integer> alreadyBound = new ArrayList<>();
 
-    public static Texture loadTexture(String path) throws IOException {
-        return TextureCache.getInstance().getTexture(path) == null ? new Texture(path) : TextureCache.getInstance().getTexture(path);
+    public static Texture loadTexture(String path, String type) {
+        return TextureCache.getInstance().getTexture(path) == null ? new Texture(path, type) : TextureCache.getInstance().getTexture(path);
     }
 
-    private Texture(String filename) throws IOException {
+    private Texture(String filename, String type) {
         // The image is loaded and read out into a ByteBuffer
         IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
         IntBuffer yBuffer = MemoryUtil.memAllocInt(1);
@@ -50,6 +48,7 @@ public class Texture {
 
         // Add to the TextureCache, set the path and free the allocated memory for buffer
         this.path = filename;
+        this.type = type;
         TextureCache.getInstance().registerTexture(this.path, this);
         STBImage.stbi_image_free(buffer);
     }

@@ -1,7 +1,6 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.utils.ListUtil;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
 
@@ -15,11 +14,13 @@ public class Model extends Renderable {
 
     private List<Mesh> meshes;
     private String path;
+    private List<Texture> loadedTextures;
 
     public Model(String path, RenderingEngineUnit renderingEngineUnit, Vector3f position) {
         super(position);
         renderingEngineUnit.addNewRenderable(this);
         meshes = new ArrayList<>();
+        loadedTextures = new ArrayList<>();
         this.path = path;
         loadModel(path);
     }
@@ -86,12 +87,20 @@ public class Model extends Renderable {
         for (int i = 0; i < Assimp.aiGetMaterialTextureCount(material, type); i++) {
             AIString str = AIString.calloc();
             Assimp.aiGetMaterialTexture(material, type, 0, str, (IntBuffer) null, null, null, null, null, null);
-            File file = new File(path);
-            try {
-                Texture texture = Texture.loadTexture(file.getParent() + File.separator + str.dataString());
-                texture.type = typeName;
+            boolean skip = false;
+            String path = new File(this.path).getParent() + File.separator + str.dataString();
+            for (Texture texture : loadedTextures) {
+                if (texture.path.equals(path)) {
+                    textures.add(texture);
+                    skip = true;
+                    break;
+                }
+            }
+            if (!skip) {
+                Texture texture = Texture.loadTexture(path, typeName);
                 textures.add(texture);
-            } catch (IOException e) { e.printStackTrace(); }
+                loadedTextures.add(texture);
+            }
             str.free();
         }
         return textures;
