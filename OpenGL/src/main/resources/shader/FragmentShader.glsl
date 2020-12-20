@@ -118,5 +118,5 @@ void main() {
     result += calcPointLight(pointLight, norm, fragPos, viewDir);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir);
 
-    fragmentColor = vec4(result, 1.0f);
+    fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
 }
