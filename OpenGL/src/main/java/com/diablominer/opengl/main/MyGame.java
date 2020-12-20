@@ -51,6 +51,9 @@ public class MyGame extends Game {
         GL33.glEnable(GL33.GL_STENCIL_TEST);
         GL33.glEnable(GL33.GL_BLEND);
         GL33.glBlendFunc(GL33.GL_SRC_ALPHA, GL33.GL_ONE_MINUS_SRC_ALPHA);
+        GL33.glEnable(GL33.GL_CULL_FACE);
+        GL33.glCullFace(GL33.GL_BACK);
+        GL33.glFrontFace(GL33.GL_CCW);
 
         ShaderProgram shaderProgram = new ShaderProgram("VertexShader", "FragmentShader");
         ShaderProgram lightSourceShaderProgram = new ShaderProgram("VertexShader", "LightSourceFragmentShader");
