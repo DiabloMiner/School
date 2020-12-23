@@ -11,7 +11,6 @@ import org.lwjgl.opengl.GL33;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
@@ -73,8 +72,6 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
-        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
-        GL33.glStencilMask(0xFF);
         renderAllRenderables();
     }
 }

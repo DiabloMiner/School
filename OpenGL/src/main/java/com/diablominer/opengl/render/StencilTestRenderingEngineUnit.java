@@ -63,6 +63,8 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
+        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
         renderAllRenderables();
+        GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0xFF);
     }
 }

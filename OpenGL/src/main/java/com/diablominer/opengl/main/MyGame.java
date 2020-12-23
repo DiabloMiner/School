@@ -13,6 +13,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
+import java.nio.ByteBuffer;
 
 public class MyGame extends Game {
 
@@ -22,6 +23,11 @@ public class MyGame extends Game {
     private MyLogicalEngine logicalEngine;
     private float deltaTime = 0.0f;
     private float lastTime = 0.0f;
+
+    private int frameBuffer;
+    private int texColorBuffer;
+    private int VAO;
+    private ShaderProgram sP;
 
     public static void main(String[] args) throws Exception {
         new MyGame();
@@ -92,6 +98,7 @@ public class MyGame extends Game {
                 GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
                 GL33.glDisable(GL33.GL_DEPTH_TEST);
                 renderAllRenderables();
+                GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
                 GL33.glEnable(GL33.GL_DEPTH_TEST);
             }
         };
@@ -105,8 +112,8 @@ public class MyGame extends Game {
         renderingEngine.addNewEngineUnit(renderingEngineUnit0);
         renderingEngine.addNewEngineUnit(renderingEngineUnit1);
         renderingEngine.addNewEngineUnit(renderingEngineUnit2);
-        renderingEngine.addNewEngineUnit(renderingEngineUnit3);
         renderingEngine.addNewEngineUnit(transparencyRenderingEngineUnit);
+        renderingEngine.addNewEngineUnit(renderingEngineUnit3);
 
         Runnable logicalEngineRunnable = logicalEngine;
         Thread logicalEngineThread = new Thread(logicalEngineRunnable);
@@ -163,6 +170,8 @@ public class MyGame extends Game {
     @Override
     public void cleanUp() {
         logicalEngine.setShouldRun(false);
+
+        GL33.glDeleteFramebuffers(this.frameBuffer);
 
         renderingEngine.end();
 
