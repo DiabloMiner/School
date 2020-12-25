@@ -62,7 +62,10 @@ public class Texture {
     }
 
     public static void unbindAll() {
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        for (int id : alreadyBound) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0);
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        }
         alreadyBound.clear();
     }
 

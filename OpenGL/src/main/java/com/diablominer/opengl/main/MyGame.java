@@ -104,18 +104,17 @@ public class MyGame extends Game {
             }
         };
         TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight);
-        /*new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(0.0f, 0.0f, 25.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(0.0f, 0.0f, 25.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.5f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.5f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
-        renderingEngine.addNewEngineUnit(renderingEngineUnit0);*/
-        new Model("./src/main/resources/models/cube/simpleCube.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        renderingEngine.addNewEngineUnit(renderingEngineUnit0);
         renderingEngine.addNewEngineUnit(renderingEngineUnit1);
-        /*renderingEngine.addNewEngineUnit(renderingEngineUnit2);
+        renderingEngine.addNewEngineUnit(renderingEngineUnit2);
         renderingEngine.addNewEngineUnit(transparencyRenderingEngineUnit);
-        renderingEngine.addNewEngineUnit(renderingEngineUnit3);*/
+        renderingEngine.addNewEngineUnit(renderingEngineUnit3);
 
         Runnable logicalEngineRunnable = logicalEngine;
         Thread logicalEngineThread = new Thread(logicalEngineRunnable);
@@ -190,7 +189,6 @@ public class MyGame extends Game {
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-        GL33.glEnable(GL33.GL_TEXTURE_2D);
 
         GL33.glActiveTexture(0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
@@ -201,9 +199,8 @@ public class MyGame extends Game {
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
         GL33.glBindVertexArray(0);
         sP.unbind();
-
-        /*GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_LINE);
-        GL33.glBlitFramebuffer(0, 0, 1280,720, 0,0, 1280,720, GL33.GL_COLOR_BUFFER_BIT, GL33.GL_LINEAR);*/
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glEnable(GL33.GL_STENCIL_TEST);
 
         GLFW.glfwSwapBuffers(window.getWindow());
     }

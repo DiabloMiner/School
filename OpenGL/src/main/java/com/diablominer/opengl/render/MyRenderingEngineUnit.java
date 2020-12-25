@@ -63,6 +63,8 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
         renderAllRenderables();
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
     }
 }
