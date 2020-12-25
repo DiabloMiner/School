@@ -13,6 +13,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
+
 import java.nio.ByteBuffer;
 
 public class MyGame extends Game {
@@ -103,21 +104,68 @@ public class MyGame extends Game {
             }
         };
         TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight);
-        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        /*new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(0.0f, 0.0f, 25.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(0.0f, 0.0f, 25.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.5f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.5f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
-        renderingEngine.addNewEngineUnit(renderingEngineUnit0);
+        renderingEngine.addNewEngineUnit(renderingEngineUnit0);*/
+        new Model("./src/main/resources/models/cube/simpleCube.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
         renderingEngine.addNewEngineUnit(renderingEngineUnit1);
-        renderingEngine.addNewEngineUnit(renderingEngineUnit2);
+        /*renderingEngine.addNewEngineUnit(renderingEngineUnit2);
         renderingEngine.addNewEngineUnit(transparencyRenderingEngineUnit);
-        renderingEngine.addNewEngineUnit(renderingEngineUnit3);
+        renderingEngine.addNewEngineUnit(renderingEngineUnit3);*/
 
         Runnable logicalEngineRunnable = logicalEngine;
         Thread logicalEngineThread = new Thread(logicalEngineRunnable);
         logicalEngineThread.start();
+
+        texColorBuffer = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, 1280, 720, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+
+        frameBuffer = GL33.glGenFramebuffers();
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D, texColorBuffer, 0);
+
+        int RBO = GL33.glGenRenderbuffers();
+        GL33.glBindRenderbuffer(GL33.GL_RENDERBUFFER, RBO);
+        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, GL33.GL_DEPTH24_STENCIL8, 1280, 720);
+        GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_RENDERBUFFER, RBO);
+
+        if(GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
+            System.err.println("The framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(frameBuffer));
+        }
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+
+
+        sP = new ShaderProgram("SimpleVertexShader", "SimpleFragmentShader");
+        float[] quadVertices = {
+                -1.0f,  1.0f,  0.0f, 1.0f,
+                -1.0f, -1.0f,  0.0f, 0.0f,
+                1.0f, -1.0f,  1.0f, 0.0f,
+
+                -1.0f,  1.0f,  0.0f, 1.0f,
+                1.0f, -1.0f,  1.0f, 0.0f,
+                1.0f,  1.0f,  1.0f, 1.0f
+        };
+        VAO = GL33.glGenVertexArrays();
+        int VBO = GL33.glGenBuffers();
+
+        GL33.glBindVertexArray(VAO);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, quadVertices, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(0, 2, GL33.GL_FLOAT, false, 4 * Float.BYTES, 0);
+        GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 4 * Float.BYTES, 2 * Float.BYTES);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glEnableVertexAttribArray(1);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
+        GL33.glBindVertexArray(0);
     }
 
     @Override
@@ -134,7 +182,30 @@ public class MyGame extends Game {
     }
 
     public void render() {
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         renderingEngine.render(window);
+
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL33.glDisable(GL33.GL_DEPTH_TEST);
+        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
+        GL33.glEnable(GL33.GL_TEXTURE_2D);
+
+        GL33.glActiveTexture(0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
+        sP.setUniform1I("screenTexture", 0);
+
+        sP.bind();
+        GL33.glBindVertexArray(VAO);
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
+        GL33.glBindVertexArray(0);
+        sP.unbind();
+
+        /*GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_LINE);
+        GL33.glBlitFramebuffer(0, 0, 1280,720, 0,0, 1280,720, GL33.GL_COLOR_BUFFER_BIT, GL33.GL_LINEAR);*/
+
+        GLFW.glfwSwapBuffers(window.getWindow());
     }
 
     public void update() {
