@@ -17,9 +17,9 @@ public class Camera {
     public Camera(float fov, Vector3f pos, Vector3f front, Vector3f up) {
         this.fov = fov;
         cameraPos = pos;
-        cameraFront = front;
+        cameraFront = front.normalize();
         cameraUp = up;
-        yaw = (float) -Math.toDegrees(zeroDegreeVector.angle(front));
+        yaw = (float) -Math.toDegrees(zeroDegreeVector.angle(cameraFront));
         pitch = 0.0f;
     }
 

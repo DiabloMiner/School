@@ -13,7 +13,6 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
-import org.lwjgl.system.CallbackI;
 
 import java.nio.ByteBuffer;
 
@@ -212,19 +211,10 @@ public class MyGame extends Game {
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
         GL33.glViewport(0, 0, 320, 180);
-        Vector3f pos = new Vector3f();
-        Vector3f front = new Vector3f();
-        Vector3f up = new Vector3f();
-        camera.cameraPos.get(pos);
-        camera.cameraFront.get(front);
-        camera.cameraUp.get(up);
-        Camera camera2 = new Camera(45.0f, pos, front, up);
-        camera2.setYaw(camera.getYaw());
-        camera2.setPitch(camera.getPitch());
-        camera2.changeYaw(-180.0f);
-        renderingEngine.updateAllEngineUnits(camera2, window);
+        camera.changeYaw(-180.0f);
+        renderingEngine.updateAllEngineUnits(camera, window);
         renderingEngine.render(window);
-        camera2.changeYaw(180.0f);
+        camera.changeYaw(180.0f);
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
         GL33.glViewport(0, 0, 1280, 720);
@@ -236,7 +226,6 @@ public class MyGame extends Game {
         GL33.glActiveTexture(0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
         sP.setUniform1I("screenTexture", 0);
-
         sP.bind();
         GL33.glBindVertexArray(VAO);
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
@@ -247,7 +236,6 @@ public class MyGame extends Game {
         GL33.glActiveTexture(0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
         sP.setUniform1I("screenTexture", 0);
-
         sP.bind();
         GL33.glBindVertexArray(VAO);
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);

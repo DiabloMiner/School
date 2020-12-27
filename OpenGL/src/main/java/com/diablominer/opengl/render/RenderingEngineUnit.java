@@ -8,7 +8,7 @@ import java.util.List;
 
 public abstract class RenderingEngineUnit {
 
-    private ShaderProgram shaderProgram;
+    protected ShaderProgram shaderProgram;
     private List<Renderable> renderables;
 
     public RenderingEngineUnit(ShaderProgram shaderProgram) {
