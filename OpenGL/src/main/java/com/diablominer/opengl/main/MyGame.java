@@ -13,6 +13,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.system.CallbackI;
 
 import java.nio.ByteBuffer;
 
@@ -25,8 +26,8 @@ public class MyGame extends Game {
     private float deltaTime = 0.0f;
     private float lastTime = 0.0f;
 
-    private int frameBuffer;
-    private int texColorBuffer;
+    private int frameBuffer, frameBuffer2;
+    private int texColorBuffer, texColorBuffer2;
     private int VAO;
     private ShaderProgram sP;
 
@@ -49,8 +50,9 @@ public class MyGame extends Game {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        camera = new Camera(45.0f, new Vector3f(20.0f, 1.0f, 20.0f), new Vector3f(-1.0f, 0.0f, -1.0f), new Vector3f(0.0f, 1.0f, 0.0f));
+        camera = new Camera(45.0f, new Vector3f(1.0f, 1.0f, 5.0f), new Vector3f(0.0f, 0.0f, -1.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         window = new Window(1280, 720, "OpenGL", camera);
+        GLFW.glfwMakeContextCurrent(window.getWindow());
 
         GL.createCapabilities();
         GL33.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
@@ -142,6 +144,28 @@ public class MyGame extends Game {
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
+        texColorBuffer2 = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, 320, 180, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+
+        frameBuffer2 = GL33.glGenFramebuffers();
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer2);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D, texColorBuffer2, 0);
+
+        int RBO2 = GL33.glGenRenderbuffers();
+        GL33.glBindRenderbuffer(GL33.GL_RENDERBUFFER, RBO2);
+        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, GL33.GL_DEPTH24_STENCIL8, 320, 180);
+        GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_RENDERBUFFER, RBO2);
+
+        if(GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
+            System.err.println("The framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(frameBuffer));
+        }
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+
 
         sP = new ShaderProgram("SimpleVertexShader", "SimpleFragmentShader");
         float[] quadVertices = {
@@ -184,7 +208,26 @@ public class MyGame extends Game {
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         renderingEngine.render(window);
 
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer2);
+        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
+        GL33.glViewport(0, 0, 320, 180);
+        Vector3f pos = new Vector3f();
+        Vector3f front = new Vector3f();
+        Vector3f up = new Vector3f();
+        camera.cameraPos.get(pos);
+        camera.cameraFront.get(front);
+        camera.cameraUp.get(up);
+        Camera camera2 = new Camera(45.0f, pos, front, up);
+        camera2.setYaw(camera.getYaw());
+        camera2.setPitch(camera.getPitch());
+        camera2.changeYaw(-180.0f);
+        renderingEngine.updateAllEngineUnits(camera2, window);
+        renderingEngine.render(window);
+        camera2.changeYaw(180.0f);
+
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+        GL33.glViewport(0, 0, 1280, 720);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
@@ -199,6 +242,19 @@ public class MyGame extends Game {
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
         GL33.glBindVertexArray(0);
         sP.unbind();
+
+        GL33.glViewport(480, 540, 320, 180);
+        GL33.glActiveTexture(0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
+        sP.setUniform1I("screenTexture", 0);
+
+        sP.bind();
+        GL33.glBindVertexArray(VAO);
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
+        GL33.glBindVertexArray(0);
+        sP.unbind();
+        GL33.glViewport(0, 0, 1280, 720);
+
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);
 

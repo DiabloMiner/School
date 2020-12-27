@@ -73,7 +73,6 @@ public class Window {
             GLFW.glfwShowWindow(window);
         }
 
-        GLFW.glfwMakeContextCurrent(window);
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
 
         input = new Input(window);

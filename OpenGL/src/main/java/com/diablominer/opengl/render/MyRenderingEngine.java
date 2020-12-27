@@ -13,6 +13,9 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
 
         this.renderAllEngineUnits();
+
+        // TODO: Undo commented code here
+        // GLFW.glfwSwapBuffers(window.getWindow());
     }
 
     @Override

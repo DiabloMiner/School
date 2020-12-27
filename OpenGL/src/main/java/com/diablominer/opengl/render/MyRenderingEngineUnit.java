@@ -7,7 +7,6 @@ import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL33;
 
 public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
@@ -57,14 +56,8 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
     }
 
-    public void setPointLight(PointLight pointLight) {
-        this.pointLight = pointLight;
-    }
-
     @Override
     public void render() {
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
         renderAllRenderables();
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
     }
 }
