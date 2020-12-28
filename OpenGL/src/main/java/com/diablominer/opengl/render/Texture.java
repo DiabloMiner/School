@@ -62,8 +62,8 @@ public class Texture {
     }
 
     public static void unbindAll() {
-        for (int id : alreadyBound) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        for (int i = 0; i < alreadyBound.size(); i++) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + i);
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
         }
         alreadyBound.clear();
@@ -71,7 +71,7 @@ public class Texture {
 
     public static int getIndexForTexture(Texture texture) {
         // For this method to work the texture from which the index is requested has to be bound already,
-        // if this is not the case then just -1 will be returned
+        // if this is not the case -1 will be returned
         return alreadyBound.indexOf(texture.id);
     }
 

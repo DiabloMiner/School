@@ -184,8 +184,6 @@ public class MyGame extends Game {
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, quadVertices, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(0, 2, GL33.GL_FLOAT, false, 4 * Float.BYTES, 0);
         GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 4 * Float.BYTES, 2 * Float.BYTES);
-        GL33.glEnableVertexAttribArray(0);
-        GL33.glEnableVertexAttribArray(1);
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
         GL33.glBindVertexArray(0);
     }
@@ -215,30 +213,35 @@ public class MyGame extends Game {
         renderingEngine.updateAllEngineUnits(camera, window);
         renderingEngine.render(window);
         camera.changeYaw(180.0f);
+        GL33.glViewport(0, 0, 1280, 720);
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-        GL33.glViewport(0, 0, 1280, 720);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
 
-        GL33.glActiveTexture(0);
+        GL33.glDisable(GL33.GL_DEPTH_TEST);
+        GL33.glDisable(GL33.GL_STENCIL_TEST);
+
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
         sP.setUniform1I("screenTexture", 0);
         sP.bind();
         GL33.glBindVertexArray(VAO);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glEnableVertexAttribArray(1);
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
         GL33.glBindVertexArray(0);
         sP.unbind();
 
         GL33.glViewport(480, 540, 320, 180);
-        GL33.glActiveTexture(0);
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
         sP.setUniform1I("screenTexture", 0);
         sP.bind();
         GL33.glBindVertexArray(VAO);
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glDisableVertexAttribArray(1);
         GL33.glBindVertexArray(0);
         sP.unbind();
         GL33.glViewport(0, 0, 1280, 720);

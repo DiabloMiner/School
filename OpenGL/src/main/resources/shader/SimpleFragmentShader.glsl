@@ -5,7 +5,7 @@ in vec2 texCoords;
 
 uniform sampler2D screenTexture;
 
-const float offset = 1.0f / 100.0f;
+const float offset = 1.0f / 300.0f;
 
 void main() {
     vec2 offsets[9] = vec2[](
