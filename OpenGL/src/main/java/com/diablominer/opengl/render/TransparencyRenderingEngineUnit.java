@@ -72,6 +72,8 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
+        GL33.glDisable(GL33.GL_CULL_FACE);
         renderAllRenderables();
+        GL33.glEnable(GL33.GL_CULL_FACE);
     }
 }

@@ -1,11 +1,11 @@
 package com.diablominer.opengl.main;
 
-public abstract class Game {
+public interface Game {
 
-    public abstract void init() throws Exception;
+    void init() throws Exception;
 
-    public abstract void mainLoop();
+    void mainLoop();
 
-    public abstract void cleanUp();
+    void cleanUp();
 
 }

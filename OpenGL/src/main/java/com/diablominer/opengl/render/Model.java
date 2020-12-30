@@ -5,7 +5,6 @@ import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,14 @@ public class Model extends Renderable {
     public Model(String path, RenderingEngineUnit renderingEngineUnit, Vector3f position) {
         super(position);
         renderingEngineUnit.addNewRenderable(this);
+        meshes = new ArrayList<>();
+        loadedTextures = new ArrayList<>();
+        this.path = path;
+        loadModel(path);
+    }
+
+    public Model(String path, Vector3f position) {
+        super(position);
         meshes = new ArrayList<>();
         loadedTextures = new ArrayList<>();
         this.path = path;
@@ -97,7 +104,7 @@ public class Model extends Renderable {
                 }
             }
             if (!skip) {
-                Texture texture = Texture.loadTexture(path, typeName);
+                Texture texture = new Texture(path, typeName);
                 textures.add(texture);
                 loadedTextures.add(texture);
             }

@@ -52,6 +52,7 @@ uniform DirectionaLight dirLight;
 uniform PointLight pointLight;
 uniform SpotLight spotLight;
 uniform vec3 viewPos;
+uniform samplerCube skybox;
 
 vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-dirLight.direction);
@@ -118,5 +119,9 @@ void main() {
     result += calcPointLight(pointLight, norm, fragPos, viewDir);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir);
 
-    fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
+    vec3 I = normalize(fragPos - viewPos);
+    vec3 R = reflect(I, normalize(normal));
+    vec4 reflectioncolor = vec4(texture(skybox, R).rgb, 1.0);
+
+    fragmentColor = reflectioncolor;
 }

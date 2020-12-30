@@ -7,6 +7,7 @@ import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL33;
 
 public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
@@ -14,6 +15,7 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
     private PointLight pointLight;
     private SpotLight spotLight;
     private float shininess = 32.0f;
+    private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
 
     public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
         super(shaderProgram);
@@ -54,6 +56,9 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniform1F("spotLight.outerCutOff", spotLight.getOuterCutOff());
 
         shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        cubeMap.bind();
+        shaderProgram.setUniform1I("skybox", 0);
     }
 
     @Override

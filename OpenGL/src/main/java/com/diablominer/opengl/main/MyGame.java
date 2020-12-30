@@ -16,7 +16,7 @@ import org.lwjgl.opengl.GL33;
 
 import java.nio.ByteBuffer;
 
-public class MyGame extends Game {
+public class MyGame implements Game {
 
     private Camera camera;
     private Window window;
@@ -34,8 +34,8 @@ public class MyGame extends Game {
         new MyGame();
     }
 
-    public MyGame() throws Exception {
-        init();
+    public MyGame() {
+        try { init(); } catch (Exception e) { System.err.println("An exception has occurred while initializing the game: " + e.getMessage()); }
         mainLoop();
         cleanUp();
     }
@@ -57,6 +57,7 @@ public class MyGame extends Game {
         GL33.glViewport(0, 0, window.getWIDTH(), window.getHEIGHT());
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);
+        GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_REPLACE);
         GL33.glEnable(GL33.GL_BLEND);
         GL33.glBlendFunc(GL33.GL_SRC_ALPHA, GL33.GL_ONE_MINUS_SRC_ALPHA);
         GL33.glEnable(GL33.GL_CULL_FACE);
@@ -98,10 +99,10 @@ public class MyGame extends Game {
             @Override
             public void render() {
                 GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
-                GL33.glDisable(GL33.GL_DEPTH_TEST);
+                GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_KEEP);
                 renderAllRenderables();
+                GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_REPLACE);
                 GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
-                GL33.glEnable(GL33.GL_DEPTH_TEST);
             }
         };
         TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight);
@@ -114,7 +115,6 @@ public class MyGame extends Game {
         renderingEngine.addNewEngineUnit(renderingEngineUnit0);
         renderingEngine.addNewEngineUnit(renderingEngineUnit1);
         renderingEngine.addNewEngineUnit(renderingEngineUnit2);
-        renderingEngine.addNewEngineUnit(transparencyRenderingEngineUnit);
         renderingEngine.addNewEngineUnit(renderingEngineUnit3);
 
         Runnable logicalEngineRunnable = logicalEngine;
@@ -186,6 +186,106 @@ public class MyGame extends Game {
         GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 4 * Float.BYTES, 2 * Float.BYTES);
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
         GL33.glBindVertexArray(0);
+
+        CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
+        ShaderProgram skyboxShaderProgram = new ShaderProgram("SkyboxVertexShader", "SkyboxFragmentShader");
+        float[] skyboxVertices = {
+                // positions
+                -1.0f,  1.0f, -1.0f,
+                -1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f,  1.0f, -1.0f,
+                -1.0f,  1.0f, -1.0f,
+
+                -1.0f, -1.0f,  1.0f,
+                -1.0f, -1.0f, -1.0f,
+                -1.0f,  1.0f, -1.0f,
+                -1.0f,  1.0f, -1.0f,
+                -1.0f,  1.0f,  1.0f,
+                -1.0f, -1.0f,  1.0f,
+
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+
+                -1.0f, -1.0f,  1.0f,
+                -1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f, -1.0f,  1.0f,
+                -1.0f, -1.0f,  1.0f,
+
+                -1.0f,  1.0f, -1.0f,
+                1.0f,  1.0f, -1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                -1.0f,  1.0f,  1.0f,
+                -1.0f,  1.0f, -1.0f,
+
+                -1.0f, -1.0f, -1.0f,
+                -1.0f, -1.0f,  1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                -1.0f, -1.0f,  1.0f,
+                1.0f, -1.0f,  1.0f
+        };
+        int VAO2 = GL33.glGenVertexArrays();
+        int VBO2 = GL33.glGenBuffers();
+        GL33.glBindVertexArray(VAO2);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO2);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, skyboxVertices, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
+        GL33.glBindVertexArray(0);
+        Renderable skybox = new Renderable(new Vector3f(0.0f, 0.0f, 0.0f)) {
+            @Override
+            public void draw(ShaderProgram shaderProgram) {
+                GL33.glDepthFunc(GL33.GL_LEQUAL);
+                GL33.glActiveTexture(GL33.GL_TEXTURE0);
+                cubeMap.bind();
+                shaderProgram.setUniform1I("skybox", 0);
+                shaderProgram.bind();
+                GL33.glBindVertexArray(VAO2);
+                GL33.glEnableVertexAttribArray(0);
+
+                GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+
+                GL33.glDisableVertexAttribArray(0);
+                GL33.glBindVertexArray(0);
+                shaderProgram.unbind();
+                CubeMap.unbindAll();
+                GL33.glDepthFunc(GL33.GL_LESS);
+                GL33.glEnable(GL33.GL_STENCIL_TEST);
+            }
+
+            @Override
+            public void cleanUp() {
+                GL33.glDeleteVertexArrays(VAO2);
+                GL33.glDeleteBuffers(VBO2);
+            }
+        };
+
+        RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram) {
+            @Override
+            public void updateRenderState(Camera camera, Window window) {
+                Matrix4f viewMatrix = new Matrix4f().identity();
+                viewMatrix.set3x3(new Matrix4f().identity().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp));
+                shaderProgram.setUniformMat4F("view", viewMatrix);
+                shaderProgram.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
+            }
+
+            @Override
+            public void render() {
+                this.renderAllRenderables();
+            }
+        };
+        skyboxRenderingEngineUnit.addNewRenderable(skybox);
+        renderingEngine.addNewEngineUnit(skyboxRenderingEngineUnit);
+        renderingEngine.addNewEngineUnit(transparencyRenderingEngineUnit);
     }
 
     @Override
@@ -218,7 +318,6 @@ public class MyGame extends Game {
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
 
@@ -265,7 +364,6 @@ public class MyGame extends Game {
 
         if (window.getInput().isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
             GLFW.glfwSetWindowShouldClose(window.getWindow(), true);
-            GLFW.glfwDestroyWindow(window.getWindow());
         }
 
         if (window.getInput().isKeyDown(GLFW.GLFW_KEY_W)) {
@@ -284,6 +382,8 @@ public class MyGame extends Game {
 
     @Override
     public void cleanUp() {
+        GLFW.glfwDestroyWindow(window.getWindow());
+
         logicalEngine.setShouldRun(false);
 
         GL33.glDeleteFramebuffers(this.frameBuffer);
