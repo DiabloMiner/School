@@ -1,5 +1,7 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.render.renderables;
 
+import com.diablominer.opengl.render.ShaderProgram;
+import com.diablominer.opengl.render.textures.Texture;
 import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 
@@ -111,7 +113,6 @@ public class Mesh {
 
         // Unbind the shaderProgram and all textures
         shaderProgram.unbind();
-        Texture.unbindAll();
     }
 
     public void destroy() {

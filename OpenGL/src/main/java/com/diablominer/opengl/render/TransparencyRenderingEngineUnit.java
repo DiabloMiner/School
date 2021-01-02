@@ -1,10 +1,10 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.io.Camera;
-import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
+import com.diablominer.opengl.render.renderables.Renderable;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
@@ -30,8 +30,8 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
     }
 
     @Override
-    public void updateRenderState(Camera camera, Window window) {
-        this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, window.getWIDTH(), window.getHEIGHT(), 0.1f, 100.0f));
+    public void updateRenderState(Camera camera) {
+        this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
         this.getShaderProgram().setUniformMat4F("view", new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp));
         this.getShaderProgram().setUniformVec3F("viewPos", camera.cameraPos);
         this.getShaderProgram().setUniform1F("material.shininess", shininess);

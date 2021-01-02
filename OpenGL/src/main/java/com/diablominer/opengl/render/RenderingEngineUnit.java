@@ -1,7 +1,7 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.io.Camera;
-import com.diablominer.opengl.io.Window;
+import com.diablominer.opengl.render.renderables.Renderable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,13 +42,26 @@ public abstract class RenderingEngineUnit {
         }
     }
 
-    public void cleanUpAllRenderables() {
+    public void destroyAllRenderables() {
         for (Renderable renderable : renderables) {
-            renderable.cleanUp();
+            renderable.destroy();
         }
     }
 
-    public abstract void updateRenderState(Camera camera, Window window);
+    public void destroyShaderProgram() {
+        shaderProgram.destroy();
+    }
+
+    public boolean containsRenderable(Renderable renderable) {
+        for (Renderable containedRenderable : renderables) {
+            if (renderables.contains(renderable)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public abstract void updateRenderState(Camera camera);
 
     public abstract void render();
 

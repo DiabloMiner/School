@@ -2,7 +2,7 @@ package com.diablominer.opengl.render.lightsources;
 
 import com.diablominer.opengl.main.GameObject;
 import com.diablominer.opengl.main.LogicalEngine;
-import com.diablominer.opengl.render.Model;
+import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Vector3f;

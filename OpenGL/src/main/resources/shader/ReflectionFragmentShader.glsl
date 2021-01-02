@@ -48,10 +48,18 @@ in vec3 fragPos;
 in vec2 texCoord;
 
 uniform vec3 viewPos;
+uniform samplerCube cubeMap;
 uniform Material material;
 uniform DirectionaLight dirLight;
 uniform PointLight pointLight;
 uniform SpotLight spotLight;
+
+vec3 reflection(vec3 fragmentPosition, vec3 cameraPosition, vec3 normal) {
+    vec3 I = normalize(fragmentPosition - cameraPosition);
+    vec3 R = reflect(I, normalize(normal));
+
+    return texture(cubeMap, R).xyz;
+}
 
 vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-dirLight.direction);
@@ -111,12 +119,21 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir)
 }
 
 void main() {
-    vec3 norm = normalize(normal);
-    vec3 viewDir = normalize(viewPos - fragPos);
+    float reflectionWeight = texture(material.texture_specular1, texCoord).x;
+    vec3 reflectionColor = reflection(fragPos, viewPos, normal);
+    vec3 normalColor;
 
-    vec3 result = calcDirLight(dirLight, norm, viewDir);
-    result += calcPointLight(pointLight, norm, fragPos, viewDir);
-    result += calcSpotLight(spotLight, norm, fragPos, viewDir);
+    if (reflectionWeight < 1.0f) {
+        vec3 norm = normalize(normal);
+        vec3 viewDir = normalize(viewPos - fragPos);
 
-    fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
+        normalColor = calcDirLight(dirLight, norm, viewDir);
+        normalColor += calcPointLight(pointLight, norm, fragPos, viewDir);
+        normalColor += calcSpotLight(spotLight, norm, fragPos, viewDir);
+    } else {
+        normalColor = vec3(0.0f, 0.0f, 0.0f);
+    }
+    vec3 finalColor = mix(normalColor, reflectionColor, reflectionWeight);
+
+    fragmentColor = vec4(finalColor, 1.0f);
 }

@@ -1,4 +1,4 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.render.textures;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -16,6 +16,7 @@ public class Texture {
     public String type;
 
     public static List<Texture> alreadyBound = new ArrayList<>();
+    public static List<Texture> allTextures = new ArrayList<>();
 
     public Texture(String filename, String type) {
         // The image is loaded and read out into a ByteBuffer
@@ -59,6 +60,10 @@ public class Texture {
         }
     }
 
+    public void destroy() {
+        GL33.glDeleteTextures(id);
+    }
+
     public static void unbindAll() {
         for (int i = 0; i < alreadyBound.size(); i++) {
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + i);
@@ -71,6 +76,12 @@ public class Texture {
         // For this method to work the texture from which the index is requested has to be bound already,
         // if this is not the case -1 will be returned
         return alreadyBound.indexOf(texture);
+    }
+
+    public static void destroyAllTextures() {
+        for (Texture texture : allTextures) {
+            texture.destroy();
+        }
     }
 
 }

@@ -8,30 +8,33 @@ public class Camera {
 
     private static final Vector3f zeroDegreeVector = new Vector3f(1.0f, 0.0f, 0.0f);
     public float fov;
+    public float aspect;
     private float yaw;
     private float pitch;
     public Vector3f cameraPos;
     public Vector3f cameraFront;
     public Vector3f cameraUp;
 
-    public Camera(float fov, Vector3f pos, Vector3f front, Vector3f up) {
+    public Camera(float fov, Vector3f pos, Vector3f front, Vector3f up, float aspect) {
         this.fov = fov;
+        this.aspect = aspect;
         cameraPos = pos;
         cameraFront = front.normalize();
         cameraUp = up;
         yaw = (float) -Math.toDegrees(zeroDegreeVector.angle(cameraFront));
         pitch = 0.0f;
+        changeDirection();
     }
 
     public void update(Mouse mouse) {
         yaw += mouse.xOffset;
         pitch += mouse.yOffset;
 
+        pitch = Math.clamp(-89.0f, 89.0f, pitch);
         changeDirection();
     }
 
     private void changeDirection() {
-        pitch = Math.clamp(-89.0f, 89.0f, pitch);
         Vector3f direction = new Vector3f();
         direction.x = Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
         direction.y = Math.sin(Math.toRadians(pitch));
@@ -41,10 +44,7 @@ public class Camera {
 
     public void updateZoom(float yOffset) {
         fov -= yOffset;
-        if (fov < 1.0f)
-            fov = 1.0f;
-        if (fov > 45.0f)
-            fov = 45.0f;
+        fov = Math.clamp(1.0f, 45.0f, fov);
     }
 
     public Vector3f getLookAtPosition() {

@@ -8,7 +8,7 @@ import java.util.List;
 
 public abstract class RenderingEngine {
 
-    private List<RenderingEngineUnit> renderingEngineUnits = new ArrayList<>();
+    protected List<RenderingEngineUnit> renderingEngineUnits = new ArrayList<>();
 
     public void addNewEngineUnit(RenderingEngineUnit renderingEngineUnit) {
         renderingEngineUnits.add(renderingEngineUnit);
@@ -24,20 +24,21 @@ public abstract class RenderingEngine {
         }
     }
 
-    public void cleanUpAllEngineUnits() {
+    public void destroyAllEngineUnits() {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.cleanUpAllRenderables();
+            renderingEngineUnit.destroyAllRenderables();
+            renderingEngineUnit.destroyShaderProgram();
         }
     }
 
-    public void updateAllEngineUnits(Camera camera, Window window) {
+    public void updateAllEngineUnits(Camera camera) {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.updateRenderState(camera, window);
+            renderingEngineUnit.updateRenderState(camera);
         }
     }
 
     public abstract void render(Window window);
 
-    public abstract void end();
+    public abstract void destroy();
 
 }

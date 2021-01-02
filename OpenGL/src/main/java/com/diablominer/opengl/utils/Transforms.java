@@ -29,11 +29,11 @@ public class Transforms {
         return product;
     }
 
-    public static Matrix4f createProjectionMatrix(float fovy, boolean givenInDegrees, double width, double height, float zNear, float zFar) {
+    public static Matrix4f createProjectionMatrix(float fovy, boolean givenInDegrees, float aspect, float zNear, float zFar) {
         // If givenInDegrees is true fovy has to be given in degrees else it has to be given in radians
         fovy = givenInDegrees ? Math.toRadians(fovy) : fovy;
         Matrix4f result = new Matrix4f().identity();
-        result.perspective(fovy, (float) width / (float) height, zNear, zFar);
+        result.perspective(fovy, aspect, zNear, zFar);
         return result;
     }
 

@@ -90,7 +90,6 @@ public class Window {
 
     public void update() {
         input.update();
-        GLFW.glfwPollEvents();
     }
 
     public void setSize(int width, int height) {

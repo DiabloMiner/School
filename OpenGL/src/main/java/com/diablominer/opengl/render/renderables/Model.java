@@ -1,5 +1,8 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.render.renderables;
 
+import com.diablominer.opengl.render.RenderingEngineUnit;
+import com.diablominer.opengl.render.ShaderProgram;
+import com.diablominer.opengl.render.textures.Texture;
 import com.diablominer.opengl.utils.ListUtil;
 import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
@@ -32,7 +35,7 @@ public class Model extends Renderable {
         loadModel(path);
     }
 
-    public void cleanUp() {
+    public void destroy() {
         for (Mesh mesh : meshes) {
             mesh.destroy();
         }

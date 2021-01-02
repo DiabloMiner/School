@@ -1,4 +1,4 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.render.textures;
 
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.stb.STBImage;
@@ -7,10 +7,15 @@ import org.lwjgl.system.MemoryUtil;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CubeMap {
 
     public int id;
+
+    public static List<CubeMap> alreadyBound = new ArrayList<>();
+    public static List<CubeMap> allCubeMaps = new ArrayList<>();
 
     public CubeMap(String directory, String fileType) {
         String[] files = {directory + File.separator + "right" + fileType, directory + File.separator + "left" + fileType, directory + File.separator + "top" + fileType,
@@ -26,7 +31,6 @@ public class CubeMap {
 
             if (buffer != null) {
                 GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL33.GL_RGBA, xBuffer.get(), yBuffer.get(), 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, buffer);
-                GL33.glGenerateMipmap(GL33.GL_TEXTURE_CUBE_MAP);
                 STBImage.stbi_image_free(buffer);
             } else {
                 System.err.println("CubeMap loading has failed, because the files couldn't be loaded from the given directory.");
@@ -40,14 +44,38 @@ public class CubeMap {
         GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
 
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+
+        allCubeMaps.add(this);
     }
 
     public void bind() {
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
+        if (!alreadyBound.contains(this)) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
+            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
+            alreadyBound.add(this);
+        }
+    }
+
+    public void destroy() {
+        GL33.glDeleteTextures(id);
+    }
+
+    public static int getIndexForTexture(CubeMap texture) {
+        return alreadyBound.indexOf(texture);
     }
 
     public static void unbindAll() {
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+        for (int i = 0; i < alreadyBound.size(); i++) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + i);
+            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+        }
+        alreadyBound.clear();
+    }
+
+    public static void destroyAllCubeMaps() {
+        for (CubeMap cubeMap : allCubeMaps) {
+            cubeMap.destroy();
+        }
     }
 
 }

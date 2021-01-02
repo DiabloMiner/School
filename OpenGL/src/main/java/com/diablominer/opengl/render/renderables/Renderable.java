@@ -1,5 +1,6 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.render.renderables;
 
+import com.diablominer.opengl.render.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -17,7 +18,7 @@ public abstract class Renderable {
 
     public abstract void draw(ShaderProgram shaderProgram);
 
-    public abstract void cleanUp();
+    public abstract void destroy();
 
     public Vector3f getPosition() {
         return position;
