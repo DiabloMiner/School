@@ -35,5 +35,5 @@ void main() {
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * kernel[i];
 
-    fragmentColor = texture(screenTexture, texCoords);
+    fragmentColor = vec4(texture(screenTexture, texCoords).xyz, 1.0f);
 }

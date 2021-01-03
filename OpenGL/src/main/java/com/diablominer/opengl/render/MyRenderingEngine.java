@@ -2,8 +2,10 @@ package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
+import com.diablominer.opengl.main.LogicalEngine;
 import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
+import com.diablominer.opengl.render.lightsources.RenderablePointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.renderables.Renderable;
@@ -20,21 +22,85 @@ import java.nio.ByteBuffer;
 public class MyRenderingEngine extends RenderingEngine {
 
     private Camera camera;
+    private Window window;
     private int frameBuffer, frameBuffer2, frameBuffer3;
     private int texColorBuffer, texColorBuffer2, texColorBuffer3;
     private int VAO;
-    private ShaderProgram sP, reflectionShaderProgram;
-    private Renderable reflectionCube;
+    private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram;
+    private Renderable[] notToBeRendered;
     private Camera environmentMappingCamera;
+    private float deltaTime = 0.0f;
 
-    public MyRenderingEngine(DirectionalLight directionalLight, PointLight pointLight, SpotLight spotLight) throws Exception {
-        camera = new Camera(45.0f, new Vector3f(1.0f, 1.0f, 5.0f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, 1.0f, 0.0f), 1280.0f / 720.0f);
+    public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
+        this.window = window;
+        this.camera = camera;
         environmentMappingCamera = new Camera(90.0f, new Vector3f(-15.0f, 0.0f, 20.0f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f), 1.0f);
 
+        ShaderProgram shaderProgram = new ShaderProgram("VertexShader", "FragmentShader");
+        ShaderProgram lightSourceShaderProgram = new ShaderProgram("VertexShader", "LightSourceFragmentShader");
+        ShaderProgram oneColorShaderProgram = new ShaderProgram("VertexShader", "OneColorShader");
         reflectionShaderProgram = new ShaderProgram("VertexShader", "ReflectionFragmentShader");
-        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight);
-        reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-8.0f, 0.0f, 20.0f));
+        refractionShaderProgram = new ShaderProgram("VertexShader", "RefractionFragmentShader");
 
+        DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1.0f, -1.0f, 1.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
+        PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
+        SpotLight spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f)));
+
+        StencilTestRenderingEngineUnit renderingEngineUnit0 = new StencilTestRenderingEngineUnit(shaderProgram, directionalLight , pointLight, spotLight);
+        MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, directionalLight , pointLight, spotLight);
+        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight);
+        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight);
+        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight);
+        RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram) {
+            @Override
+            public void updateRenderState(Camera camera) {
+                this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
+                Matrix4f view = new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp);
+                this.getShaderProgram().setUniformMat4F("view", view);
+                this.getShaderProgram().setUniformVec3F("color", 1.0f, 1.0f, 1.0f);
+            }
+
+            @Override
+            public void render() {
+                renderAllRenderables();
+            }
+        };
+        RenderingEngineUnit renderingEngineUnit3 = new RenderingEngineUnit(oneColorShaderProgram) {
+            @Override
+            public void updateRenderState(Camera camera) {
+                this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
+                Matrix4f view = new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp);
+                this.getShaderProgram().setUniformMat4F("view", view);
+            }
+
+            @Override
+            public void render() {
+                GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
+                GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_KEEP);
+                renderAllRenderables();
+                GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_REPLACE);
+                GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
+            }
+        };
+
+        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 25.0f));
+        new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 25.0f));
+        Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-8.0f, 0.0f, 20.0f));
+        Renderable refractionCube = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-8.0f, 2.0f, 20.0f));
+        new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
+        new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
+        new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
+
+        addNewEngineUnit(renderingEngineUnit0);
+        addNewEngineUnit(renderingEngineUnit1);
+        addNewEngineUnit(renderingEngineUnit2);
+        addNewEngineUnit(renderingEngineUnit3);
+        addNewEngineUnit(reflectionRenderingEngineUnit);
+        addNewEngineUnit(refractionRenderingEngineUnit);
+
+
+        notToBeRendered = new Renderable[] {reflectionCube, refractionCube};
 
         frameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
@@ -228,58 +294,61 @@ public class MyRenderingEngine extends RenderingEngine {
     }
 
     @Override
-    public void render(Window window) {
+    public void render() {
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
+
         GL33.glViewport(0, 0, 1280, 1280);
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
 
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X, texColorBuffer3, 0);
-        environmentMappingCamera.cameraPos = reflectionCube.getPosition();
+        environmentMappingCamera.cameraPos = notToBeRendered[0].getPosition();
         environmentMappingCamera.cameraFront = new Vector3f(1.0f, 0.0f, 0.0f);
         environmentMappingCamera.cameraUp = new Vector3f(0.0f, -1.0f, 0.0f);
         updateAllEngineUnits(environmentMappingCamera);
-        renderWithoutRenderable(window, reflectionCube);
+        renderWithoutRenderables(notToBeRendered);
 
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, texColorBuffer3, 0);
         environmentMappingCamera.cameraFront = new Vector3f(-1.0f, 0.0f, 0.0f);
         updateAllEngineUnits(environmentMappingCamera);
-        renderWithoutRenderable(window, reflectionCube);
+        renderWithoutRenderables(notToBeRendered);
 
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, texColorBuffer3, 0);
         environmentMappingCamera.cameraFront = new Vector3f(0.0f, 1.0f, 0.0f);
         environmentMappingCamera.cameraUp = new Vector3f(0.0f, 0.0f, 1.0f);
         updateAllEngineUnits(environmentMappingCamera);
-        renderWithoutRenderable(window, reflectionCube);
+        renderWithoutRenderables(notToBeRendered);
 
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, texColorBuffer3, 0);
         environmentMappingCamera.cameraFront = new Vector3f(0.0f, -1.0f, 0.0f);
         environmentMappingCamera.cameraUp = new Vector3f(0.0f, 0.0f, -1.0f);
         updateAllEngineUnits(environmentMappingCamera);
-        renderWithoutRenderable(window, reflectionCube);
+        renderWithoutRenderables(notToBeRendered);
 
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, texColorBuffer3, 0);
         environmentMappingCamera.cameraFront = new Vector3f(0.0f, 0.0f, 1.0f);
         environmentMappingCamera.cameraUp = new Vector3f(0.0f, -1.0f, 0.0f);
         updateAllEngineUnits(environmentMappingCamera);
-        renderWithoutRenderable(window, reflectionCube);
+        renderWithoutRenderables(notToBeRendered);
 
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, texColorBuffer3, 0);
         environmentMappingCamera.cameraFront = new Vector3f(0.0f, 0.0f, -1.0f);
         updateAllEngineUnits(environmentMappingCamera);
-        renderWithoutRenderable(window, reflectionCube);
+        renderWithoutRenderables(notToBeRendered);
 
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
-        reflectionShaderProgram.setUniform1I("skybox", 0);
+        reflectionShaderProgram.setUniform1I("cubeMap", 0);
+        refractionShaderProgram.setUniform1I("cubeMap", 0);
 
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
+        GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
         GL33.glViewport(0, 0, 1280, 720);
 
         updateAllEngineUnits(camera);
-        this.renderAllEngineUnits();
+        renderAllEngineUnits();
 
         Texture.unbindAll();
         CubeMap.unbindAll();
@@ -287,24 +356,23 @@ public class MyRenderingEngine extends RenderingEngine {
 
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
-        reflectionShaderProgram.setUniform1I("skybox", 0);
+        reflectionShaderProgram.setUniform1I("cubeMap", 0);
+        refractionShaderProgram.setUniform1I("cubeMap", 0);
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer2);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glViewport(0, 0, 320, 180);
+
+        camera.cameraFront = Transforms.getProductOf2Vectors(camera.cameraFront, new Vector3f(-1.0f));
+        updateAllEngineUnits(camera);
+        renderAllEngineUnits();
         camera.cameraFront = Transforms.getProductOf2Vectors(camera.cameraFront, new Vector3f(-1.0f));
 
-        updateAllEngineUnits(camera);
-        this.renderAllEngineUnits();
+        GL33.glViewport(0, 0, 1280, 720);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
-
-        camera.cameraFront = Transforms.getProductOf2Vectors(camera.cameraFront, new Vector3f(-1.0f));
-        GL33.glViewport(0, 0, 1280, 720);
 
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
@@ -326,6 +394,9 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBindVertexArray(0);
         sP.unbind();
 
+        Texture.unbindAll();
+        CubeMap.unbindAll();
+
         GL33.glViewport(480, 540, 320, 180);
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
@@ -343,10 +414,10 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);
 
-        GLFW.glfwSwapBuffers(window.getWindow());
+        GLFW.glfwSwapBuffers(window.getId());
     }
 
-    public void renderWithoutRenderable(Window window, Renderable renderable) {
+    public void renderWithoutRenderable(Renderable renderable) {
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glEnable(GL33.GL_DEPTH_TEST);
@@ -367,10 +438,77 @@ public class MyRenderingEngine extends RenderingEngine {
         // GLFW.glfwSwapBuffers(window.getWindow());
     }
 
+    public void renderWithoutRenderables(Renderable[] renderables) {
+        GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glStencilOp(GL33.GL_KEEP,GL33.GL_KEEP, GL33.GL_REPLACE);
+        for (Renderable renderable : renderables) {
+            for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
+                if (!renderingEngineUnit.containsRenderable(renderable)) {
+                    renderingEngineUnit.render();
+                } else {
+                    renderingEngineUnit.getRenderables().remove(renderable);
+                    renderingEngineUnit.render();
+                    renderingEngineUnit.addNewRenderable(renderable);
+                }
+            }
+        }
+        Texture.unbindAll();
+        CubeMap.unbindAll();
+        // TODO: Maybe uncomment the code
+        // GLFW.glfwSwapBuffers(window.getWindow());
+    }
+
     @Override
     public void destroy() {
         this.destroyAllEngineUnits();
 
         GL33.glDeleteFramebuffers(new int[] {frameBuffer, frameBuffer2, frameBuffer3});
+
+        GLFW.glfwDestroyWindow(window.getId());
     }
+
+    @Override
+    public void update() {
+        updateAllEngineUnits(camera);
+
+        window.update();
+
+        handleInputs();
+    }
+
+    public void handleInputs() {
+        float cameraSpeed = 10.0f * deltaTime;
+
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_ESCAPE)) {
+            GLFW.glfwSetWindowShouldClose(window.getId(), true);
+        }
+
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_W)) {
+            camera.moveForwards(cameraSpeed);
+        }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_S)) {
+            camera.moveBackwards(cameraSpeed);
+        }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_A)) {
+            camera.moveLeft(cameraSpeed);
+        }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_D)) {
+            camera.moveRight(cameraSpeed);
+        }
+    }
+
+    public Camera getCamera() {
+        return camera;
+    }
+
+    public Window getWindow() {
+        return window;
+    }
+
+    public void setDeltaTime(float deltaTime) {
+        this.deltaTime = deltaTime;
+    }
+
 }

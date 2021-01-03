@@ -37,7 +37,9 @@ public abstract class RenderingEngine {
         }
     }
 
-    public abstract void render(Window window);
+    public abstract void render();
+
+    public abstract void update();
 
     public abstract void destroy();
 

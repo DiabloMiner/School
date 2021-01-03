@@ -36,7 +36,7 @@ public class Mesh {
         FloatBuffer normalBuffer = BufferUtil.createBuffer(normals);
         FloatBuffer textureCoordinateBuffer = BufferUtil.createBuffer(texCoords);
 
-        // Generate Vertex Array and Buffers
+        // Vertex array and buffers are generated
         VAO = GL33.glGenVertexArrays();
         VBO = GL33.glGenBuffers();
         NBO = GL33.glGenBuffers();
@@ -50,17 +50,15 @@ public class Mesh {
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, EBO);
         GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL33.GL_STATIC_DRAW);
 
-        // The vertex buffer object is bound, data is provided to it and the data is pointed to the vertex shader
+        // The vertex buffer object is bound, all vertex data is provided to it and the data is pointed to the vertex shader
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, verticesBuffer, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
 
-        // The normal buffer object is bound, data is provided to it and the data is pointed to the vertex shader
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, NBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, normalBuffer, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
 
-        // The texture coordinate buffer object is bound, data is provided to it and the data is pointed to the vertex shader
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, TBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, textureCoordinateBuffer, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, 2 * Float.BYTES, 0);

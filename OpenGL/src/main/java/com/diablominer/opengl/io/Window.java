@@ -6,7 +6,7 @@ import org.lwjgl.opengl.GL33;
 
 public class Window {
 
-    private long window;
+    private long id;
     public int WIDTH;
     public int HEIGHT;
     private boolean fullscreen;
@@ -31,7 +31,7 @@ public class Window {
                 GL33.glViewport(0, 0, width, height);
             }
         };
-        GLFW.glfwSetWindowSizeCallback(window, windowsizecallback);
+        GLFW.glfwSetWindowSizeCallback(id, windowsizecallback);
 
         GLFWCursorPosCallback cursorPosCallback = new GLFWCursorPosCallback() {
             @Override
@@ -44,15 +44,15 @@ public class Window {
                 camera.update(mouse);
             }
         };
-        GLFW.glfwSetCursorPosCallback(window, cursorPosCallback);
+        GLFW.glfwSetCursorPosCallback(id, cursorPosCallback);
 
         GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
             @Override
             public void invoke(long window, double xoffset, double yoffset) {
-                camera.updateZoom((float) yoffset);
+
             }
         };
-        GLFW.glfwSetScrollCallback(window, scrollCallback);
+        GLFW.glfwSetScrollCallback(id, scrollCallback);
     }
 
     public Window(int width, int height, String title, Camera camera) {
@@ -60,8 +60,8 @@ public class Window {
         this.fullscreen = false;
         this.hasResized = false;
 
-        window = GLFW.glfwCreateWindow(WIDTH, HEIGHT, title, fullscreen ? GLFW.glfwGetPrimaryMonitor() : 0, 0);
-        if (window == 0) {
+        id = GLFW.glfwCreateWindow(WIDTH, HEIGHT, title, fullscreen ? GLFW.glfwGetPrimaryMonitor() : 0, 0);
+        if (id == 0) {
             PointerBuffer buffer = PointerBuffer.allocateDirect(1);
             GLFW.glfwGetError(buffer);
             throw new IllegalStateException("Failed to create window: " + buffer.getStringASCII());
@@ -69,23 +69,23 @@ public class Window {
 
         if (!fullscreen) {
             GLFWVidMode videoMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-            GLFW.glfwSetWindowPos(window, (videoMode.width() - WIDTH) / 2, (videoMode.height() - HEIGHT) / 2);
-            GLFW.glfwShowWindow(window);
+            GLFW.glfwSetWindowPos(id, (videoMode.width() - WIDTH) / 2, (videoMode.height() - HEIGHT) / 2);
+            GLFW.glfwShowWindow(id);
         }
 
-        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+        GLFW.glfwSetInputMode(id, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
 
-        input = new Input(window);
+        input = new Input(id);
         mouse = new Mouse(WIDTH, HEIGHT);
         setCallbacks(camera);
     }
 
     public boolean shouldClose() {
-        return GLFW.glfwWindowShouldClose(window);
+        return GLFW.glfwWindowShouldClose(id);
     }
 
     public void swapBuffers() {
-        GLFW.glfwSwapBuffers(window);
+        GLFW.glfwSwapBuffers(id);
     }
 
     public void update() {
@@ -113,8 +113,8 @@ public class Window {
         this.fullscreen = fullscreen;
     }
 
-    public long getWindow() {
-        return this.window;
+    public long getId() {
+        return this.id;
     }
 
     public Input getInput() {

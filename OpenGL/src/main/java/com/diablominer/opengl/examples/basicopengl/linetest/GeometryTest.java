@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class LineTest {
+public class GeometryTest {
 
     private static long window;
     private static int shaderProgram;
@@ -39,7 +39,7 @@ public class LineTest {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Line test",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Geometry test",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -59,22 +59,27 @@ public class LineTest {
         });
 
 
-        int vertexShader = createShader("LT_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("LT_FS", GL33.GL_FRAGMENT_SHADER);
+        int vertexShader = createShader("GT_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("GT_FS", GL33.GL_FRAGMENT_SHADER);
+        int geometryShader = createShader("GT_GS", GL33.GL_GEOMETRY_SHADER);
         shaderProgram = GL33.glCreateProgram();
         GL33.glAttachShader(shaderProgram, vertexShader);
         GL33.glAttachShader(shaderProgram, fragmentShader);
+        GL33.glAttachShader(shaderProgram, geometryShader);
         GL33.glLinkProgram(shaderProgram);
         if (GL33.glGetProgrami(shaderProgram, GL33.GL_LINK_STATUS) == 0) {
             throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(shaderProgram, 1024));
         }
         GL33.glDeleteShader(vertexShader);
         GL33.glDeleteShader(fragmentShader);
+        GL33.glDeleteShader(geometryShader);
 
 
         float[] vertices = {
-                0.0f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-                0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+                -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // top-left
+                0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // top-right
+                0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
+                -0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // bottom-left
         };
         int VBO = GL33.glGenBuffers();
         VAO = GL33.glGenVertexArrays();
@@ -83,8 +88,8 @@ public class LineTest {
 
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, vertices, GL33.GL_STATIC_DRAW);
-        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 6 * Float.BYTES, 0);
-        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, 6 * Float.BYTES, 3 * Float.BYTES);
+        GL33.glVertexAttribPointer(0, 2, GL33.GL_FLOAT, false, 5 * Float.BYTES, 0);
+        GL33.glVertexAttribPointer(1, 3, GL33.GL_FLOAT, false, 5 * Float.BYTES, 2 * Float.BYTES);
         GL33.glEnableVertexAttribArray(0);
         GL33.glEnableVertexAttribArray(1);
 
@@ -102,11 +107,11 @@ public class LineTest {
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
 
-        GL33.glLineWidth(10.0f);
+        GL33.glPointSize(10.0f);
 
         GL33.glUseProgram(shaderProgram);
         GL33.glBindVertexArray(VAO);
-        GL33.glDrawArrays(GL33.GL_LINES, 0, 2);
+        GL33.glDrawArrays(GL33.GL_POINTS, 0, 4);
         GL33.glBindVertexArray(0);
     }
 

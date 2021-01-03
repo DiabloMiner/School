@@ -15,10 +15,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-public class Assimp {
+public class NormalVectorVisualization {
 
     private static long window;
-    private static int shaderProgram, lightSourceShaderProgram;
+    private static int normalVectorShaderProgram, lightSourceShaderProgram, shaderProgram;
     private static float deltaTime = 0.0f, lastFrame = 0.0f;
     private static boolean firstMouse = true, constantDirection = false;
     private static float lastX = 400.0f, lastY = 300.0f, yaw, pitch = 0.0f, zoom = 45.0f;
@@ -42,7 +42,7 @@ public class Assimp {
             GLFW.glfwPollEvents();
         }
         GLFW.glfwTerminate();
-        GL33.glDeleteProgram(shaderProgram);
+        GL33.glDeleteProgram(normalVectorShaderProgram);
     }
 
     public static void init() throws Exception {
@@ -54,7 +54,7 @@ public class Assimp {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Model Loading with Assimp",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Explosion.",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -114,27 +114,42 @@ public class Assimp {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
 
 
-        int vertexShader = createShader("AS_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("AS_FS", GL33.GL_FRAGMENT_SHADER);
+        int vS = createShader("AS_VS", GL33.GL_VERTEX_SHADER);
+        int fS = createShader("AS_FS", GL33.GL_FRAGMENT_SHADER);
         shaderProgram = GL33.glCreateProgram();
-        GL33.glAttachShader(shaderProgram, vertexShader);
-        GL33.glAttachShader(shaderProgram, fragmentShader);
+        GL33.glAttachShader(shaderProgram, vS);
+        GL33.glAttachShader(shaderProgram, fS);
         GL33.glLinkProgram(shaderProgram);
         if (GL33.glGetProgrami(shaderProgram, GL33.GL_LINK_STATUS) == 0) {
             throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(shaderProgram, 1024));
         }
-        GL33.glDeleteShader(fragmentShader);
+        GL33.glDeleteShader(vS);
+        GL33.glDeleteShader(fS);
 
-        int fS = createShader("AS_FS_LightSource", GL33.GL_FRAGMENT_SHADER);
+        int vertexShader = createShader("NVV_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("NVV_FS", GL33.GL_FRAGMENT_SHADER);
+        int geometryShader = createShader("NVV_GS", GL33.GL_GEOMETRY_SHADER);
+        normalVectorShaderProgram = GL33.glCreateProgram();
+        GL33.glAttachShader(normalVectorShaderProgram, vertexShader);
+        GL33.glAttachShader(normalVectorShaderProgram, fragmentShader);
+        GL33.glAttachShader(normalVectorShaderProgram, geometryShader);
+        GL33.glLinkProgram(normalVectorShaderProgram);
+        if (GL33.glGetProgrami(normalVectorShaderProgram, GL33.GL_LINK_STATUS) == 0) {
+            throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(normalVectorShaderProgram, 1024));
+        }
+        GL33.glDeleteShader(fragmentShader);
+        GL33.glDeleteShader(geometryShader);
+
+        int fS2 = createShader("AS_FS_LightSource", GL33.GL_FRAGMENT_SHADER);
         lightSourceShaderProgram = GL33.glCreateProgram();
-        GL33.glAttachShader(lightSourceShaderProgram, vertexShader);
-        GL33.glAttachShader(lightSourceShaderProgram, fS);
+        GL33.glAttachShader(lightSourceShaderProgram, vS);
+        GL33.glAttachShader(lightSourceShaderProgram, fS2);
         GL33.glLinkProgram(lightSourceShaderProgram);
         if (GL33.glGetProgrami(lightSourceShaderProgram, GL33.GL_LINK_STATUS) == 0) {
             throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(lightSourceShaderProgram, 1024));
         }
         GL33.glDeleteShader(vertexShader);
-        GL33.glDeleteShader(fS);
+        GL33.glDeleteShader(fS2);
 
 
         model = new Model("./src/main/resources/models/backpack/backpack.obj");
@@ -192,6 +207,7 @@ public class Assimp {
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
 
         model.draw(shaderProgram);
+        model.draw(normalVectorShaderProgram);
         lightSourceModel.draw(lightSourceShaderProgram);
     }
 
@@ -211,6 +227,11 @@ public class Assimp {
         projection.perspective(Math.toRadians(zoom), 1280.0f / 720.0f, 0.1f, 100.0f);
         float[] projectionData = new float[4 * 4];
         projection.get(projectionData);
+
+        GL33.glUseProgram(normalVectorShaderProgram);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(normalVectorShaderProgram, "model"), false, modelData);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(normalVectorShaderProgram, "view"), false, viewData);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(normalVectorShaderProgram, "projection"), false, projectionData);
 
         GL33.glUseProgram(shaderProgram);
         GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(shaderProgram, "model"), false, modelData);

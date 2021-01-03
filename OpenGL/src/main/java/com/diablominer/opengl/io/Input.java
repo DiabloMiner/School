@@ -6,25 +6,25 @@ import java.util.Arrays;
 
 public class Input {
 
-    private long window;
+    private long id;
     public boolean[] keys;
 
-    public Input(long window) {
-        this.window = window;
+    public Input(long id) {
+        this.id = id;
         this.keys = new boolean[GLFW.GLFW_KEY_LAST];
         Arrays.fill(keys, false);
     }
 
     public boolean isKeyDown(int key) {
-        return GLFW.glfwGetKey(window, key) == GLFW.GLFW_TRUE;
+        return GLFW.glfwGetKey(id, key) == GLFW.GLFW_TRUE;
     }
 
     public boolean isMouseButtonDown(int button) {
-        return GLFW.glfwGetMouseButton(window, button) == 1;
+        return GLFW.glfwGetMouseButton(id, button) == 1;
     }
 
     public boolean isMouseButtonReleased(int button) {
-        return GLFW.glfwGetMouseButton(window, button) == GLFW.GLFW_RELEASE;
+        return GLFW.glfwGetMouseButton(id, button) == GLFW.GLFW_RELEASE;
     }
 
     public void update() {

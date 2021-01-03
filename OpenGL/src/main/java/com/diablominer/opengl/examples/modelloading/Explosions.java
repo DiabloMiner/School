@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-public class Assimp {
+public class Explosions {
 
     private static long window;
     private static int shaderProgram, lightSourceShaderProgram;
@@ -54,7 +54,7 @@ public class Assimp {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Model Loading with Assimp",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Explosion.",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -114,16 +114,19 @@ public class Assimp {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
 
 
-        int vertexShader = createShader("AS_VS", GL33.GL_VERTEX_SHADER);
-        int fragmentShader = createShader("AS_FS", GL33.GL_FRAGMENT_SHADER);
+        int vertexShader = createShader("Ex_VS", GL33.GL_VERTEX_SHADER);
+        int fragmentShader = createShader("Ex_FS", GL33.GL_FRAGMENT_SHADER);
+        int geometryShader = createShader("Ex_GS", GL33.GL_GEOMETRY_SHADER);
         shaderProgram = GL33.glCreateProgram();
         GL33.glAttachShader(shaderProgram, vertexShader);
         GL33.glAttachShader(shaderProgram, fragmentShader);
+        GL33.glAttachShader(shaderProgram, geometryShader);
         GL33.glLinkProgram(shaderProgram);
         if (GL33.glGetProgrami(shaderProgram, GL33.GL_LINK_STATUS) == 0) {
             throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(shaderProgram, 1024));
         }
         GL33.glDeleteShader(fragmentShader);
+        GL33.glDeleteShader(geometryShader);
 
         int fS = createShader("AS_FS_LightSource", GL33.GL_FRAGMENT_SHADER);
         lightSourceShaderProgram = GL33.glCreateProgram();
@@ -131,7 +134,7 @@ public class Assimp {
         GL33.glAttachShader(lightSourceShaderProgram, fS);
         GL33.glLinkProgram(lightSourceShaderProgram);
         if (GL33.glGetProgrami(lightSourceShaderProgram, GL33.GL_LINK_STATUS) == 0) {
-            throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(lightSourceShaderProgram, 1024));
+            throw new Exception("Error linking Shader code: " + GL33.glGetProgramInfoLog(shaderProgram, 1024));
         }
         GL33.glDeleteShader(vertexShader);
         GL33.glDeleteShader(fS);
@@ -241,6 +244,7 @@ public class Assimp {
         GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.constant"), 1.0f);
         GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.linear"), 0.14f);
         GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "mySpotLight.quadratic"), 0.07f);
+        GL33.glUniform1f(GL33.glGetUniformLocation(shaderProgram, "time"), (float) GLFW.glfwGetTime());
 
         model.translate(new Vector3f(-2.0f, 1.0f, 2.0f));
         model.scale(0.3f);
