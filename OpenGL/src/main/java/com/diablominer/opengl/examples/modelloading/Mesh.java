@@ -13,8 +13,8 @@ public class Mesh {
     public List<Vertex> vertices;
     public List<Integer> indices;
     public List<Texture> textures;
-    private int VAO, EBO;
-    private IntBuffer indicesBuffer;
+    public int VAO, EBO;
+    public IntBuffer indicesBuffer;
 
     public Mesh(List<Vertex> vertices, List<Integer> indices, List<Texture> textures) {
         this.vertices = vertices;

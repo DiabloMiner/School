@@ -35,6 +35,7 @@ public class MyGame implements Game {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+        GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 4);
 
         Camera camera = new Camera(45.0f, new Vector3f(1.0f, 1.0f, 5.0f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, 1.0f, 0.0f), 1280.0f / 720.0f);
         Window window = new Window(1280, 720, "OpenGL", camera);
@@ -50,6 +51,7 @@ public class MyGame implements Game {
         GL33.glEnable(GL33.GL_CULL_FACE);
         GL33.glCullFace(GL33.GL_BACK);
         GL33.glFrontFace(GL33.GL_CCW);
+        GL33.glEnable(GL33.GL_MULTISAMPLE);
 
         logicalEngine = new MyLogicalEngine(true);
         renderingEngine = new MyRenderingEngine(logicalEngine, window, camera);

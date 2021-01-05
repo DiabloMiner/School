@@ -98,25 +98,21 @@ public class MyRenderingEngine extends RenderingEngine {
         addNewEngineUnit(renderingEngineUnit3);
         addNewEngineUnit(reflectionRenderingEngineUnit);
         addNewEngineUnit(refractionRenderingEngineUnit);
-
-
         notToBeRendered = new Renderable[] {reflectionCube, refractionCube};
+
 
         frameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
 
         texColorBuffer = GL33.glGenTextures();
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
-        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, 1280, 720, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D, texColorBuffer, 0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D_MULTISAMPLE, texColorBuffer);
+        GL33.glTexImage2DMultisample(GL33.GL_TEXTURE_2D_MULTISAMPLE, 4, GL33.GL_RGBA, 1280,  720, true);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D_MULTISAMPLE, texColorBuffer, 0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D_MULTISAMPLE, 0);
 
         int RBO = GL33.glGenRenderbuffers();
         GL33.glBindRenderbuffer(GL33.GL_RENDERBUFFER, RBO);
-        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, GL33.GL_DEPTH24_STENCIL8, 1280, 720);
+        GL33.glRenderbufferStorageMultisample(GL33.GL_RENDERBUFFER, 4, GL33.GL_DEPTH24_STENCIL8, 1280, 720);
         GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_RENDERBUFFER, RBO);
 
         if(GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -124,12 +120,13 @@ public class MyRenderingEngine extends RenderingEngine {
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
+
         frameBuffer2 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer2);
 
         texColorBuffer2 = GL33.glGenTextures();
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
-        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, 320, 180, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, 1280, 720, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
@@ -138,13 +135,14 @@ public class MyRenderingEngine extends RenderingEngine {
 
         int RBO2 = GL33.glGenRenderbuffers();
         GL33.glBindRenderbuffer(GL33.GL_RENDERBUFFER, RBO2);
-        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, GL33.GL_DEPTH24_STENCIL8, 320, 180);
+        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, GL33.GL_DEPTH24_STENCIL8, 1280, 720);
         GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_RENDERBUFFER, RBO2);
 
         if(GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("The framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+
 
         frameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
@@ -291,6 +289,7 @@ public class MyRenderingEngine extends RenderingEngine {
         };
         skyboxRenderingEngineUnit.addNewRenderable(skybox);
         addNewEngineUnit(skyboxRenderingEngineUnit);
+        addNewEngineUnit(transparencyRenderingEngineUnit);
     }
 
     @Override
@@ -340,7 +339,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
         reflectionShaderProgram.setUniform1I("cubeMap", 0);
-        refractionShaderProgram.setUniform1I("cubeMap", 0);
+
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -353,13 +352,15 @@ public class MyRenderingEngine extends RenderingEngine {
         Texture.unbindAll();
         CubeMap.unbindAll();
 
+        GL33.glBindFramebuffer(GL33.GL_READ_FRAMEBUFFER, frameBuffer);
+        GL33.glBindFramebuffer(GL33.GL_DRAW_FRAMEBUFFER, frameBuffer2);
+        GL33.glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL33.GL_COLOR_BUFFER_BIT, GL33.GL_LINEAR);
 
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
         reflectionShaderProgram.setUniform1I("cubeMap", 0);
-        refractionShaderProgram.setUniform1I("cubeMap", 0);
 
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer2);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glViewport(0, 0, 320, 180);
@@ -369,21 +370,23 @@ public class MyRenderingEngine extends RenderingEngine {
         renderAllEngineUnits();
         camera.cameraFront = Transforms.getProductOf2Vectors(camera.cameraFront, new Vector3f(-1.0f));
 
-        GL33.glViewport(0, 0, 1280, 720);
+        GL33.glBindFramebuffer(GL33.GL_READ_FRAMEBUFFER, frameBuffer);
+        GL33.glBindFramebuffer(GL33.GL_DRAW_FRAMEBUFFER, frameBuffer2);
+        GL33.glBlitFramebuffer(0, 0, 320, 180, 480, 540, 800, 720, GL33.GL_COLOR_BUFFER_BIT, GL33.GL_LINEAR);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
+        GL33.glViewport(0, 0, 1280, 720);
 
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
 
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
         sP.setUniform1I("screenTexture", 0);
 
         sP.bind();
@@ -396,20 +399,6 @@ public class MyRenderingEngine extends RenderingEngine {
 
         Texture.unbindAll();
         CubeMap.unbindAll();
-
-        GL33.glViewport(480, 540, 320, 180);
-        GL33.glActiveTexture(GL33.GL_TEXTURE0);
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
-        sP.setUniform1I("screenTexture", 0);
-
-        sP.bind();
-        GL33.glBindVertexArray(VAO);
-        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
-        GL33.glDisableVertexAttribArray(0);
-        GL33.glDisableVertexAttribArray(1);
-        GL33.glBindVertexArray(0);
-        sP.unbind();
-        GL33.glViewport(0, 0, 1280, 720);
 
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);

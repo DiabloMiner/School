@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Model {
 
-    private List<Mesh> meshes;
+    public List<Mesh> meshes;
     private List<Texture> loadedTextures;
     String path;
 
