@@ -3,7 +3,7 @@ package com.diablominer.opengl.main;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class LogicalEngine implements Runnable {
+public abstract class LogicalEngine {
 
     private List<GameObject> gameObjects;
 

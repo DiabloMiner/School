@@ -12,10 +12,10 @@ import org.lwjgl.opengl.GL33;
 
 public class MyGame implements Game {
 
+
     private MyRenderingEngine renderingEngine;
     private MyLogicalEngine logicalEngine;
-    private float deltaTime = 0.0f;
-    private float lastTime = 0.0f;
+    private float lastTime = (float) GLFW.glfwGetTime();
 
     public static void main(String[] args) throws Exception {
         new MyGame();
@@ -53,20 +53,18 @@ public class MyGame implements Game {
         GL33.glFrontFace(GL33.GL_CCW);
         GL33.glEnable(GL33.GL_MULTISAMPLE);
 
-        logicalEngine = new MyLogicalEngine(true);
+        logicalEngine = new MyLogicalEngine();
         renderingEngine = new MyRenderingEngine(logicalEngine, window, camera);
-
-        Runnable logicalEngineRunnable = logicalEngine;
-        Thread logicalEngineThread = new Thread(logicalEngineRunnable);
-        logicalEngineThread.start();
     }
 
     @Override
     public void mainLoop() {
         while (!renderingEngine.getWindow().shouldClose()) {
             float currentTime = (float) GLFW.glfwGetTime();
-            deltaTime = currentTime - lastTime;
+            float deltaTime = currentTime - lastTime;
             lastTime = currentTime;
+
+            renderingEngine.handleInputs(deltaTime);
 
             update();
 
@@ -75,12 +73,12 @@ public class MyGame implements Game {
     }
 
     public void render() {
+        renderingEngine.update();
         renderingEngine.render();
     }
 
     public void update() {
-        renderingEngine.setDeltaTime(deltaTime);
-        renderingEngine.update();
+        logicalEngine.update();
 
         GLFW.glfwPollEvents();
     }
@@ -89,8 +87,6 @@ public class MyGame implements Game {
     public void cleanUp() {
         Texture.destroyAllTextures();
         CubeMap.destroyAllCubeMaps();
-
-        logicalEngine.setShouldRun(false);
 
         renderingEngine.destroy();
 

@@ -23,8 +23,6 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void updateRenderState(Camera camera) {
-        shaderProgram.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
-        shaderProgram.setUniformMat4F("view", new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp));
         shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
         shaderProgram.setUniform1F("material.shininess", shininess);
 

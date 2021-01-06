@@ -25,8 +25,6 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void updateRenderState(Camera camera) {
-        this.getShaderProgram().setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
-        this.getShaderProgram().setUniformMat4F("view", new Matrix4f().lookAt(camera.cameraPos, camera.getLookAtPosition(), camera.cameraUp));
         this.getShaderProgram().setUniformVec3F("viewPos", camera.cameraPos);
         this.getShaderProgram().setUniform1F("material.shininess", shininess);
 

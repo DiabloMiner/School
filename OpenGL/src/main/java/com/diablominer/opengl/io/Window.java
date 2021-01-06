@@ -49,7 +49,7 @@ public class Window {
         GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
             @Override
             public void invoke(long window, double xoffset, double yoffset) {
-
+                camera.updateZoom((float) yoffset);
             }
         };
         GLFW.glfwSetScrollCallback(id, scrollCallback);
