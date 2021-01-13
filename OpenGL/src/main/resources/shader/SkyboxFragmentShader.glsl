@@ -5,7 +5,6 @@ in vec3 texCoords;
 
 uniform samplerCube cubeMap;
 
-void main()
-{
+void main() {
     fragColor = texture(cubeMap, texCoords);
 }

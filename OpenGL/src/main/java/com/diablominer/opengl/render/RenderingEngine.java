@@ -1,7 +1,6 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.io.Camera;
-import com.diablominer.opengl.io.Window;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +32,19 @@ public abstract class RenderingEngine {
 
     public void updateAllEngineUnits(Camera camera) {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.updateRenderState(camera);
+            renderingEngineUnit.updateRenderState(camera, renderingEngineUnit.shaderProgram);
+        }
+    }
+
+    public void updateWithAnotherShaderProgram(Camera camera, ShaderProgram shaderProgram) {
+        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
+            renderingEngineUnit.updateRenderState(camera, shaderProgram);
+        }
+    }
+
+    public void renderWithAnotherShaderProgram(ShaderProgram shaderProgram) {
+        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
+            renderingEngineUnit.renderWithAnotherShaderProgram(shaderProgram);
         }
     }
 

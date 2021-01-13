@@ -61,7 +61,13 @@ public abstract class RenderingEngineUnit {
         return false;
     }
 
-    public abstract void updateRenderState(Camera camera);
+    public void renderWithAnotherShaderProgram(ShaderProgram shaderProgram) {
+        for (Renderable renderable : renderables) {
+            renderable.draw(shaderProgram);
+        }
+    }
+
+    public abstract void updateRenderState(Camera camera, ShaderProgram shaderProgram);
 
     public abstract void render();
 

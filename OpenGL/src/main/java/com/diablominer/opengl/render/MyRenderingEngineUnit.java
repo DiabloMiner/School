@@ -4,7 +4,6 @@ import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 
 public class MyRenderingEngineUnit extends RenderingEngineUnit {
@@ -22,7 +21,7 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
     }
 
     @Override
-    public void updateRenderState(Camera camera) {
+    public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
         shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
         shaderProgram.setUniform1F("material.shininess", shininess);
 

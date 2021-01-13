@@ -11,12 +11,14 @@ public class ShaderProgram {
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
+    private int geometryShaderId;
 
     public ShaderProgram() throws Exception {
         programId = GL33.glCreateProgram();
         if (programId == 0) {
             throw new Exception("Could not create Shader");
         }
+        geometryShaderId = 0;
     }
 
     public ShaderProgram(String vertexShaderPath, String fragmentShaderPath) throws Exception {
@@ -24,13 +26,29 @@ public class ShaderProgram {
         if (programId == 0) {
             throw new Exception("Could not create Shader");
         }
+        geometryShaderId = 0;
         createVertexShader(vertexShaderPath);
+        createFragmentShader(fragmentShaderPath);
+        link();
+    }
+
+    public ShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath) throws Exception {
+        programId = GL33.glCreateProgram();
+        if (programId == 0) {
+            throw new Exception("Could not create Shader");
+        }
+        createVertexShader(vertexShaderPath);
+        createGeometryShader(geometryShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
     }
 
     public void createVertexShader(String shaderFile) throws Exception {
         vertexShaderId = createShader(shaderFile, GL33.GL_VERTEX_SHADER);
+    }
+
+    public void createGeometryShader(String shaderFile) throws Exception {
+        geometryShaderId = createShader(shaderFile, GL33.GL_GEOMETRY_SHADER);
     }
 
     public void createFragmentShader(String shaderFile) throws Exception {
@@ -63,6 +81,9 @@ public class ShaderProgram {
 
         if (vertexShaderId != 0) {
             GL33.glDetachShader(programId, vertexShaderId);
+        }
+        if (geometryShaderId != 0) {
+            GL33.glDetachShader(programId, geometryShaderId);
         }
         if (fragmentShaderId != 0) {
             GL33.glDetachShader(programId, fragmentShaderId);
