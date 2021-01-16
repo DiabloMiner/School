@@ -4,8 +4,7 @@ layout (location = 1) in vec2 aTexCoords;
 
 out vec2 texCoords;
 
-void main()
-{
+void main() {
     gl_Position = vec4(aPos.xy, 0.0f, 1.0f);
     texCoords = aTexCoords;
 }  

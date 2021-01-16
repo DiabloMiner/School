@@ -20,9 +20,16 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         this.spotLight = spotLight;
     }
 
+    public MyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
+        super(shaderProgram, alternativeShaderProgram);
+        this.dirLight = dirLight;
+        this.pointLight = pointLight;
+        this.spotLight = spotLight;
+    }
+
     @Override
     public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
-        shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
+        shaderProgram.setUniformVec3F("viewPos", camera.position);
         shaderProgram.setUniform1F("material.shininess", shininess);
 
         shaderProgram.setUniformVec3F("dirLight.direction", dirLight.getDirection());
@@ -38,8 +45,8 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniform1F("pointLight.linear", pointLight.getLinear());
         shaderProgram.setUniform1F("pointLight.quadratic", pointLight.getQuadratic());
 
-        shaderProgram.setUniformVec3F("spotLight.position", camera.cameraPos);
-        shaderProgram.setUniformVec3F("spotLight.direction", camera.cameraFront);
+        shaderProgram.setUniformVec3F("spotLight.position", camera.position);
+        shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
         shaderProgram.setUniformVec3F("spotLight.ambient", spotLight.getAmbient());
         shaderProgram.setUniformVec3F("spotLight.diffuse", spotLight.getDiffuse());
         shaderProgram.setUniformVec3F("spotLight.specular", spotLight.getSpecular());
@@ -55,5 +62,10 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
     @Override
     public void render() {
         renderAllRenderables();
+    }
+
+    @Override
+    public void renderAlternative() {
+        renderAllRenderablesAlternative();
     }
 }

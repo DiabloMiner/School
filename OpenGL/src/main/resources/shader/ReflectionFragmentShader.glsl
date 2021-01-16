@@ -135,5 +135,5 @@ void main() {
     }
     vec3 finalColor = mix(normalColor, reflectionColor, reflectionWeight);
 
-    fragmentColor = vec4(reflectionColor, 1.0f);
+    fragmentColor = vec4(finalColor, 1.0f);
 }

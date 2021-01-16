@@ -4,26 +4,20 @@ import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
-import com.diablominer.opengl.render.renderables.Renderable;
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    private List<Renderable> sortedRenderables;
     private float shininess = 32.0f;
 
-    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
-        super(shaderProgram);
-        sortedRenderables = new ArrayList<>();
+    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
+        super(shaderProgram, alternativeShaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
@@ -31,7 +25,7 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
-        shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
+        shaderProgram.setUniformVec3F("viewPos", camera.position);
         shaderProgram.setUniform1F("material.shininess", shininess);
 
         shaderProgram.setUniformVec3F("dirLight.direction", dirLight.getDirection());
@@ -47,8 +41,8 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniform1F("pointLight.linear", pointLight.getLinear());
         shaderProgram.setUniform1F("pointLight.quadratic", pointLight.getQuadratic());
 
-        shaderProgram.setUniformVec3F("spotLight.position", camera.cameraPos);
-        shaderProgram.setUniformVec3F("spotLight.direction", camera.cameraFront);
+        shaderProgram.setUniformVec3F("spotLight.position", camera.position);
+        shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
         shaderProgram.setUniformVec3F("spotLight.ambient", spotLight.getAmbient());
         shaderProgram.setUniformVec3F("spotLight.diffuse", spotLight.getDiffuse());
         shaderProgram.setUniformVec3F("spotLight.specular", spotLight.getSpecular());
@@ -61,8 +55,8 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
         this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
 
         this.getRenderables().sort((o1, o2) -> {
-            float distance1 = Math.abs(o1.getPosition().distance(camera.cameraPos));
-            float distance2 = Math.abs(o2.getPosition().distance(camera.cameraPos));
+            float distance1 = Math.abs(o1.getPosition().distance(camera.position));
+            float distance2 = Math.abs(o2.getPosition().distance(camera.position));
             return Float.compare(distance1, distance2);
         });
         Collections.reverse(this.getRenderables());
@@ -72,6 +66,13 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
     public void render() {
         GL33.glDisable(GL33.GL_CULL_FACE);
         renderAllRenderables();
+        GL33.glEnable(GL33.GL_CULL_FACE);
+    }
+
+    @Override
+    public void renderAlternative() {
+        GL33.glDisable(GL33.GL_CULL_FACE);
+        renderAllRenderablesAlternative();
         GL33.glEnable(GL33.GL_CULL_FACE);
     }
 }

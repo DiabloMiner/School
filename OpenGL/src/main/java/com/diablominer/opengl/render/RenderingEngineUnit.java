@@ -4,15 +4,25 @@ import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.render.renderables.Renderable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class RenderingEngineUnit {
 
     protected ShaderProgram shaderProgram;
+    protected ShaderProgram alternativeShaderProgram;
     private List<Renderable> renderables;
 
     public RenderingEngineUnit(ShaderProgram shaderProgram) {
         this.shaderProgram = shaderProgram;
+        this.alternativeShaderProgram = null;
+        renderables = new ArrayList<>();
+    }
+
+    public RenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram) {
+        this.shaderProgram = shaderProgram;
+        this.alternativeShaderProgram = alternativeShaderProgram;
         renderables = new ArrayList<>();
     }
 
@@ -29,7 +39,7 @@ public abstract class RenderingEngineUnit {
     }
 
     public void addNewRenderables(List<Renderable> renderables) {
-        renderables.addAll(renderables);
+        this.renderables.addAll(renderables);
     }
 
     public List<Renderable> getRenderables() {
@@ -39,6 +49,15 @@ public abstract class RenderingEngineUnit {
     public void renderAllRenderables() {
         for (Renderable renderable : renderables) {
             renderable.draw(shaderProgram);
+        }
+    }
+
+    public void renderAllRenderablesAlternative() {
+        if (alternativeShaderProgram != null) {
+            for (Renderable renderable : renderables) {
+                renderable.draw(alternativeShaderProgram);
+            }
+        } else {
         }
     }
 
@@ -52,13 +71,14 @@ public abstract class RenderingEngineUnit {
         shaderProgram.destroy();
     }
 
-    public boolean containsRenderable(Renderable renderable) {
-        for (Renderable containedRenderable : renderables) {
-            if (renderables.contains(renderable)) {
-                return true;
+    public Set<Renderable> containsRenderables(Set<Renderable> renderables) {
+        Set<Renderable> result = new HashSet<>();
+        for (Renderable renderable : renderables) {
+            if (this.renderables.contains(renderable)) {
+                result.add(renderable);
             }
         }
-        return false;
+        return result;
     }
 
     public void renderWithAnotherShaderProgram(ShaderProgram shaderProgram) {
@@ -70,5 +90,7 @@ public abstract class RenderingEngineUnit {
     public abstract void updateRenderState(Camera camera, ShaderProgram shaderProgram);
 
     public abstract void render();
+
+    public abstract void renderAlternative();
 
 }

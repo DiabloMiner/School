@@ -11,17 +11,17 @@ public class Camera {
     public float aspect;
     private float yaw;
     private float pitch;
-    public Vector3f cameraPos;
-    public Vector3f cameraFront;
-    public Vector3f cameraUp;
+    public Vector3f position;
+    public Vector3f front;
+    public Vector3f up;
 
     public Camera(float fov, Vector3f pos, Vector3f front, Vector3f up, float aspect) {
         this.fov = fov;
         this.aspect = aspect;
-        cameraPos = pos;
-        cameraFront = front.normalize();
-        cameraUp = up;
-        yaw = (float) -Math.toDegrees(zeroDegreeVector.angle(cameraFront));
+        this.position = pos;
+        this.front = front.normalize();
+        this.up = up;
+        yaw = (float) -Math.toDegrees(zeroDegreeVector.angle(this.front));
         pitch = 0.0f;
         changeDirection();
     }
@@ -39,7 +39,7 @@ public class Camera {
         direction.x = Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
         direction.y = Math.sin(Math.toRadians(pitch));
         direction.z = Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
-        direction.normalize(cameraFront);
+        direction.normalize(front);
     }
 
     public void updateZoom(float yOffset) {
@@ -48,60 +48,32 @@ public class Camera {
     }
 
     public Vector3f getLookAtPosition() {
-        return Transforms.getSumOf2Vectors(cameraPos, cameraFront);
+        return Transforms.getSumOf2Vectors(position, front);
     }
 
     public void moveForwards(float cameraSpeed) {
         Vector3f product = new Vector3f();
-        cameraFront.mul(cameraSpeed, product);
-        cameraPos.add(product);
+        front.mul(cameraSpeed, product);
+        position.add(product);
     }
 
     public void moveBackwards(float cameraSpeed) {
         Vector3f product = new Vector3f();
-        cameraFront.mul(cameraSpeed, product);
-        cameraPos.sub(product);
+        front.mul(cameraSpeed, product);
+        position.sub(product);
     }
 
     public void moveLeft(float cameraSpeed) {
         Vector3f product = new Vector3f();
-        cameraFront.cross(cameraUp, product);
+        front.cross(up, product);
         product.normalize().mul(cameraSpeed);
-        cameraPos.sub(product);
+        position.sub(product);
     }
 
     public void moveRight(float cameraSpeed) {
         Vector3f product = new Vector3f();
-        cameraFront.cross(cameraUp, product);
+        front.cross(up, product);
         product.normalize().mul(cameraSpeed);
-        cameraPos.add(product);
-    }
-
-    public void changeYaw(float changeValue) {
-        this.yaw += changeValue;
-        changeDirection();
-    }
-
-    public void changePitch(float changeValue) {
-        this.pitch += changeValue;
-        changeDirection();
-    }
-
-    public void setYaw(float yaw) {
-        this.yaw = yaw;
-        changeDirection();
-    }
-
-    public void setPitch(float pitch) {
-        this.pitch = pitch;
-        changeDirection();
-    }
-
-    public float getYaw() {
-        return yaw;
-    }
-
-    public float getPitch() {
-        return pitch;
+        position.add(product);
     }
 }

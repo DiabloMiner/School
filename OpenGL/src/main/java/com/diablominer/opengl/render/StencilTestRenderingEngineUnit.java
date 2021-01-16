@@ -1,11 +1,9 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.io.Camera;
-import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
 
@@ -16,8 +14,8 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
     private SpotLight spotLight;
     private float shininess = 32.0f;
 
-    public StencilTestRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
-        super(shaderProgram);
+    public StencilTestRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
+        super(shaderProgram, alternativeShaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
@@ -25,7 +23,7 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
-        shaderProgram.setUniformVec3F("viewPos", camera.cameraPos);
+        shaderProgram.setUniformVec3F("viewPos", camera.position);
         shaderProgram.setUniform1F("material.shininess", shininess);
 
         shaderProgram.setUniformVec3F("dirLight.direction", dirLight.getDirection());
@@ -41,8 +39,8 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniform1F("pointLight.linear", pointLight.getLinear());
         shaderProgram.setUniform1F("pointLight.quadratic", pointLight.getQuadratic());
 
-        shaderProgram.setUniformVec3F("spotLight.position", camera.cameraPos);
-        shaderProgram.setUniformVec3F("spotLight.direction", camera.cameraFront);
+        shaderProgram.setUniformVec3F("spotLight.position", camera.position);
+        shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
         shaderProgram.setUniformVec3F("spotLight.ambient", spotLight.getAmbient());
         shaderProgram.setUniformVec3F("spotLight.diffuse", spotLight.getDiffuse());
         shaderProgram.setUniformVec3F("spotLight.specular", spotLight.getSpecular());
@@ -63,6 +61,13 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
     public void render() {
         GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
         renderAllRenderables();
+        GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0xFF);
+    }
+
+    @Override
+    public void renderAlternative() {
+        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
+        renderAllRenderablesAlternative();
         GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0xFF);
     }
 }

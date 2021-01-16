@@ -1,5 +1,6 @@
 package com.diablominer.opengl.utils;
 
+import com.diablominer.opengl.io.Camera;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -35,6 +36,10 @@ public class Transforms {
         Matrix4f result = new Matrix4f().identity();
         result.perspective(fovy, aspect, zNear, zFar);
         return result;
+    }
+
+    public static Matrix4f createViewMatrix(Camera camera) {
+        return new Matrix4f().identity().lookAt(camera.position, camera.getLookAtPosition(), camera.up);
     }
 
 }
