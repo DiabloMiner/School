@@ -18,7 +18,7 @@ public class Texture {
     public static List<Texture> alreadyBound = new ArrayList<>();
     public static List<Texture> allTextures = new ArrayList<>();
 
-    public Texture(String filename, String type) {
+    public Texture(String filename, String type, boolean isInSRGBColorSpace) {
         // The image is loaded and read out into a ByteBuffer
         IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
         IntBuffer yBuffer = MemoryUtil.memAllocInt(1);
@@ -31,8 +31,13 @@ public class Texture {
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, id);
 
             // The imageData for the texture is given and a mipmap is generated with this data
-            GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, xBuffer.get(), yBuffer.get(), 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, buffer);
-            GL33.glGenerateMipmap(GL33.GL_TEXTURE_2D);
+            if (isInSRGBColorSpace) {
+                GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_SRGB_ALPHA, xBuffer.get(), yBuffer.get(), 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, buffer);
+                GL33.glGenerateMipmap(GL33.GL_TEXTURE_2D);
+            } else {
+                GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, xBuffer.get(), yBuffer.get(), 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, buffer);
+                GL33.glGenerateMipmap(GL33.GL_TEXTURE_2D);
+            }
 
             // A few parameters for texture wrapping/filtering are set
             GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);

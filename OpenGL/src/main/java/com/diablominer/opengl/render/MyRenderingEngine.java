@@ -401,6 +401,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
+        GL33.glEnable(GL33.GL_FRAMEBUFFER_SRGB);
 
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
@@ -417,6 +418,7 @@ public class MyRenderingEngine extends RenderingEngine {
         Texture.unbindAll();
         CubeMap.unbindAll();
 
+        GL33.glDisable(GL33.GL_FRAMEBUFFER_SRGB);
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);
 
