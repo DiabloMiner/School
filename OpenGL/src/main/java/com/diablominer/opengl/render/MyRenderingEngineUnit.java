@@ -11,7 +11,7 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    private float shininess = 32.0f;
+    private float shininess = 128.0f;
 
     public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
         super(shaderProgram);

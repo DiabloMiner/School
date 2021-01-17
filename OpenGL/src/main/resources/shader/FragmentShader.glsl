@@ -56,8 +56,8 @@ uniform SpotLight spotLight;
 vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-dirLight.direction);
     float diff = max(dot(normal, lightDir), 0.0f);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0f), material.shininess);
 
     vec3 ambient = dirLight.ambient * texture(material.texture_diffuse1, texCoord).xyz;
     vec3 diffuse = dirLight.diffuse * diff * texture(material.texture_diffuse1, texCoord).xyz;
@@ -69,8 +69,8 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
 vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir) {
     vec3 lightDir = normalize(pointLight.position - fragPos);
     float diff = max(dot(normal, lightDir), 0.0f);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0f), material.shininess);
 
     float distance = length(pointLight.position - fragPos);
     float attenuation = 1.0 / (pointLight.constant + pointLight.linear * distance + pointLight.quadratic * distance * distance);
@@ -89,8 +89,8 @@ vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
 vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir) {
     vec3 lightDir = normalize(spotLight.position - fragPos);
     float diff = max(dot(normal, lightDir), 0.0f);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0f), material.shininess);
 
     float theta = dot(lightDir, normalize(-spotLight.direction));
     float epsilon = spotLight.cutOff - spotLight.outerCutOff;

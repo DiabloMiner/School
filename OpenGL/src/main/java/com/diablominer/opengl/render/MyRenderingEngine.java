@@ -21,7 +21,8 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MyRenderingEngine extends RenderingEngine {
 
@@ -162,7 +163,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_RENDERBUFFER, RBO);
 
         if(GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("The framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+            System.err.println("Framebuffer 1 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
@@ -185,7 +186,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_RENDERBUFFER, RBO2);
 
         if(GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("The framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+            System.err.println("Framebuffer 2 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
@@ -213,7 +214,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, depthAndStencilTexture, 0);
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("The framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+            System.err.println("Framebuffer 3 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
