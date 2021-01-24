@@ -82,9 +82,10 @@ public abstract class RenderingEngineUnit {
     }
 
     public void renderWithAnotherShaderProgram(ShaderProgram shaderProgram) {
-        for (Renderable renderable : renderables) {
-            renderable.draw(shaderProgram);
-        }
+        ShaderProgram temporaryShaderProgram = this.shaderProgram;
+        this.shaderProgram = shaderProgram;
+        render();
+        this.shaderProgram = temporaryShaderProgram;
     }
 
     public abstract void updateRenderState(Camera camera, ShaderProgram shaderProgram);

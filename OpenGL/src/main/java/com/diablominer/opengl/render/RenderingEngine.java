@@ -59,7 +59,7 @@ public abstract class RenderingEngine {
         }
     }
 
-    public void renderWithAnotherShaderProgram(ShaderProgram shaderProgram) {
+    public void renderAllEngineUnitsWithAnotherShaderProgram(ShaderProgram shaderProgram) {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
             renderingEngineUnit.renderWithAnotherShaderProgram(shaderProgram);
         }

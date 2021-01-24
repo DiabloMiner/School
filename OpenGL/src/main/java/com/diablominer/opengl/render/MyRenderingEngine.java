@@ -28,13 +28,14 @@ public class MyRenderingEngine extends RenderingEngine {
 
     private Camera camera;
     private Window window;
-    private int frameBuffer, frameBuffer2, frameBuffer3;
-    private int texColorBuffer, texColorBuffer2, texColorBuffer3;
+    private int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer;
+    private int texColorBuffer, texColorBuffer2, texColorBuffer3, shadowDepthTexture;
     private int VAO;
-    private Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms;
-    private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram;
+    private Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
+    private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram;
     private Set<Renderable> notToBeRendered;
     private Camera environmentMappingCamera;
+    private DirectionalLight directionalLight;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         this.window = window;
@@ -43,6 +44,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         matricesUniformBufferBlockShaderPrograms = new HashSet<>();
         environmentMappingUniformBufferBlockShaderPrograms = new HashSet<>();
+        shadowMappingShaderPrograms = new HashSet<>();
 
         ShaderProgram shaderProgram = new ShaderProgram("./normalShaders/VertexShader", "FragmentShader");
         ShaderProgram lightSourceShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "LightSourceFragmentShader");
@@ -57,26 +59,31 @@ public class MyRenderingEngine extends RenderingEngine {
         reflectionShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "ReflectionFragmentShader");
         refractionShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "RefractionFragmentShader");
         sP = new ShaderProgram("SimpleVertexShader", "SimpleFragmentShader");
+        shadowShaderProgram = new ShaderProgram("SimpleDepthVertexShader", "SimpleDepthFragmentShader");
 
-        matricesUniformBufferBlockShaderPrograms.add(shaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(lightSourceShaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(oneColorShaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(skyboxShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(shaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(lightSourceShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(oneColorShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(skyboxShaderProgram);
 
-        matricesUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(alternativeOneColorShaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(alternativeSkyboxShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(alternativeOneColorShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(alternativeSkyboxShaderProgram);
 
-        matricesUniformBufferBlockShaderPrograms.add(reflectionShaderProgram);
-        matricesUniformBufferBlockShaderPrograms.add(refractionShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(reflectionShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(refractionShaderProgram);
+            matricesUniformBufferBlockShaderPrograms.add(shadowShaderProgram);
 
-        environmentMappingUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
-        environmentMappingUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
-        environmentMappingUniformBufferBlockShaderPrograms.add(alternativeOneColorShaderProgram);
-        environmentMappingUniformBufferBlockShaderPrograms.add(alternativeSkyboxShaderProgram);
+            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
+            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
+            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeOneColorShaderProgram);
+            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeSkyboxShaderProgram);
 
-        DirectionalLight directionalLight = new DirectionalLight(new Vector3f(1.0f, -1.0f, 1.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
+            shadowMappingShaderPrograms.add(shaderProgram);
+            shadowMappingShaderPrograms.add(reflectionShaderProgram);
+            shadowMappingShaderPrograms.add(refractionShaderProgram);
+        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
         PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
         SpotLight spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f)));
 
@@ -129,6 +136,7 @@ public class MyRenderingEngine extends RenderingEngine {
         };
 
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 20.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 25.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 25.0f));
         Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-8.0f, 0.0f, 20.0f));
@@ -215,6 +223,25 @@ public class MyRenderingEngine extends RenderingEngine {
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer 3 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+        }
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+
+        shadowFrameBuffer = GL33.glGenFramebuffers();
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
+
+        shadowDepthTexture = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowDepthTexture);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_REPEAT);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_REPEAT);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_DEPTH_COMPONENT, 1024, 1024, 0, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, (ByteBuffer) null);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_ATTACHMENT, GL33.GL_TEXTURE_2D, shadowDepthTexture, 0);
+        GL33.glDrawBuffer(GL33.GL_NONE);
+        GL33.glReadBuffer(GL33.GL_NONE);
+
+        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
+            System.err.println("Shadow framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
@@ -351,6 +378,22 @@ public class MyRenderingEngine extends RenderingEngine {
         updateAllEngineUnitsAlternative(environmentMappingCamera);
         renderAllEngineUnitsWithoutRenderablesAlternative(notToBeRendered);
 
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
+        reflectionShaderProgram.setUniform1I("cubeMap", 0);
+
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
+        GL33.glViewport(0, 0, 1024, 1024);
+        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
+        updateUniformBufferBlocks(camera);
+        renderAllEngineUnitsWithAnotherShaderProgram(shadowShaderProgram);
+        GL33.glEnable(GL33.GL_STENCIL_TEST);
+
+        Texture.unbindAll();
+        CubeMap.unbindAll();
+
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -360,6 +403,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
         reflectionShaderProgram.setUniform1I("cubeMap", 0);
+        updateShadowMapUniform();
 
         updateUniformBufferBlocks(camera);
         updateAllEngineUnits(camera);
@@ -380,6 +424,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
         reflectionShaderProgram.setUniform1I("cubeMap", 0);
+        updateShadowMapUniform();
 
         camera.front = Transforms.getProductOf2Vectors(camera.front, new Vector3f(-1.0f));
         updateUniformBufferBlocks(camera);
@@ -454,13 +499,18 @@ public class MyRenderingEngine extends RenderingEngine {
     }
 
     private void updateUniformBufferBlocks(Camera cam) {
-        // Uniform buffer blocks are set
         int uniformBufferBlock = GL33.glGenBuffers();
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, uniformBufferBlock);
-        GL33.glBufferData(GL33.GL_UNIFORM_BUFFER, 128, GL33.GL_STATIC_DRAW);
+        GL33.glBufferData(GL33.GL_UNIFORM_BUFFER, 192, GL33.GL_STATIC_DRAW);
 
         Matrix4f view = new Matrix4f().identity().lookAt(cam.position, cam.getLookAtPosition(), cam.up);
         Matrix4f projection = Transforms.createProjectionMatrix(cam.fov, true, cam.aspect, 0.1f, 100.0f);
+
+        Matrix4f lightProjection = new Matrix4f().identity().ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 40.5f);
+        Matrix4f lightView = new Matrix4f().identity().lookAt(new Vector3f(-20.0f, 0.0f, 20.0f), new Vector3f(0.0f, 0.0f, 20.0f), new Vector3f(0.0f, 1.0f, 0.0f));
+        Matrix4f lightSpaceMatrix = new Matrix4f().identity();
+        lightProjection.mul(lightView, lightSpaceMatrix);
+
         FloatBuffer buffer = MemoryUtil.memAllocFloat(4);
         Vector4f column = new Vector4f();
         for (int i = 0; i < 4; i++) {
@@ -472,6 +522,11 @@ public class MyRenderingEngine extends RenderingEngine {
             projection.getColumn(i, column);
             column.get(buffer);
             GL33.glBufferSubData(GL33.GL_UNIFORM_BUFFER, i * 16 + 64, buffer);
+        }
+        for (int i = 0; i < 4; i++) {
+            lightSpaceMatrix.getColumn(i, column);
+            column.get(buffer);
+            GL33.glBufferSubData(GL33.GL_UNIFORM_BUFFER, i * 16 + 128, buffer);
         }
 
         GL33.glBindBufferBase(GL33.GL_UNIFORM_BUFFER, 0, uniformBufferBlock);
@@ -534,6 +589,14 @@ public class MyRenderingEngine extends RenderingEngine {
             GL33.glUniformBlockBinding(shaderProgram.getProgramId(), GL33.glGetUniformBlockIndex(shaderProgram.getProgramId(), "environmentMappingMatrices"), 1);
         }
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, 0);
+    }
+
+    public void updateShadowMapUniform() {
+        GL33.glActiveTexture(GL33.GL_TEXTURE1);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowDepthTexture);
+        for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
+            shaderProgram.setUniform1I("dirLight.shadowMap", 1);
+        }
     }
 
     @Override

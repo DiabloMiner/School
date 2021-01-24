@@ -13,6 +13,8 @@ struct DirectionaLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    sampler2D shadowMap;
 };
 
 struct PointLight {
@@ -46,13 +48,26 @@ struct SpotLight {
 in vec3 normal;
 in vec3 fragPos;
 in vec2 texCoord;
+in vec4 fragPosLightSpace;
 
 uniform vec3 viewPos;
-uniform samplerCube cubeMap;
 uniform Material material;
 uniform DirectionaLight dirLight;
 uniform PointLight pointLight;
 uniform SpotLight spotLight;
+
+uniform samplerCube cubeMap;
+
+float shadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLight) {
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    float closestDepth = texture(dirLight.shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+
+    return shadow;
+}
 
 vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-dirLight.direction);
@@ -60,11 +75,14 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0f), material.shininess);
 
-    vec3 ambient = dirLight.ambient * texture(material.texture_diffuse1, texCoord).xyz;
-    vec3 diffuse = dirLight.diffuse * diff * texture(material.texture_diffuse1, texCoord).xyz;
-    vec3 specular = dirLight.specular * spec * texture(material.texture_specular1, texCoord).xyz;
+    vec3 ambient = dirLight.ambient;
+    vec3 diffuse = dirLight.diffuse * diff;
+    vec3 specular = dirLight.specular * spec;
 
-    return (ambient + diffuse + specular);
+    float shadow = shadowCalculation(fragPosLightSpace, dirLight);
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * texture(material.texture_diffuse1, texCoord).xyz;
+
+    return (lighting);
 }
 
 vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir) {
