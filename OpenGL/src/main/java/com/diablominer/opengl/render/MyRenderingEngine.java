@@ -83,15 +83,15 @@ public class MyRenderingEngine extends RenderingEngine {
             shadowMappingShaderPrograms.add(shaderProgram);
             shadowMappingShaderPrograms.add(reflectionShaderProgram);
             shadowMappingShaderPrograms.add(refractionShaderProgram);
-        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
+        directionalLight = new DirectionalLight(new Vector3f(-1.0f, 0.0f, 0.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
         PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
         SpotLight spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f)));
 
         StencilTestRenderingEngineUnit renderingEngineUnit0 = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
-        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight);
-        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight);
+        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
+        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
         RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
@@ -139,7 +139,8 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 20.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 25.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 25.0f));
-        Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-8.0f, 0.0f, 20.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(8.0f, 0.0f, 20.0f));
+        Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-5.0f, 0.0f, 15.0f));
         Renderable refractionCube = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-8.0f, 2.0f, 20.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
@@ -151,6 +152,7 @@ public class MyRenderingEngine extends RenderingEngine {
         addNewEngineUnit(renderingEngineUnit3);
         addNewEngineUnit(reflectionRenderingEngineUnit);
         addNewEngineUnit(refractionRenderingEngineUnit);
+
         notToBeRendered = new HashSet<>();
         notToBeRendered.add(reflectionCube);
         notToBeRendered.add(refractionCube);
@@ -235,8 +237,8 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_REPEAT);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_REPEAT);
-        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_DEPTH_COMPONENT, 1024, 1024, 0, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, (ByteBuffer) null);
-        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_ATTACHMENT, GL33.GL_TEXTURE_2D, shadowDepthTexture, 0);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_DEPTH24_STENCIL8, 1024, 1024, 0, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, (ByteBuffer) null);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_TEXTURE_2D, shadowDepthTexture, 0);
         GL33.glDrawBuffer(GL33.GL_NONE);
         GL33.glReadBuffer(GL33.GL_NONE);
 
@@ -384,12 +386,10 @@ public class MyRenderingEngine extends RenderingEngine {
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
         GL33.glViewport(0, 0, 1024, 1024);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         updateUniformBufferBlocks(camera);
         renderAllEngineUnitsWithAnotherShaderProgram(shadowShaderProgram);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
@@ -506,8 +506,9 @@ public class MyRenderingEngine extends RenderingEngine {
         Matrix4f view = new Matrix4f().identity().lookAt(cam.position, cam.getLookAtPosition(), cam.up);
         Matrix4f projection = Transforms.createProjectionMatrix(cam.fov, true, cam.aspect, 0.1f, 100.0f);
 
-        Matrix4f lightProjection = new Matrix4f().identity().ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 40.5f);
-        Matrix4f lightView = new Matrix4f().identity().lookAt(new Vector3f(-20.0f, 0.0f, 20.0f), new Vector3f(0.0f, 0.0f, 20.0f), new Vector3f(0.0f, 1.0f, 0.0f));
+        Matrix4f lightProjection = new Matrix4f().identity().ortho(-30.0f, 30.0f, -30.0f, 30.0f, 0.1f, 120.0f);
+        Vector3f position = Transforms.getProductOf2Vectors(directionalLight.getDirection(), new Vector3f(-20.0f));
+        Matrix4f lightView = new Matrix4f().identity().lookAt(position, new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         Matrix4f lightSpaceMatrix = new Matrix4f().identity();
         lightProjection.mul(lightView, lightSpaceMatrix);
 
@@ -592,10 +593,10 @@ public class MyRenderingEngine extends RenderingEngine {
     }
 
     public void updateShadowMapUniform() {
-        GL33.glActiveTexture(GL33.GL_TEXTURE1);
+        GL33.glActiveTexture(GL33.GL_TEXTURE10);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowDepthTexture);
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
-            shaderProgram.setUniform1I("dirLight.shadowMap", 1);
+            shaderProgram.setUniform1I("dirLight.shadowMap", 10);
         }
     }
 

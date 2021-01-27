@@ -62,7 +62,7 @@ float shadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLight) {
 
     float closestDepth = texture(dirLight.shadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    float shadow = currentDepth > closestDepth ? 1.0f : 0.0f;
 
     return shadow;
 }
@@ -78,7 +78,7 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 specular = dirLight.specular * spec;
 
     float shadow = shadowCalculation(fragPosLightSpace, dirLight);
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * texture(material.texture_diffuse1, texCoord).xyz;
+    vec3 lighting = (ambient * texture(material.texture_diffuse1, texCoord).xyz + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
 
     return (lighting);
 }
@@ -132,8 +132,8 @@ void main() {
     vec3 viewDir = normalize(viewPos - fragPos);
 
     vec3 result = calcDirLight(dirLight, norm, viewDir);
-    result += calcPointLight(pointLight, norm, fragPos, viewDir);
-    result += calcSpotLight(spotLight, norm, fragPos, viewDir);
+    /*result += calcPointLight(pointLight, norm, fragPos, viewDir);
+    result += calcSpotLight(spotLight, norm, fragPos, viewDir);*/
 
     fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
 }
