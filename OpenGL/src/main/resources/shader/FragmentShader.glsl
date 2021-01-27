@@ -56,13 +56,14 @@ uniform DirectionaLight dirLight;
 uniform PointLight pointLight;
 uniform SpotLight spotLight;
 
-float shadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLight) {
+float shadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLight, vec3 normal) {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 
     float closestDepth = texture(dirLight.shadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float shadow = currentDepth > closestDepth ? 1.0f : 0.0f;
+    float bias = max(0.05 * (1.0 - dot(normal, dirLight.direction)), 0.001f);
+    float shadow = currentDepth - bias > closestDepth ? 1.0f : 0.0f;
 
     return shadow;
 }
@@ -77,7 +78,7 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 diffuse = dirLight.diffuse * diff;
     vec3 specular = dirLight.specular * spec;
 
-    float shadow = shadowCalculation(fragPosLightSpace, dirLight);
+    float shadow = shadowCalculation(fragPosLightSpace, dirLight, normal);
     vec3 lighting = (ambient * texture(material.texture_diffuse1, texCoord).xyz + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
 
     return (lighting);
