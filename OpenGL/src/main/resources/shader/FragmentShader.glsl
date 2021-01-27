@@ -79,6 +79,7 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 specular = dirLight.specular * spec;
 
     float shadow = shadowCalculation(fragPosLightSpace, dirLight, normal);
+    shadow *= floor(texture(material.texture_diffuse1, texCoord).w);
     vec3 lighting = (ambient * texture(material.texture_diffuse1, texCoord).xyz + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
 
     return (lighting);
@@ -133,6 +134,7 @@ void main() {
     vec3 viewDir = normalize(viewPos - fragPos);
 
     vec3 result = calcDirLight(dirLight, norm, viewDir);
+    // TODO: Remove!
     /*result += calcPointLight(pointLight, norm, fragPos, viewDir);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir);*/
 
