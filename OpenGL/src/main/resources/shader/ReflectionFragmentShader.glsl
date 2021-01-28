@@ -64,8 +64,23 @@ float shadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLight, vec3 n
 
     float closestDepth = texture(dirLight.shadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float bias = max(0.05 * (1.0 - dot(normal, dirLight.direction)), 0.001f);
-    float shadow = currentDepth - bias > closestDepth ? 1.0f : 0.0f;
+    float bias = max(0.04f * (1.0f - dot(normal, dirLight.direction)), 0.005f);
+
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(dirLight.shadowMap, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(dirLight.shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+
+    if (projCoords.z > 1.0f) {
+        shadow = 0.0f;
+    }
 
     return shadow;
 }
@@ -81,6 +96,7 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 specular = dirLight.specular * spec;
 
     float shadow = shadowCalculation(fragPosLightSpace, dirLight, normal);
+    shadow *= floor(texture(material.texture_diffuse1, texCoord).w);
     vec3 lighting = (ambient * texture(material.texture_diffuse1, texCoord).xyz + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
 
     return (lighting);
