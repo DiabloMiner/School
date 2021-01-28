@@ -83,7 +83,7 @@ public class MyRenderingEngine extends RenderingEngine {
             shadowMappingShaderPrograms.add(shaderProgram);
             shadowMappingShaderPrograms.add(reflectionShaderProgram);
             shadowMappingShaderPrograms.add(refractionShaderProgram);
-        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -1.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
+        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
         PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
         SpotLight spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f)));
 
@@ -137,11 +137,11 @@ public class MyRenderingEngine extends RenderingEngine {
 
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 20.0f));
-        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 25.0f));
-        new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 25.0f));
-        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(8.0f, 0.0f, 15.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 16.0f));
+        new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 16.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(8.0f, 2.0f, 7.0f));
         Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
-        Renderable refractionCube = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 3.0f, 20.0f));
+        Renderable refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-8.0f, 1.0f, 20.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
@@ -155,7 +155,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         notToBeRendered = new HashSet<>();
         notToBeRendered.add(reflectionCube);
-        notToBeRendered.add(refractionCube);
+        notToBeRendered.add(refractionText);
 
 
         frameBuffer = GL33.glGenFramebuffers();
@@ -389,9 +389,8 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         updateUniformBufferBlocks(camera);
-        GL33.glCullFace(GL33.GL_FRONT);
+        updateAllEngineUnits(camera);
         renderAllEngineUnitsWithAnotherShaderProgram(shadowShaderProgram);
-        GL33.glCullFace(GL33.GL_BACK);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
@@ -508,7 +507,7 @@ public class MyRenderingEngine extends RenderingEngine {
         Matrix4f view = new Matrix4f().identity().lookAt(cam.position, cam.getLookAtPosition(), cam.up);
         Matrix4f projection = Transforms.createProjectionMatrix(cam.fov, true, cam.aspect, 0.1f, 100.0f);
 
-        Matrix4f lightProjection = new Matrix4f().identity().ortho(-35.0f, 35.0f, -15.0f, 15.0f, 0.1f, 120.0f);
+        Matrix4f lightProjection = new Matrix4f().identity().ortho(-25.0f, 25.0f, -5.0f, 5.0f, 0.1f, 35.0f);
         Vector3f position = Transforms.getProductOf2Vectors(directionalLight.getDirection(), new Vector3f(-20.0f));
         Matrix4f lightView = new Matrix4f().identity().lookAt(position, new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         Matrix4f lightSpaceMatrix = new Matrix4f().identity();
