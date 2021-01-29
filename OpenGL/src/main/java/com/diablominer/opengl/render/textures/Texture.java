@@ -57,6 +57,15 @@ public class Texture {
         }
     }
 
+    private Texture(int width, int height, int internalFormat, int format, int type) {
+        this.id = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, id);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
+
+        this.type = "";
+        this.path = "";
+    }
+
     public void bind() {
         if (!alreadyBound.contains(this)) {
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
@@ -89,4 +98,16 @@ public class Texture {
         }
     }
 
+    public static Texture createShadowTexture(int width, int height, int internalFormat, int format, int type) {
+        Texture texture = new Texture( width, height, internalFormat, format, type);
+
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_BORDER);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_BORDER);
+        GL33.glTexParameterfv(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_BORDER_COLOR, new float[] {1.0f, 1.0f, 1.0f, 1.0f});
+
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        return texture;
+    }
 }
