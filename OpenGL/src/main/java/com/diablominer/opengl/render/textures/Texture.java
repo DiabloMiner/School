@@ -17,6 +17,7 @@ public class Texture {
 
     public static List<Texture> alreadyBound = new ArrayList<>();
     public static List<Texture> allTextures = new ArrayList<>();
+    public static int activeTextureOffset = 0;
 
     public Texture(String filename, String type, boolean isInSRGBColorSpace) {
         // The image is loaded and read out into a ByteBuffer
@@ -67,8 +68,9 @@ public class Texture {
     }
 
     public void bind() {
+        activeTextureOffset = CubeMap.alreadyBound.size();
         if (!alreadyBound.contains(this)) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size() + activeTextureOffset);
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, this.id);
             alreadyBound.add(this);
         }
@@ -89,7 +91,7 @@ public class Texture {
     public static int getIndexForTexture(Texture texture) {
         // For this method to work the texture from which the index is requested has to be bound already,
         // if this is not the case -1 will be returned
-        return alreadyBound.indexOf(texture);
+        return alreadyBound.indexOf(texture) + activeTextureOffset;
     }
 
     public static void destroyAllTextures() {

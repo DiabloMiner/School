@@ -12,10 +12,11 @@ import java.util.List;
 
 public class CubeMap {
 
-    public int id;
-
     public static List<CubeMap> alreadyBound = new ArrayList<>();
-    public static List<CubeMap> allCubeMaps = new ArrayList<>();
+    public static List<CubeMap> allTextures = new ArrayList<>();
+    public static int activeTextureOffset = 0;
+
+    public int id;
 
     public CubeMap(String directory, String fileType) {
         String[] files = {directory + File.separator + "right" + fileType, directory + File.separator + "left" + fileType, directory + File.separator + "top" + fileType,
@@ -45,12 +46,29 @@ public class CubeMap {
 
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
 
-        allCubeMaps.add(this);
+        allTextures.add(this);
+    }
+
+    public CubeMap(int width, int height, int internalFormat, int format, int type) {
+        this.id = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, id);
+        for (int i = 0; i < 6; i++) {
+            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
+        }
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_R, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+
+        allTextures.add(this);
     }
 
     public void bind() {
+        activeTextureOffset = Texture.alreadyBound.size();
         if (!alreadyBound.contains(this)) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size() + activeTextureOffset);
             GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
             alreadyBound.add(this);
         }
@@ -61,7 +79,7 @@ public class CubeMap {
     }
 
     public static int getIndexForTexture(CubeMap texture) {
-        return alreadyBound.indexOf(texture);
+        return alreadyBound.indexOf(texture) + activeTextureOffset;
     }
 
     public static void unbindAll() {
@@ -73,7 +91,7 @@ public class CubeMap {
     }
 
     public static void destroyAllCubeMaps() {
-        for (CubeMap cubeMap : allCubeMaps) {
+        for (CubeMap cubeMap : allTextures) {
             cubeMap.destroy();
         }
     }

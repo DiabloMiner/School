@@ -29,7 +29,7 @@ public class MyRenderingEngine extends RenderingEngine {
     private Camera camera;
     private Window window;
     private int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer;
-    private int texColorBuffer, texColorBuffer2, texColorBuffer3, shadowDepthTexture;
+    private int texColorBuffer, texColorBuffer2;
     private int VAO;
     private Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
     private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram;
@@ -37,6 +37,7 @@ public class MyRenderingEngine extends RenderingEngine {
     private Camera environmentMappingCamera;
     private DirectionalLight directionalLight;
     private Texture shadowTexture;
+    private CubeMap environmentCubeMap;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         this.window = window;
@@ -205,42 +206,23 @@ public class MyRenderingEngine extends RenderingEngine {
         frameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
 
-        texColorBuffer3 = GL33.glGenTextures();
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_R, GL33.GL_CLAMP_TO_EDGE);
-        for (int i = 0; i < 6; i++) {
-            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL33.GL_RGBA, 1280, 1280, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-        }
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, texColorBuffer3, 0);
+        environmentCubeMap = new CubeMap(1280, 1280, GL33.GL_RGBA, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE);
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, environmentCubeMap.id, 0);
 
-        int depthAndStencilTexture = GL33.glGenTextures();
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, depthAndStencilTexture);
-        for (int i = 0; i < 6; i++) {
-            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL33.GL_DEPTH24_STENCIL8, 1280, 1280, 0, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, (ByteBuffer) null);
-        }
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, depthAndStencilTexture, 0);
+        CubeMap depthAndStencilTexture = new CubeMap(1280, 1280, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, depthAndStencilTexture.id, 0);
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer 3 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
+
         shadowFrameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
 
         shadowTexture = Texture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
-        shadowDepthTexture = GL33.glGenTextures();
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowDepthTexture);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_BORDER);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_BORDER);
-        GL33.glTexParameterfv(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_BORDER_COLOR, new float[] {1.0f, 1.0f, 1.0f, 1.0f});
-        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_DEPTH24_STENCIL8, 2048, 2048, 0, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, (ByteBuffer) null);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowTexture.id);
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_TEXTURE_2D, shadowTexture.id, 0);
         GL33.glDrawBuffer(GL33.GL_NONE);
         GL33.glReadBuffer(GL33.GL_NONE);
@@ -316,7 +298,6 @@ public class MyRenderingEngine extends RenderingEngine {
                 -1.0f, -1.0f,  1.0f,
                 1.0f, -1.0f,  1.0f
         };
-        CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
         int VAO2 = GL33.glGenVertexArrays();
         int VBO2 = GL33.glGenBuffers();
 
@@ -328,6 +309,9 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBindVertexArray(0);
 
         Renderable skybox = new Renderable(new Vector3f(0.0f, 0.0f, 0.0f)) {
+
+            CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
+
             @Override
             public void draw(ShaderProgram shaderProgram) {
                 GL33.glDepthFunc(GL33.GL_LEQUAL);
@@ -378,15 +362,20 @@ public class MyRenderingEngine extends RenderingEngine {
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
         GL33.glViewport(0, 0, 2048, 2048);
-        GL33.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         updateUniformBufferBlocks(camera);
         updateAllEngineUnits(camera);
         renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(notToBeRendered, shadowShaderProgram);
 
+        Texture.unbindAll();
+        CubeMap.unbindAll();
+
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
         GL33.glViewport(0, 0, 1280, 1280);
-        updateShadowMapUniform();
+        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
+        updateShadowUniforms();
         updateUniformBufferBlocks(environmentMappingCamera);
         updateSpecialUniformBufferBlocks(environmentMappingCamera);
         updateAllEngineUnitsAlternative(environmentMappingCamera);
@@ -401,35 +390,27 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glViewport(0, 0, 1280, 720);
 
-        GL33.glActiveTexture(GL33.GL_TEXTURE0);
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
-        reflectionShaderProgram.setUniform1I("cubeMap", 0);
-
-        updateShadowMapUniform();
         updateUniformBufferBlocks(camera);
         updateAllEngineUnits(camera);
+        updateUniforms();
         renderAllEngineUnits();
-
-        Texture.unbindAll();
-        CubeMap.unbindAll();
 
         GL33.glBindFramebuffer(GL33.GL_READ_FRAMEBUFFER, frameBuffer);
         GL33.glBindFramebuffer(GL33.GL_DRAW_FRAMEBUFFER, frameBuffer2);
         GL33.glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL33.GL_COLOR_BUFFER_BIT, GL33.GL_LINEAR);
+
+        Texture.unbindAll();
+        CubeMap.unbindAll();
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glViewport(0, 0, 320, 180);
 
-        GL33.glActiveTexture(GL33.GL_TEXTURE0);
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, texColorBuffer3);
-        reflectionShaderProgram.setUniform1I("cubeMap", 0);
-        updateShadowMapUniform();
-
         camera.front = Transforms.getProductOf2Vectors(camera.front, new Vector3f(-1.0f));
         updateUniformBufferBlocks(camera);
         updateAllEngineUnits(camera);
+        updateUniforms();
         renderAllEngineUnits();
         camera.front = Transforms.getProductOf2Vectors(camera.front, new Vector3f(-1.0f));
 
@@ -574,7 +555,15 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, 0);
     }
 
-    public void updateShadowMapUniform() {
+    private void updateUniforms() {
+        updateShadowUniforms();
+
+        environmentCubeMap.bind();
+        reflectionShaderProgram.setUniform1I("cubeMap", 1);
+        refractionShaderProgram.setUniform1I("cubeMap", 1);
+    }
+
+    private void updateShadowUniforms() {
         shadowTexture.bind();
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
             shaderProgram.setUniform1I("dirLight.shadowMap", Texture.getIndexForTexture(shadowTexture));
@@ -624,8 +613,6 @@ public class MyRenderingEngine extends RenderingEngine {
                 renderingEngineUnit.getRenderables().addAll(needToBeRemoved);
             }
         }
-        Texture.unbindAll();
-        CubeMap.unbindAll();
     }
 
     private void renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(Set<Renderable> renderables, ShaderProgram shaderProgram) {
@@ -641,8 +628,6 @@ public class MyRenderingEngine extends RenderingEngine {
                 renderingEngineUnit.getRenderables().addAll(needToBeRemoved);
             }
         }
-        Texture.unbindAll();
-        CubeMap.unbindAll();
     }
 
     public Camera getCamera() {

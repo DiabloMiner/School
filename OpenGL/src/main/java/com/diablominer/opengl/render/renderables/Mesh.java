@@ -109,7 +109,7 @@ public class Mesh {
         GL33.glDisableVertexAttribArray(1);
         GL33.glDisableVertexAttribArray(0);
 
-        // Unbind the shaderProgram and all textures
+        // Unbind the shaderProgram
         shaderProgram.unbind();
     }
 
