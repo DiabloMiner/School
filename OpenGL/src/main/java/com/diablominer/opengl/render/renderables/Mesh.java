@@ -104,10 +104,10 @@ public class Mesh {
         GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);
 
         // Unbind the vertex array object and disable vertex attribute pointers
-        GL33.glBindVertexArray(0);
         GL33.glDisableVertexAttribArray(2);
         GL33.glDisableVertexAttribArray(1);
         GL33.glDisableVertexAttribArray(0);
+        GL33.glBindVertexArray(0);
 
         // Unbind the shaderProgram
         shaderProgram.unbind();

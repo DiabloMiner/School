@@ -141,19 +141,18 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 20.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 16.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 16.0f));
-        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit1, new Vector3f(8.0f, 2.0f, 7.0f));
         Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
         Renderable refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 2.0f, 20.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
 
+        addNewEngineUnit(reflectionRenderingEngineUnit);
+        addNewEngineUnit(refractionRenderingEngineUnit);
         addNewEngineUnit(renderingEngineUnit0);
         addNewEngineUnit(renderingEngineUnit1);
         addNewEngineUnit(renderingEngineUnit2);
         addNewEngineUnit(renderingEngineUnit3);
-        addNewEngineUnit(reflectionRenderingEngineUnit);
-        addNewEngineUnit(refractionRenderingEngineUnit);
 
         notToBeRendered = new HashSet<>();
         notToBeRendered.add(reflectionCube);
@@ -206,10 +205,10 @@ public class MyRenderingEngine extends RenderingEngine {
         frameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
 
-        environmentCubeMap = new CubeMap(1280, 1280, GL33.GL_RGBA, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE);
+        environmentCubeMap = new CubeMap(1024, 1024, GL33.GL_RGBA, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, environmentCubeMap.id, 0);
 
-        CubeMap depthAndStencilTexture = new CubeMap(1280, 1280, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        CubeMap depthAndStencilTexture = new CubeMap(1024, 1024, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, depthAndStencilTexture.id, 0);
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -310,7 +309,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         Renderable skybox = new Renderable(new Vector3f(0.0f, 0.0f, 0.0f)) {
 
-            CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
+            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
 
             @Override
             public void draw(ShaderProgram shaderProgram) {
@@ -364,15 +363,13 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glViewport(0, 0, 2048, 2048);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        updateUniformBufferBlocks(camera);
-        updateAllEngineUnits(camera);
-        renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(notToBeRendered, shadowShaderProgram);
+        renderAllEngineUnitsWithAnotherShaderProgram(shadowShaderProgram);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
 
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
-        GL33.glViewport(0, 0, 1280, 1280);
+        GL33.glViewport(0, 0, 1024, 1024);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         updateShadowUniforms();
@@ -559,8 +556,8 @@ public class MyRenderingEngine extends RenderingEngine {
         updateShadowUniforms();
 
         environmentCubeMap.bind();
-        reflectionShaderProgram.setUniform1I("cubeMap", 1);
-        refractionShaderProgram.setUniform1I("cubeMap", 1);
+        reflectionShaderProgram.setUniform1I("cubeMap", CubeMap.getIndexForTexture(environmentCubeMap));
+        refractionShaderProgram.setUniform1I("cubeMap", CubeMap.getIndexForTexture(environmentCubeMap));
     }
 
     private void updateShadowUniforms() {
@@ -573,6 +570,7 @@ public class MyRenderingEngine extends RenderingEngine {
     @Override
     public void update() {
         updateUniformBufferBlocks(camera);
+        updateUniforms();
 
         updateAllEngineUnits(camera);
 
