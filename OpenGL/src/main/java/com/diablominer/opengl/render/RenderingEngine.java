@@ -53,7 +53,7 @@ public abstract class RenderingEngine {
         }
     }
 
-    public void updateWithAnotherShaderProgram(Camera camera, ShaderProgram shaderProgram) {
+    public void updateAllEngineUnitsWithAnotherShaderProgram(Camera camera, ShaderProgram shaderProgram) {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
             renderingEngineUnit.updateRenderState(camera, shaderProgram);
         }

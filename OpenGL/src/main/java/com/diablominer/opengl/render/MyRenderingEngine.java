@@ -33,7 +33,7 @@ public class MyRenderingEngine extends RenderingEngine {
     private int VAO;
     private Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
     private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram;
-    private Set<Renderable> notToBeRendered;
+    private Set<Renderable> notToBeRendered, shadowNotToBeRendered;
     private Camera environmentMappingCamera;
     private DirectionalLight directionalLight;
     private Texture shadowTexture;
@@ -85,6 +85,7 @@ public class MyRenderingEngine extends RenderingEngine {
             shadowMappingShaderPrograms.add(shaderProgram);
             shadowMappingShaderPrograms.add(reflectionShaderProgram);
             shadowMappingShaderPrograms.add(refractionShaderProgram);
+
         directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
         PointLight pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.22f, 0.20f);
         SpotLight spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, (float) Math.cos(Math.toRadians(17.5f)), (float) Math.cos(Math.toRadians(19.5f)));
@@ -92,8 +93,8 @@ public class MyRenderingEngine extends RenderingEngine {
         StencilTestRenderingEngineUnit renderingEngineUnit0 = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
-        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
-        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
+        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight);
+        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight);
         RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
@@ -147,12 +148,12 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
 
-        addNewEngineUnit(reflectionRenderingEngineUnit);
-        addNewEngineUnit(refractionRenderingEngineUnit);
         addNewEngineUnit(renderingEngineUnit0);
         addNewEngineUnit(renderingEngineUnit1);
         addNewEngineUnit(renderingEngineUnit2);
         addNewEngineUnit(renderingEngineUnit3);
+        addNewEngineUnit(reflectionRenderingEngineUnit);
+        addNewEngineUnit(refractionRenderingEngineUnit);
 
         notToBeRendered = new HashSet<>();
         notToBeRendered.add(reflectionCube);
@@ -308,14 +309,8 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBindVertexArray(0);
 
         Renderable skybox = new Renderable(new Vector3f(0.0f, 0.0f, 0.0f)) {
-
-            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
-
             @Override
             public void draw(ShaderProgram shaderProgram) {
-                GL33.glDepthFunc(GL33.GL_LEQUAL);
-                cubeMap.bind();
-                shaderProgram.setUniform1I("skybox", CubeMap.getIndexForTexture(cubeMap));
                 shaderProgram.bind();
                 GL33.glBindVertexArray(VAO2);
                 GL33.glEnableVertexAttribArray(0);
@@ -325,7 +320,6 @@ public class MyRenderingEngine extends RenderingEngine {
                 GL33.glDisableVertexAttribArray(0);
                 GL33.glBindVertexArray(0);
                 shaderProgram.unbind();
-                GL33.glDepthFunc(GL33.GL_LESS);
             }
 
             @Override
@@ -336,19 +330,32 @@ public class MyRenderingEngine extends RenderingEngine {
         };
 
         RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
+
+            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
+
             @Override
-            public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {}
+            public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
+                cubeMap.bind();
+                shaderProgram.setUniform1I("skybox", CubeMap.getIndexForTexture(cubeMap));
+            }
 
             @Override
             public void render() {
+                GL33.glDepthFunc(GL33.GL_LEQUAL);
                 this.renderAllRenderables();
+                GL33.glDepthFunc(GL33.GL_LESS);
             }
 
             @Override
             public void renderAlternative() {
+                GL33.glDepthFunc(GL33.GL_LEQUAL);
                 this.renderAllRenderablesAlternative();
+                GL33.glDepthFunc(GL33.GL_LESS);
             }
         };
+        shadowNotToBeRendered = new HashSet<>();
+        shadowNotToBeRendered.add(skybox);
+
         skyboxRenderingEngineUnit.addNewRenderable(skybox);
         addNewEngineUnit(skyboxRenderingEngineUnit);
         addNewEngineUnit(transparencyRenderingEngineUnit);
@@ -363,7 +370,10 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glViewport(0, 0, 2048, 2048);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        renderAllEngineUnitsWithAnotherShaderProgram(shadowShaderProgram);
+        GL33.glCullFace(GL33.GL_FRONT);
+        updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram);
+        renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram);
+        GL33.glCullFace(GL33.GL_BACK);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
@@ -450,12 +460,34 @@ public class MyRenderingEngine extends RenderingEngine {
     }
 
     @Override
-    public void destroy() {
-        this.destroyAllEngineUnits();
+    public void update() {
+        updateUniformBufferBlocks(camera);
+        updateUniforms();
 
-        GL33.glDeleteFramebuffers(new int[] {frameBuffer, frameBuffer2, frameBuffer3});
+        updateAllEngineUnits(camera);
 
-        GLFW.glfwDestroyWindow(window.getId());
+        window.update();
+    }
+
+    public void handleInputs(float deltaTime) {
+        float cameraSpeed = 10.0f * deltaTime;
+
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_ESCAPE)) {
+            GLFW.glfwSetWindowShouldClose(window.getId(), true);
+        }
+
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_W)) {
+            camera.moveForwards(cameraSpeed);
+        }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_S)) {
+            camera.moveBackwards(cameraSpeed);
+        }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_A)) {
+            camera.moveLeft(cameraSpeed);
+        }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_D)) {
+            camera.moveRight(cameraSpeed);
+        }
     }
 
     private void updateUniformBufferBlocks(Camera cam) {
@@ -567,37 +599,6 @@ public class MyRenderingEngine extends RenderingEngine {
         }
     }
 
-    @Override
-    public void update() {
-        updateUniformBufferBlocks(camera);
-        updateUniforms();
-
-        updateAllEngineUnits(camera);
-
-        window.update();
-    }
-
-    public void handleInputs(float deltaTime) {
-        float cameraSpeed = 10.0f * deltaTime;
-
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_ESCAPE)) {
-            GLFW.glfwSetWindowShouldClose(window.getId(), true);
-        }
-
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_W)) {
-            camera.moveForwards(cameraSpeed);
-        }
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_S)) {
-            camera.moveBackwards(cameraSpeed);
-        }
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_A)) {
-            camera.moveLeft(cameraSpeed);
-        }
-        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_D)) {
-            camera.moveRight(cameraSpeed);
-        }
-    }
-
     private void renderAllEngineUnitsWithoutRenderablesAlternative(Set<Renderable> renderables) {
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
@@ -626,6 +627,15 @@ public class MyRenderingEngine extends RenderingEngine {
                 renderingEngineUnit.getRenderables().addAll(needToBeRemoved);
             }
         }
+    }
+
+    @Override
+    public void destroy() {
+        this.destroyAllEngineUnits();
+
+        GL33.glDeleteFramebuffers(new int[] {frameBuffer, frameBuffer2, frameBuffer3});
+
+        GLFW.glfwDestroyWindow(window.getId());
     }
 
     public Camera getCamera() {
