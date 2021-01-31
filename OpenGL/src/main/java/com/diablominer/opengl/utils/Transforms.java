@@ -42,4 +42,10 @@ public class Transforms {
         return new Matrix4f().identity().lookAt(camera.position, camera.getLookAtPosition(), camera.up);
     }
 
+    public static Matrix4f getProductOf2Matrices(Matrix4f matrix1, Matrix4f matrix2) {
+        Matrix4f result = new Matrix4f().identity();
+        matrix1.mul(matrix2, result);
+        return result;
+    }
+
 }
