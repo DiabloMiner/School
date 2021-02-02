@@ -46,6 +46,9 @@ struct SpotLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    samplerCube shadowMap;
+    float farPlane;
 };
 
 in vec3 normal;
@@ -67,7 +70,7 @@ float directionalShadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLi
     float currentDepth = projCoords.z;
     float bias = max(0.04f * (1.0f - dot(normal, dirLight.direction)), 0.005f);
 
-    float shadow = 0.0;
+    float shadow = 0.0f;
     vec2 texelSize = 1.0 / textureSize(dirLight.shadowMap, 0);
     for(int x = -1; x <= 1; ++x)
     {
@@ -77,7 +80,7 @@ float directionalShadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLi
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
-    shadow /= 9.0;
+    shadow /= 9.0f;
 
     if (projCoords.z > 1.0f) {
         shadow = 0.0f;
@@ -86,7 +89,7 @@ float directionalShadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLi
     return shadow;
 }
 
-float omnidirectionalShadowCalculation(vec3 fragPos, PointLight pointLight, vec3 normal) {
+float omnidirectionalShadowCalculation(vec3 fragPos, vec3 lightPos, vec3 normal, samplerCube shadowMap, float farPlane) {
     vec3 sampleOffsetDirections[20] = vec3[] (
         vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
         vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
@@ -95,19 +98,19 @@ float omnidirectionalShadowCalculation(vec3 fragPos, PointLight pointLight, vec3
         vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
     );
 
-    vec3 fragToLight = fragPos - pointLight.position;
+    vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
 
     float bias = max(0.04f * (1.0f - dot(normal, dirLight.direction)), 0.005f);
     float shadow = 0.0f;
     int samples = 20;
     float viewDistance = length(viewPos - fragPos);
-    float diskRadius = (1.0 + (viewDistance / pointLight.farPlane)) / 25.0;
+    float diskRadius = (1.0f + (viewDistance / farPlane)) / 25.0f;
 
     for(int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(pointLight.shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
-        closestDepth *= pointLight.farPlane;
+        float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+        closestDepth *= farPlane;
         if(currentDepth - bias > closestDepth)
             shadow += 1.0f;
     }
@@ -143,15 +146,15 @@ vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
     float attenuation = 1.0 / (pointLight.constant + pointLight.linear * distance + pointLight.quadratic * distance * distance);
     attenuation = 1.0f;
 
-    vec3 ambient = pointLight.ambient;
+    vec3 ambient = pointLight.ambient * texture(material.texture_diffuse1, texCoord).xyz;
     vec3 diffuse = pointLight.diffuse * diff;
     vec3 specular = pointLight.specular * spec;
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
 
-    float shadow = omnidirectionalShadowCalculation(fragPos, pointLight, normal);
-    vec3 lighting = (ambient + (1.0f - shadow) * (diffuse + specular)) * texture(material.texture_diffuse1, texCoord).xyz;
+    float shadow = omnidirectionalShadowCalculation(fragPos, pointLight.position, normal, pointLight.shadowMap, pointLight.farPlane);
+    vec3 lighting = (ambient + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
 
     return (lighting);
 }
@@ -164,20 +167,24 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir)
 
     float theta = dot(lightDir, normalize(-spotLight.direction));
     float epsilon = spotLight.cutOff - spotLight.outerCutOff;
-    float intensity = clamp((theta - spotLight.outerCutOff) / epsilon, 0.0, 1.0);
+    float intensity = clamp((theta - spotLight.outerCutOff) / epsilon, 0.0f, 1.0f);
+
     float distance = length(spotLight.position - fragPos);
-    float attenuation = 1.0 / (spotLight.constant + spotLight.linear * distance + spotLight.quadratic * (distance * distance));
+    float attenuation = 1.0f / (spotLight.constant + spotLight.linear * distance + spotLight.quadratic * (distance * distance));
 
     vec3 ambient = spotLight.ambient * texture(material.texture_diffuse1, texCoord).xyz;
-    vec3 diffuse = spotLight.diffuse * diff * texture(material.texture_diffuse1, texCoord).xyz;
-    vec3 specular = spotLight.specular * spec * texture(material.texture_specular1, texCoord).xyz;
+    vec3 diffuse = spotLight.diffuse * diff;
+    vec3 specular = spotLight.specular * spec;
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
     diffuse *= intensity;
     specular *= intensity;
 
-    return (ambient + diffuse + specular);
+    float shadow = omnidirectionalShadowCalculation(fragPos, spotLight.position, normal, spotLight.shadowMap, spotLight.farPlane);
+    vec3 lighting = (ambient + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
+
+    return (lighting);
 }
 
 void main() {
@@ -186,8 +193,7 @@ void main() {
 
     vec3 result = calcDirLight(dirLight, norm, viewDir);
     result += calcPointLight(pointLight, norm, fragPos, viewDir);
-    // TODO: REMOVE!
-    // result += calcSpotLight(spotLight, norm, fragPos, viewDir);
+    result += calcSpotLight(spotLight, norm, fragPos, viewDir);
 
     fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
 }

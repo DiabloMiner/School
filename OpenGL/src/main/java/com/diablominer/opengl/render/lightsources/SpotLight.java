@@ -5,9 +5,9 @@ import org.joml.Vector3f;
 public class SpotLight {
 
     private Vector3f position, direction, ambient, diffuse, specular;
-    private float constant, linear, quadratic, cutOff, outerCutOff;
+    private float constant, linear, quadratic, cutOff, outerCutOff, farPlane;
 
-    public SpotLight(Vector3f position, Vector3f direction, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic, float cutOff, float outerCutOff) {
+    public SpotLight(Vector3f position, Vector3f direction, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic, float cutOff, float outerCutOff, float farPlane) {
         this.position = position;
         this.direction = direction;
         this.ambient = ambient;
@@ -18,6 +18,7 @@ public class SpotLight {
         this.quadratic = quadratic;
         this.cutOff = cutOff;
         this.outerCutOff = outerCutOff;
+        this.farPlane = farPlane;
     }
 
     public Vector3f getPosition() {
@@ -98,5 +99,9 @@ public class SpotLight {
 
     public void setDirection(Vector3f direction) {
         this.direction = direction;
+    }
+
+    public float getFarPlane() {
+        return farPlane;
     }
 }

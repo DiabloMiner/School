@@ -5,9 +5,9 @@ import org.joml.Vector3f;
 public class PointLight {
 
     private Vector3f position, ambient, diffuse, specular;
-    private float constant, linear, quadratic;
+    private float constant, linear, quadratic, farPlane;
 
-    public PointLight(Vector3f position, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic) {
+    public PointLight(Vector3f position, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic, float farPlane) {
         this.position = position;
         this.ambient = ambient;
         this.diffuse = diffuse;
@@ -15,6 +15,7 @@ public class PointLight {
         this.constant = constant;
         this.linear = linear;
         this.quadratic = quadratic;
+        this.farPlane = farPlane;
     }
 
     public Vector3f getPosition() {
@@ -71,5 +72,9 @@ public class PointLight {
 
     public void setQuadratic(float quadratic) {
         this.quadratic = quadratic;
+    }
+
+    public float getFarPlane() {
+        return farPlane;
     }
 }
