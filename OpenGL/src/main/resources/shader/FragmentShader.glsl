@@ -202,5 +202,7 @@ void main() {
     result += calcPointLight(pointLight, norm, fragPos, viewDir, pointLightPosition);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, spotLightPosition, spotLightDirection);
 
+    // Maybe lighting caluclations are made in tangent space while they should be in some other space
+
     fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
 }

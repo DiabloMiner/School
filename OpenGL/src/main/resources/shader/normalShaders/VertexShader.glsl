@@ -58,6 +58,7 @@ layout (std140) uniform Matrices {
 out vec2 texCoord;
 out vec4 fragPosLightSpace;
 out vec3 fragPos;
+out vec3 realFragPos;
 out vec3 vPos;
 
 out vec3 dirLightDirection;
