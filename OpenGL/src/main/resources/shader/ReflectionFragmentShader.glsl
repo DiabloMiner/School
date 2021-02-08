@@ -4,6 +4,7 @@ out vec4 fragmentColor;
 struct Material {
     sampler2D texture_diffuse1;
     sampler2D texture_specular1;
+    sampler2D texture_normal1;
     float shininess;
 };
 
@@ -55,6 +56,7 @@ in vec3 normal;
 in vec3 fragPos;
 in vec2 texCoord;
 in vec4 fragPosLightSpace;
+in mat3 TBN;
 
 uniform vec3 viewPos;
 uniform Material material;
@@ -103,7 +105,7 @@ float omnidirectionalShadowCalculation(vec3 fragPos, vec3 lightPos, vec3 normal,
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
 
-    float bias = max(0.04f * (1.0f - dot(normal, dirLight.direction)), 0.005f);
+    float bias = 0.15f;
     float shadow = 0.0f;
     int samples = 20;
     float viewDistance = length(viewPos - fragPos);
@@ -127,13 +129,13 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir) {
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0f), material.shininess);
 
-    vec3 ambient = dirLight.ambient;
+    vec3 ambient = dirLight.ambient * texture(material.texture_diffuse1, texCoord).xyz;
     vec3 diffuse = dirLight.diffuse * diff;
     vec3 specular = dirLight.specular * spec;
 
     float shadow = directionalShadowCalculation(fragPosLightSpace, dirLight, normal);
     shadow *= floor(texture(material.texture_diffuse1, texCoord).w);
-    vec3 lighting = (ambient + (1.0f - shadow) * (diffuse + specular)) * texture(material.texture_specular1, texCoord).xyz;
+    vec3 lighting = (ambient + (1.0f - shadow) * (diffuse * texture(material.texture_diffuse1, texCoord).xyz + specular * texture(material.texture_specular1, texCoord).xyz));
 
     return (lighting);
 }
@@ -202,7 +204,9 @@ void main() {
     vec3 normalColor;
 
     if (reflectionWeight < 1.0f) {
-        vec3 norm = normalize(normal);
+        vec3 rgbNormal = texture(material.texture_normal1, texCoord).rgb;
+        rgbNormal = rgbNormal * 2.0f - 1.0f;
+        vec3 norm = normalize(TBN * rgbNormal);
         vec3 viewDir = normalize(viewPos - fragPos);
 
         normalColor = calcDirLight(dirLight, norm, viewDir);

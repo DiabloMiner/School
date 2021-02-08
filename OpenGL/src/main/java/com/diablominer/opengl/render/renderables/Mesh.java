@@ -97,12 +97,16 @@ public class Mesh {
         for (Texture currentTexture : textures) {
             int number = 0;
             String name = currentTexture.type;
-            if (name.equals("texture_diffuse")) {
-                number = diffuseCounter++;
-            } else if (name.equals("texture_specular")) {
-                number = specularCounter++;
-            } else if (name.equals("texture_normal")) {
-                number = normalCounter++;
+            switch (name) {
+                case "texture_diffuse":
+                    number = diffuseCounter++;
+                    break;
+                case "texture_specular":
+                    number = specularCounter++;
+                    break;
+                case "texture_normal":
+                    number = normalCounter++;
+                    break;
             }
             if (number != 0) {
                 currentTexture.bind();
