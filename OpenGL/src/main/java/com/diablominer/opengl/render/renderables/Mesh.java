@@ -14,16 +14,20 @@ public class Mesh {
     public float[] vertices;
     public float[] normals;
     public float[] texCoords;
+    public float[] tangents;
+    public float[] biTangents;
     public int[] indices;
     public List<Texture> textures;
 
-    private int VAO, VBO, NBO, TBO, EBO;
+    private int VAO, VBO, NBO, TBO, EBO, tangentBufferObject, biTangentBufferObject;
     private IntBuffer indicesBuffer;
 
-    public Mesh(float[] vertices, float[] normals, float[] texCoords, int[] indices, List<Texture> textures) {
+    public Mesh(float[] vertices, float[] normals, float[] texCoords, float[] tangents, float[] biTangents,int[] indices, List<Texture> textures) {
         this.vertices = vertices;
         this.normals = normals;
         this.texCoords = texCoords;
+        this.tangents = tangents;
+        this.biTangents = biTangents;
         this.indices = indices;
         this.textures = textures;
         setUpMesh();
@@ -35,6 +39,8 @@ public class Mesh {
         FloatBuffer verticesBuffer = BufferUtil.createBuffer(vertices);
         FloatBuffer normalBuffer = BufferUtil.createBuffer(normals);
         FloatBuffer textureCoordinateBuffer = BufferUtil.createBuffer(texCoords);
+        FloatBuffer tangentBuffer = BufferUtil.createBuffer(tangents);
+        FloatBuffer biTangentBuffer = BufferUtil.createBuffer(biTangents);
 
         // Vertex array and buffers are generated
         VAO = GL33.glGenVertexArrays();
@@ -42,6 +48,8 @@ public class Mesh {
         NBO = GL33.glGenBuffers();
         TBO = GL33.glGenBuffers();
         EBO = GL33.glGenBuffers();
+        tangentBufferObject = GL33.glGenBuffers();
+        biTangentBufferObject = GL33.glGenBuffers();
 
         // The vertex array object is bound
         GL33.glBindVertexArray(VAO);
@@ -63,6 +71,14 @@ public class Mesh {
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, textureCoordinateBuffer, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, 2 * Float.BYTES, 0);
 
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, tangentBufferObject);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, tangentBuffer, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(3, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
+
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, biTangentBufferObject);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, biTangentBuffer, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(4, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
+
         // The vertex array object, the array buffer and the element array buffer is bound to zero, resetting it to its normal state
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
@@ -77,6 +93,7 @@ public class Mesh {
     public void draw(ShaderProgram shaderProgram) {
         int diffuseCounter = 1;
         int specularCounter = 1;
+        int normalCounter = 1;
         for (Texture currentTexture : textures) {
             int number = 0;
             String name = currentTexture.type;
@@ -84,6 +101,8 @@ public class Mesh {
                 number = diffuseCounter++;
             } else if (name.equals("texture_specular")) {
                 number = specularCounter++;
+            } else if (name.equals("texture_normal")) {
+                number = normalCounter++;
             }
             if (number != 0) {
                 currentTexture.bind();
@@ -99,11 +118,15 @@ public class Mesh {
         GL33.glEnableVertexAttribArray(0);
         GL33.glEnableVertexAttribArray(1);
         GL33.glEnableVertexAttribArray(2);
+        GL33.glEnableVertexAttribArray(3);
+        GL33.glEnableVertexAttribArray(4);
 
         // Draw the elements
         GL33.glDrawElements(GL33.GL_TRIANGLES, indicesBuffer);
 
         // Unbind the vertex array object and disable vertex attribute pointers
+        GL33.glDisableVertexAttribArray(4);
+        GL33.glDisableVertexAttribArray(3);
         GL33.glDisableVertexAttribArray(2);
         GL33.glDisableVertexAttribArray(1);
         GL33.glDisableVertexAttribArray(0);
@@ -122,6 +145,8 @@ public class Mesh {
         GL33.glDeleteBuffers(VBO);
         GL33.glDeleteBuffers(NBO);
         GL33.glDeleteBuffers(TBO);
+        GL33.glDeleteBuffers(tangentBufferObject);
+        GL33.glDeleteBuffers(biTangentBufferObject);
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL33.glDeleteBuffers(EBO);
 

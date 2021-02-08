@@ -51,7 +51,7 @@ public class Model extends Renderable {
 
     private void loadModel(String path) {
         // Import the file on the given path
-        AIScene aiScene = Assimp.aiImportFile(path, Assimp.aiProcess_Triangulate | Assimp.aiProcess_FlipUVs);
+        AIScene aiScene = Assimp.aiImportFile(path, Assimp.aiProcess_Triangulate | Assimp.aiProcess_FlipUVs | Assimp.aiProcess_CalcTangentSpace);
         if (aiScene == null || (aiScene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) != 0 || aiScene.mRootNode() == null) {
             System.err.println("An Assimp loading error has been encountered: " + Assimp.aiGetErrorString());
         }
@@ -69,12 +69,15 @@ public class Model extends Renderable {
     }
 
     private Mesh processMesh(AIMesh mesh, AIScene scene) {
-        // Vertices and normals are processed here
+        // Vertices, normals, tangents and bitangents are processed here
         List<Float> vertices = processVertexAttribute3F(mesh.mVertices());
         List<Float> normals = processVertexAttribute3F(mesh.mNormals());
         List<Float> textureCoordinates = new ArrayList<>();
         List<Integer> indices = processIndices(mesh);
         List<Texture> textures = new ArrayList<>();
+        List<Float> tangents = processVertexAttribute3F(mesh.mTangents());
+        List<Float> biTangents = processVertexAttribute3F(mesh.mBitangents());
+
 
         // Texture coordinates are processed here if they exist
         if (mesh.mTextureCoords(0) != null) {
@@ -88,8 +91,10 @@ public class Model extends Renderable {
             textures.addAll(diffuseMaps);
             List<Texture> specularMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_specular");
             textures.addAll(specularMaps);
+            List<Texture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_HEIGHT, "texture_normal");
+            textures.addAll(normalMaps);
         }
-        return new Mesh(ListUtil.convertListToArray(vertices), ListUtil.convertListToArray(normals), ListUtil.convertListToArray(textureCoordinates), indices.stream().mapToInt(i -> i).toArray(), textures);
+        return new Mesh(ListUtil.convertListToArray(vertices), ListUtil.convertListToArray(normals), ListUtil.convertListToArray(textureCoordinates), ListUtil.convertListToArray(tangents), ListUtil.convertListToArray(biTangents), indices.stream().mapToInt(i -> i).toArray(), textures);
     }
 
     private List<Texture> loadMaterialTexture(AIMaterial material, int type, String typeName) {

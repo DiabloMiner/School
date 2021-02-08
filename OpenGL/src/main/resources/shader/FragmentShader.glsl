@@ -4,6 +4,7 @@ out vec4 fragmentColor;
 struct Material {
     sampler2D texture_diffuse1;
     sampler2D texture_specular1;
+    sampler2D texture_normal1;
     float shininess;
 };
 
@@ -55,6 +56,7 @@ in vec3 normal;
 in vec3 fragPos;
 in vec2 texCoord;
 in vec4 fragPosLightSpace;
+in mat3 TBN;
 
 uniform vec3 viewPos;
 uniform Material material;
@@ -188,12 +190,16 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir)
 }
 
 void main() {
-    vec3 norm = normalize(normal);
+    vec3 rgbNormal = texture(material.texture_normal1, texCoord).rgb;
+    rgbNormal = rgbNormal * 2.0f - 1.0f;
+    vec3 norm = normalize(TBN * rgbNormal);
     vec3 viewDir = normalize(viewPos - fragPos);
 
     vec3 result = calcDirLight(dirLight, norm, viewDir);
     result += calcPointLight(pointLight, norm, fragPos, viewDir);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir);
+
+    // TBN multiplication could be done in vertex shader
 
     fragmentColor = vec4(result, texture(material.texture_diffuse1, texCoord).w);
 }
