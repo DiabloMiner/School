@@ -26,8 +26,9 @@ void main() {
     texCoord = aTexCoords;
 
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0f)));
-    vec3 B = normalize(vec3(model * vec4(aBitangent, 0.0f)));
     vec3 N = normalize(vec3(model * vec4(aNormal, 0.0f)));
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
 
     gl_Position = projection * view * model * vec4(aPos, 1.0f);
