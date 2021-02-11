@@ -5,7 +5,7 @@ struct Material {
     sampler2D texture_diffuse1;
     sampler2D texture_specular1;
     sampler2D texture_normal1;
-    sampler2D texture_depth1;
+    sampler2D texture_displacement1;
     float shininess;
 };
 
@@ -66,9 +66,33 @@ uniform SpotLight spotLight;
 
 vec2 parallaxMapping(vec2 texCoords, vec3 viewDir) {
     const float height_scale = 0.1f;
-    float height = texture(material.texture_depth1, texCoords).r;
-    vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
-    return texCoords - p;
+    const float minLayers = 8.0f;
+    const float maxLayers = 32.0f;
+
+    float numLayers = mix(maxLayers, minLayers, max(dot(vec3(0.0f, 0.0f, 1.0f), viewDir), 0.0f));
+    float layerDepth = 1.0f / numLayers;
+    float currentLayerDepth = 0.0f;
+    vec2 P = viewDir.xy * height_scale;
+    vec2 deltaTexCoords = P / numLayers;
+
+    vec2 currentTexCoords = texCoords;
+    float currentDepthMapValue = texture(material.texture_displacement1, currentTexCoords).r;
+
+    while(currentLayerDepth < currentDepthMapValue) {
+        currentTexCoords -= deltaTexCoords;
+        currentDepthMapValue = texture(material.texture_displacement1, currentTexCoords).r;
+        currentLayerDepth += layerDepth;
+    }
+
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = texture(material.texture_displacement1, prevTexCoords).r - currentLayerDepth + layerDepth;
+
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+    return finalTexCoords;
 }
 
 float directionalShadowCalculation(vec4 fragPosLightSpace, DirectionaLight dirLight, vec3 normal) {

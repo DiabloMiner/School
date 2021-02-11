@@ -91,8 +91,10 @@ public class Model extends Renderable {
             textures.addAll(diffuseMaps);
             List<Texture> specularMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_specular");
             textures.addAll(specularMaps);
-            List<Texture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_HEIGHT, "texture_normal");
+            List<Texture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal");
             textures.addAll(normalMaps);
+            List<Texture> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement");
+            textures.addAll(displacementMaps);
         }
         return new Mesh(ListUtil.convertListToArray(vertices), ListUtil.convertListToArray(normals), ListUtil.convertListToArray(textureCoordinates), ListUtil.convertListToArray(tangents), ListUtil.convertListToArray(biTangents), indices.stream().mapToInt(i -> i).toArray(), textures);
     }

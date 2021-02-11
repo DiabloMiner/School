@@ -8,10 +8,10 @@ import org.joml.Matrix4f;
 
 public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
-    private DirectionalLight dirLight;
-    private PointLight pointLight;
-    private SpotLight spotLight;
-    private float shininess = 128.0f;
+    protected DirectionalLight dirLight;
+    protected PointLight pointLight;
+    protected SpotLight spotLight;
+    protected float shininess = 128.0f;
 
     public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight) {
         super(shaderProgram);

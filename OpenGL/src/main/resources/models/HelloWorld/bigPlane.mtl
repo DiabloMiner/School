@@ -10,6 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Bump marbleNormal.png
-map_Kd marble.png
-map_Ks marbleSpec.png
+map_Kn bricks2_normal.jpg
+map_Kd bricks2.jpg
+map_Ks bricks2_spec.jpg
+disp bricks2_disp.jpg
