@@ -50,7 +50,6 @@ struct SpotLight {
     vec3 specular;
 
     sampler2D shadowMap;
-    float farPlane;
 };
 
 in vec3 fragPos;
@@ -239,12 +238,7 @@ void main() {
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
 
     // TODO: Try to implement tangent space calculations in VS again and maybe change some UVs from Hello World to accomodate the change
-    // Also fix geometry shader, some bugs are occuring
-    //    Didnt find the cause of the bug at first glance
-    // Also try fixing the occurence of the brick displacement texture at the window planes
-    //    Didnt find the cause of the bug at first glance
-
-    // TODO: SpotLightFragPosLightSpace has to be accepted in the refraction/reflection fragment shaders
+    // Investigate shadow issue with letter l
 
     fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
 }
