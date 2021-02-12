@@ -65,14 +65,14 @@ uniform PointLight pointLight;
 uniform SpotLight spotLight;
 
 vec2 parallaxMapping(vec2 texCoords, vec3 viewDir) {
-    const float height_scale = 0.1f;
+    const float heightScale = 0.1f;
     const float minLayers = 8.0f;
     const float maxLayers = 32.0f;
 
     float numLayers = mix(maxLayers, minLayers, max(dot(vec3(0.0f, 0.0f, 1.0f), viewDir), 0.0f));
     float layerDepth = 1.0f / numLayers;
     float currentLayerDepth = 0.0f;
-    vec2 P = viewDir.xy * height_scale;
+    vec2 P = viewDir.xy / viewDir.z * heightScale;
     vec2 deltaTexCoords = P / numLayers;
 
     vec2 currentTexCoords = texCoords;
