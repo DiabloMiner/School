@@ -5,9 +5,9 @@ layout (location = 2) in vec2 aTexCoords;
 layout (std140) uniform Matrices {
     mat4 view;
     mat4 projection;
-    mat4 lightSpaceMatrix;
 };
 uniform mat4 model;
+uniform mat4 lightSpaceMatrix;
 
 out vec2 texCoords;
 

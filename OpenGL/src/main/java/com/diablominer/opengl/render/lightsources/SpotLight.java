@@ -1,13 +1,15 @@
 package com.diablominer.opengl.render.lightsources;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public class SpotLight {
 
     private Vector3f position, direction, ambient, diffuse, specular;
-    private float constant, linear, quadratic, cutOff, outerCutOff, farPlane;
+    private float constant, linear, quadratic, cutOff, outerCutOff;
+    private Matrix4f lightSpaceMatrix;
 
-    public SpotLight(Vector3f position, Vector3f direction, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic, float cutOff, float outerCutOff, float farPlane) {
+    public SpotLight(Vector3f position, Vector3f direction, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic, float cutOff, float outerCutOff) {
         this.position = position;
         this.direction = direction;
         this.ambient = ambient;
@@ -18,7 +20,7 @@ public class SpotLight {
         this.quadratic = quadratic;
         this.cutOff = cutOff;
         this.outerCutOff = outerCutOff;
-        this.farPlane = farPlane;
+        lightSpaceMatrix = new Matrix4f().identity();
     }
 
     public Vector3f getPosition() {
@@ -101,7 +103,11 @@ public class SpotLight {
         this.direction = direction;
     }
 
-    public float getFarPlane() {
-        return farPlane;
+    public Matrix4f getLightSpaceMatrix() {
+        return lightSpaceMatrix;
+    }
+
+    public void setLightSpaceMatrix(Matrix4f lightSpaceMatrix) {
+        this.lightSpaceMatrix = lightSpaceMatrix;
     }
 }

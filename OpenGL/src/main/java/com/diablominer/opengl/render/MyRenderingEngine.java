@@ -37,8 +37,8 @@ public class MyRenderingEngine extends RenderingEngine {
     private DirectionalLight directionalLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    private Texture shadowTexture;
-    private CubeMap environmentCubeMap, shadowCubeMap, shadowCubeMap2;
+    private Texture shadowTexture, shadowTexture2;
+    private CubeMap environmentCubeMap, shadowCubeMap;
     private int frames = 0;
     private long time = System.currentTimeMillis();
 
@@ -93,7 +93,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -0.1f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
         pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.5f, 0.5f, 0.5f),  new Vector3f(0.9f, 0.9f, 0.9f), 1.0f, 0.12f, 0.10f, 35.0f);
-        spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, Math.cos(Math.toRadians(17.5f)), Math.cos(Math.toRadians(19.5f)), 35.0f);
+        spotLight = new SpotLight(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, Math.cos(Math.toRadians(17.5f)), Math.cos(Math.toRadians(19.5f)));
 
         StencilTestRenderingEngineUnit renderingEngineUnit0 = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
@@ -251,11 +251,12 @@ public class MyRenderingEngine extends RenderingEngine {
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
+
         shadowFrameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer3);
 
-        shadowCubeMap2 = new CubeMap(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowCubeMap2.id, 0);
+        shadowTexture2 = Texture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowTexture2.id, 0);
         GL33.glDrawBuffer(GL33.GL_NONE);
         GL33.glReadBuffer(GL33.GL_NONE);
 
@@ -405,6 +406,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glCullFace(GL33.GL_FRONT);
+        directionalLight.setLightSpaceMatrix(updateDirectionalShadowMatrices(shadowShaderProgram, Transforms.getProductOf2Vectors(directionalLight.getDirection(), new Vector3f(-20.0f)), new Vector3f(0.0f, 0.0f, 0.0f)));
         updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram);
         renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram);
         GL33.glCullFace(GL33.GL_BACK);
@@ -414,26 +416,24 @@ public class MyRenderingEngine extends RenderingEngine {
 
         // Omnidirectional shadow-mapping for the point-light
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer2);
-        GL33.glViewport(0, 0, 2048, 2048);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        updateUniformBufferBlocks(camera);
-        updateShadowMatrices(pointLight.getPosition(), 35.0f);
+        updateOmniDirectionalShadowMatrices(shadowShaderProgram2, pointLight.getPosition(), pointLight.getFarPlane());
         updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram2);
         renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram2);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
 
-        // Omnidirectional shadow-mapping for the spot-light
+        // Directional shadow-mapping for the spot-light
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer3);
-        GL33.glViewport(0, 0, 2048, 2048);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        updateUniformBufferBlocks(camera);
-        updateShadowMatrices(camera.position, 35.0f);
-        updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram2);
-        renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram2);
+        GL33.glCullFace(GL33.GL_FRONT);
+        spotLight.setLightSpaceMatrix(updateDirectionalShadowMatricesForSpotLight(shadowShaderProgram, camera.position, camera.getLookAtPosition()));
+        updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram);
+        renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram);
+        GL33.glCullFace(GL33.GL_BACK);
 
         Texture.unbindAll();
         CubeMap.unbindAll();
@@ -561,16 +561,10 @@ public class MyRenderingEngine extends RenderingEngine {
     private void updateUniformBufferBlocks(Camera cam) {
         int uniformBufferBlock = GL33.glGenBuffers();
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, uniformBufferBlock);
-        GL33.glBufferData(GL33.GL_UNIFORM_BUFFER, 192, GL33.GL_STATIC_DRAW);
+        GL33.glBufferData(GL33.GL_UNIFORM_BUFFER, 128, GL33.GL_STATIC_DRAW);
 
         Matrix4f view = new Matrix4f().identity().lookAt(cam.position, cam.getLookAtPosition(), cam.up);
         Matrix4f projection = Transforms.createProjectionMatrix(cam.fov, true, cam.aspect, 0.1f, 100.0f);
-
-        Matrix4f lightProjection = new Matrix4f().identity().ortho(-30.0f, 30.0f, -20.0f, 20.0f, 1.0f, 35.0f);
-        Vector3f position = Transforms.getProductOf2Vectors(directionalLight.getDirection(), new Vector3f(-20.0f));
-        Matrix4f lightView = new Matrix4f().identity().lookAt(position, new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
-        Matrix4f lightSpaceMatrix = new Matrix4f().identity();
-        lightProjection.mul(lightView, lightSpaceMatrix);
 
         FloatBuffer buffer = MemoryUtil.memAllocFloat(4);
         Vector4f column = new Vector4f();
@@ -583,11 +577,6 @@ public class MyRenderingEngine extends RenderingEngine {
             projection.getColumn(i, column);
             column.get(buffer);
             GL33.glBufferSubData(GL33.GL_UNIFORM_BUFFER, i * 16 + 64, buffer);
-        }
-        for (int i = 0; i < 4; i++) {
-            lightSpaceMatrix.getColumn(i, column);
-            column.get(buffer);
-            GL33.glBufferSubData(GL33.GL_UNIFORM_BUFFER, i * 16 + 128, buffer);
         }
 
         GL33.glBindBufferBase(GL33.GL_UNIFORM_BUFFER, 0, uniformBufferBlock);
@@ -661,21 +650,41 @@ public class MyRenderingEngine extends RenderingEngine {
     }
 
     private void updateShadowMaps() {
-        // Here textures and uniforms for shadow mapping are set
+        // Here textures and uniforms needed for shadow mapping are set
         shadowTexture.bind();
+        shadowTexture2.bind();
         shadowCubeMap.bind();
-        shadowCubeMap2.bind();
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
             shaderProgram.setUniform1I("dirLight.shadowMap", Texture.getIndexForTexture(shadowTexture));
             shaderProgram.setUniform1I("pointLight.shadowMap", CubeMap.getIndexForTexture(shadowCubeMap));
             shaderProgram.setUniform1F("pointLight.farPlane", pointLight.getFarPlane());
-            shaderProgram.setUniform1I("spotLight.shadowMap", CubeMap.getIndexForTexture(shadowCubeMap2));
-            shaderProgram.setUniform1F("spotLight.farPlane", spotLight.getFarPlane());
+            shaderProgram.setUniform1I("spotLight.shadowMap", Texture.getIndexForTexture(shadowTexture2));
+            shaderProgram.setUniformMat4F("dirLightLightSpaceMatrix", directionalLight.getLightSpaceMatrix());
+            shaderProgram.setUniformMat4F("spotLightLightSpaceMatrix", spotLight.getLightSpaceMatrix());
         }
     }
 
-    public void updateShadowMatrices(Vector3f position, float farPlane) {
-        // The matrices here are used for omnidirectional shadow-mapping
+    public Matrix4f updateDirectionalShadowMatrices(ShaderProgram shaderProgram, Vector3f position, Vector3f lookAtPosition) {
+        Matrix4f lightProjection = new Matrix4f().identity().ortho(-30.0f, 30.0f, -20.0f, 20.0f, 1.0f, 35.0f);
+        Matrix4f lightView = new Matrix4f().identity().lookAt(position, lookAtPosition, new Vector3f(0.0f, 1.0f, 0.0f));
+        Matrix4f lightSpaceMatrix = new Matrix4f().identity();
+        lightProjection.mul(lightView, lightSpaceMatrix);
+
+        shaderProgram.setUniformMat4F("lightSpaceMatrix", lightSpaceMatrix);
+        return lightSpaceMatrix;
+    }
+
+    public Matrix4f updateDirectionalShadowMatricesForSpotLight(ShaderProgram shaderProgram, Vector3f position, Vector3f lookAtPosition) {
+        Matrix4f lightProjection = new Matrix4f().identity().perspective(Math.toRadians(90.0f), 1.0f, 1.0f, 35.0f);
+        Matrix4f lightView = new Matrix4f().identity().lookAt(position, lookAtPosition, new Vector3f(0.0f, 1.0f, 0.0f));
+        Matrix4f lightSpaceMatrix = new Matrix4f().identity();
+        lightProjection.mul(lightView, lightSpaceMatrix);
+
+        shaderProgram.setUniformMat4F("lightSpaceMatrix", lightSpaceMatrix);
+        return lightSpaceMatrix;
+    }
+
+    public void updateOmniDirectionalShadowMatrices(ShaderProgram shaderProgram, Vector3f position, float farPlane) {
         Matrix4f projection = new Matrix4f().identity().perspective(Math.toRadians(90.0f), 1.0f, 1.0f, farPlane);
         Matrix4f[] viewMatrices = {
                 new Matrix4f().identity().lookAt(position, Transforms.getSumOf2Vectors(position, new Vector3f(1.0f, 0.0f, 0.0f)), new Vector3f(0.0f, -1.0f, 0.0f)),
@@ -693,9 +702,9 @@ public class MyRenderingEngine extends RenderingEngine {
                 Transforms.getProductOf2Matrices(projection, viewMatrices[4]),
                 Transforms.getProductOf2Matrices(projection, viewMatrices[5]),
         };
-        shadowShaderProgram2.setUniform1F("farPlane", farPlane);
+        shaderProgram.setUniform1F("farPlane", farPlane);
         for (int i = 0; i < 6; i++) {
-            shadowShaderProgram2.setUniformMat4F("shadowMatrices[" + i + "]", transformMatrices[i]);
+            shaderProgram.setUniformMat4F("shadowMatrices[" + i + "]", transformMatrices[i]);
         }
     }
 

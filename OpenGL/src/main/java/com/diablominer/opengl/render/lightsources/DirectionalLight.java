@@ -1,16 +1,19 @@
 package com.diablominer.opengl.render.lightsources;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public class DirectionalLight {
 
     private Vector3f direction, ambient, diffuse, specular;
+    private Matrix4f lightSpaceMatrix;
 
     public DirectionalLight(Vector3f dir, Vector3f ambient, Vector3f diffuse, Vector3f specular) {
         this.direction = dir;
         this.ambient = ambient;
         this.diffuse = diffuse;
         this.specular = specular;
+        lightSpaceMatrix = new Matrix4f().identity();
     }
 
     public Vector3f getDirection() {
@@ -43,5 +46,13 @@ public class DirectionalLight {
 
     public void setSpecular(Vector3f specular) {
         this.specular = specular;
+    }
+
+    public Matrix4f getLightSpaceMatrix() {
+        return lightSpaceMatrix;
+    }
+
+    public void setLightSpaceMatrix(Matrix4f lightSpaceMatrix) {
+        this.lightSpaceMatrix = lightSpaceMatrix;
     }
 }

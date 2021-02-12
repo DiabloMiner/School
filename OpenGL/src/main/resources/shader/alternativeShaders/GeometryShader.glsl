@@ -9,7 +9,8 @@ layout (std140) uniform environmentMappingMatrices {
 
 out vec3 fragPos;
 out vec2 texCoord;
-out vec4 fragPosLightSpace;
+out vec4 dirLightFragPosLightSpace;
+out vec4 spotLightFragPosLightSpace;
 out mat3 TBN;
 
 out int gl_Layer;
@@ -17,7 +18,8 @@ out int gl_Layer;
 in VS_OUT {
     vec3 fragPos;
     vec2 texCoord;
-    vec4 fragPosLightSpace;
+    vec4 dirLightFragPosLightSpace;
+    vec4 spotLightFragPosLightSpace;
     mat3 TBN;
 } gsIn[];
 
@@ -28,7 +30,8 @@ void main() {
         fragPos = gsIn[i].fragPos;
         TBN = gsIn[i].TBN;
         texCoord = gsIn[i].texCoord;
-        fragPosLightSpace = gsIn[i].fragPosLightSpace;
+        dirLightFragPosLightSpace = gsIn[i].dirLightFragPosLightSpace;
+        spotLightFragPosLightSpace = gsIn[i].spotLightFragPosLightSpace;
 
         gl_Layer = gl_InvocationID;
         EmitVertex();

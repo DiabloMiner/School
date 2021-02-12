@@ -8,21 +8,24 @@ layout (location = 4) in vec3 aBitangent;
 layout (std140) uniform Matrices {
     mat4 view;
     mat4 projection;
-    mat4 lightSpaceMatrix;
 };
 
 uniform mat4 model;
+uniform mat4 dirLightLightSpaceMatrix;
+uniform mat4 spotLightLightSpaceMatrix;
 
 out VS_OUT {
     vec3 fragPos;
     vec2 texCoord;
-    vec4 fragPosLightSpace;
+    vec4 dirLightFragPosLightSpace;
+    vec4 spotLightFragPosLightSpace;
     mat3 TBN;
 } vsOut;
 
 void main() {
     vsOut.fragPos = vec3(model * vec4(aPos, 1.0f));
-    vsOut.fragPosLightSpace = lightSpaceMatrix * vec4(vsOut.fragPos, 1.0f);
+    vsOut.dirLightFragPosLightSpace = dirLightLightSpaceMatrix * vec4(vsOut.fragPos, 1.0f);
+    vsOut.spotLightFragPosLightSpace = spotLightLightSpaceMatrix * vec4(vsOut.fragPos, 1.0f);
     vsOut.texCoord = aTexCoords;
 
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0f)));
