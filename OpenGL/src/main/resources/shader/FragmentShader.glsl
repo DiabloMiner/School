@@ -237,5 +237,7 @@ void main() {
     result += calcPointLight(pointLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
 
+    // TODO: Investigate issue: Edges of cube are blue
+
     fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
 }

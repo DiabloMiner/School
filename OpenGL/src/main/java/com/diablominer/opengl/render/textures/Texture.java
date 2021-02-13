@@ -76,6 +76,12 @@ public class Texture {
         }
     }
 
+    public void unbind() {
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.indexOf(this));
+        alreadyBound.remove(this);
+    }
+
     public void destroy() {
         GL33.glDeleteTextures(id);
     }

@@ -25,6 +25,8 @@ import java.util.Set;
 
 public class MyRenderingEngine extends RenderingEngine {
 
+    private static float exposure = 1.0f;
+
     private Camera camera;
     private Window window;
     private int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer, shadowFrameBuffer2, shadowFrameBuffer3;
@@ -144,7 +146,7 @@ public class MyRenderingEngine extends RenderingEngine {
         };
 
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
-        new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 20.0f));
+        new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 20.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 16.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 16.0f));
         Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
@@ -170,7 +172,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         texColorBuffer = GL33.glGenTextures();
         GL33.glBindTexture(GL33.GL_TEXTURE_2D_MULTISAMPLE, texColorBuffer);
-        GL33.glTexImage2DMultisample(GL33.GL_TEXTURE_2D_MULTISAMPLE, 4, GL33.GL_RGBA, 1280,  720, true);
+        GL33.glTexImage2DMultisample(GL33.GL_TEXTURE_2D_MULTISAMPLE, 4, GL33.GL_RGBA16F, 1280,  720, true);
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D_MULTISAMPLE, texColorBuffer, 0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D_MULTISAMPLE, 0);
 
@@ -190,7 +192,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         texColorBuffer2 = GL33.glGenTextures();
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
-        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA, 1280, 720, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGBA16F, 1280, 720, 0, GL33.GL_RGBA, GL33.GL_FLOAT, (ByteBuffer) null);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
         GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
@@ -211,7 +213,7 @@ public class MyRenderingEngine extends RenderingEngine {
         frameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
 
-        environmentCubeMap = new CubeMap(1024, 1024, GL33.GL_RGBA, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE);
+        environmentCubeMap = new CubeMap(1024, 1024, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, environmentCubeMap.id, 0);
 
         CubeMap depthAndStencilTexture = new CubeMap(1024, 1024, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
@@ -500,6 +502,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
         sP.setUniform1I("screenTexture", 0);
+        sP.setUniform1F("exposure", MyRenderingEngine.exposure);
 
         sP.bind();
         GL33.glBindVertexArray(VAO);

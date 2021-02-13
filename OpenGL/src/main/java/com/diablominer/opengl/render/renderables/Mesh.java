@@ -145,10 +145,29 @@ public class Mesh {
         // Unbind the shaderProgram
         shaderProgram.unbind();
 
-        if (displacementTexture != null) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0);
-            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
-            shaderProgram.setUniform1I("material.texture_displacement1", 0);
+        // Unbind all textures used for this mesh
+        for (Texture currentTexture : textures) {
+            int number = 0;
+            String name = currentTexture.type;
+            switch (name) {
+                case "texture_diffuse":
+                    number = diffuseCounter++;
+                    break;
+                case "texture_specular":
+                    number = specularCounter++;
+                    break;
+                case "texture_normal":
+                    number = normalCounter++;
+                    break;
+                case "texture_displacement":
+                    number = displacementCounter++;
+                    break;
+            }
+            if (number != 0) {
+                int index = Texture.getIndexForTexture(currentTexture);
+                currentTexture.unbind();
+                shaderProgram.setUniform1I("material." + name + number, index);
+            }
         }
     }
 
