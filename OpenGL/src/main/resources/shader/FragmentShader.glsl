@@ -237,8 +237,5 @@ void main() {
     result += calcPointLight(pointLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
 
-    // TODO: Try to implement tangent space calculations in VS again and maybe change some UVs from Hello World to accomodate the change
-    // Investigate shadow issue with letter l
-
     fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
 }

@@ -64,7 +64,6 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
-        shaderProgram.setUniform1I("material.texture_displacement1", 0);
         GL33.glDisable(GL33.GL_CULL_FACE);
         renderAllRenderables();
         GL33.glEnable(GL33.GL_CULL_FACE);
@@ -72,7 +71,6 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void renderAlternative() {
-        shaderProgram.setUniform1I("material.texture_displacement1", 0);
         GL33.glDisable(GL33.GL_CULL_FACE);
         renderAllRenderablesAlternative();
         GL33.glEnable(GL33.GL_CULL_FACE);

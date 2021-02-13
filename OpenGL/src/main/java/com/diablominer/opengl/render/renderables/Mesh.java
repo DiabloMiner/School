@@ -95,6 +95,7 @@ public class Mesh {
         int specularCounter = 1;
         int normalCounter = 1;
         int displacementCounter = 1;
+        Texture displacementTexture = null;
         for (Texture currentTexture : textures) {
             int number = 0;
             String name = currentTexture.type;
@@ -110,6 +111,7 @@ public class Mesh {
                     break;
                 case "texture_displacement":
                     number = displacementCounter++;
+                    displacementTexture = currentTexture;
                     break;
             }
             if (number != 0) {
@@ -142,6 +144,12 @@ public class Mesh {
 
         // Unbind the shaderProgram
         shaderProgram.unbind();
+
+        if (displacementTexture != null) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0);
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+            shaderProgram.setUniform1I("material.texture_displacement1", 0);
+        }
     }
 
     public void destroy() {
