@@ -223,7 +223,7 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir,
 }
 
 void main() {
-    vec3 tangentViewDir = normalize((TBN * viewPos) - (TBN * fragPos));
+    vec3 tangentViewDir = normalize(TBN * (viewPos - fragPos));
     vec2 parallaxMappedTexCoords = parallaxMapping(texCoord, tangentViewDir);
     if (parallaxMappedTexCoords.x > 1.0 || parallaxMappedTexCoords.y > 1.0 || parallaxMappedTexCoords.x < 0.0 || parallaxMappedTexCoords.y < 0.0)
         discard;
@@ -236,6 +236,8 @@ void main() {
     vec3 result = calcDirLight(dirLight, norm, viewDir, parallaxMappedTexCoords);
     result += calcPointLight(pointLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
+
+    // TODO: Investigate issue: Edges of cube are blue
 
     // TODO: Investigate issue: Edges of cube are blue
 

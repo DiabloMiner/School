@@ -22,16 +22,17 @@ out vec4 spotLightFragPosLightSpace;
 out mat3 TBN;
 
 void main() {
+    mat3 normalMatrix = mat3(transpose(inverse(model)));
+
     fragPos = vec3(model * vec4(aPos, 1.0f));
-    normal = mat3(transpose(inverse(model))) * aNormal;
+    normal = normalMatrix * aNormal;
     dirLightFragPosLightSpace = dirLightLightSpaceMatrix * vec4(fragPos, 1.0f);
     spotLightFragPosLightSpace = spotLightLightSpaceMatrix * vec4(fragPos, 1.0f);
     texCoord = aTexCoords;
 
-    vec3 T = normalize(vec3(model * vec4(aTangent, 0.0f)));
-    vec3 N = normalize(vec3(model * vec4(aNormal, 0.0f)));
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = cross(N, T);
+    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 B = normalize(normalMatrix * aBitangent);
+    vec3 N = normalize(normalMatrix * aNormal);
     TBN = mat3(T, B, N);
 
     gl_Position = projection * view * model * vec4(aPos, 1.0f);
