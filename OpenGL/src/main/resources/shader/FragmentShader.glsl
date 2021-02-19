@@ -239,7 +239,5 @@ void main() {
 
     // TODO: Investigate issue: Edges of cube are blue
 
-    // TODO: Investigate issue: Edges of cube are blue
-
     fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
 }
