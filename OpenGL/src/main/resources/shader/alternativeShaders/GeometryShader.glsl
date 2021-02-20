@@ -11,6 +11,8 @@ out vec3 fragPos;
 out vec2 texCoord;
 out vec4 dirLightFragPosLightSpace;
 out vec4 spotLightFragPosLightSpace;
+out vec3 tangentFragPos;
+out vec3 tangentViewPos;
 out mat3 TBN;
 
 out int gl_Layer;
@@ -20,6 +22,8 @@ in VS_OUT {
     vec2 texCoord;
     vec4 dirLightFragPosLightSpace;
     vec4 spotLightFragPosLightSpace;
+    vec3 tangentFragPos;
+    vec3 tangentViewPos;
     mat3 TBN;
 } gsIn[];
 
@@ -32,6 +36,8 @@ void main() {
         texCoord = gsIn[i].texCoord;
         dirLightFragPosLightSpace = gsIn[i].dirLightFragPosLightSpace;
         spotLightFragPosLightSpace = gsIn[i].spotLightFragPosLightSpace;
+        tangentViewPos = gsIn[i].tangentViewPos;
+        tangentFragPos = gsIn[i].tangentFragPos;
 
         gl_Layer = gl_InvocationID;
         EmitVertex();

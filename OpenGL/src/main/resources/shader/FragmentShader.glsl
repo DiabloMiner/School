@@ -56,10 +56,9 @@ in vec3 fragPos;
 in vec2 texCoord;
 in vec4 dirLightFragPosLightSpace;
 in vec4 spotLightFragPosLightSpace;
-in mat3 TBN;
-
 in vec3 tangentViewPos;
 in vec3 tangentFragPos;
+in mat3 TBN;
 
 uniform vec3 viewPos;
 uniform Material material;
@@ -227,7 +226,7 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir,
 }
 
 void main() {
-    vec3 tangentViewDir = normalize(tangentFragPos - tangentViewPos);
+    vec3 tangentViewDir = normalize(tangentViewPos - tangentFragPos);
     vec2 parallaxMappedTexCoords = parallaxMapping(texCoord, tangentViewDir);
     if (parallaxMappedTexCoords.x > 1.0 || parallaxMappedTexCoords.y > 1.0 || parallaxMappedTexCoords.x < 0.0 || parallaxMappedTexCoords.y < 0.0)
         discard;

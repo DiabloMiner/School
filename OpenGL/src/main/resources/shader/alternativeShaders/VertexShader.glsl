@@ -10,6 +10,7 @@ layout (std140) uniform Matrices {
     mat4 projection;
 };
 
+uniform vec3 viewPos;
 uniform mat4 model;
 uniform mat4 dirLightLightSpaceMatrix;
 uniform mat4 spotLightLightSpaceMatrix;
@@ -19,6 +20,8 @@ out VS_OUT {
     vec2 texCoord;
     vec4 dirLightFragPosLightSpace;
     vec4 spotLightFragPosLightSpace;
+    vec3 tangentFragPos;
+    vec3 tangentViewPos;
     mat3 TBN;
 } vsOut;
 
@@ -29,10 +32,13 @@ void main() {
     vsOut.texCoord = aTexCoords;
 
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0f)));
+    vec3 B = normalize(vec3(model * vec4(aBitangent, 0.0f)));
     vec3 N = normalize(vec3(model * vec4(aNormal, 0.0f)));
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = cross(N, T);
     vsOut.TBN = mat3(T, B, N);
+
+    mat3 transposedTBN = transpose(vsOut.TBN);
+    vsOut.tangentFragPos = transposedTBN * vec3(model * vec4(aPos, 1.0f));
+    vsOut.tangentViewPos = transposedTBN * viewPos;
 
     gl_Position = projection * view * model * vec4(aPos, 1.0f);
 }

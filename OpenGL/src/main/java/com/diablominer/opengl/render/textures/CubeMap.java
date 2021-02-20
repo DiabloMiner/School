@@ -18,7 +18,7 @@ public class CubeMap {
 
     public int id;
 
-    public CubeMap(String directory, String fileType, boolean shouldFlip) {
+    public CubeMap(String directory, String fileType, boolean flipImage) {
         String[] files = {directory + File.separator + "right" + fileType, directory + File.separator + "left" + fileType, directory + File.separator + "top" + fileType,
                 directory + File.separator + "bottom" + fileType, directory + File.separator + "front" + fileType, directory + File.separator + "back" + fileType};
         this.id = GL33.glGenTextures();
@@ -28,7 +28,7 @@ public class CubeMap {
             IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
             IntBuffer yBuffer = MemoryUtil.memAllocInt(1);
             IntBuffer channelsBuffer = MemoryUtil.memAllocInt(1);
-            STBImage.stbi_set_flip_vertically_on_load(shouldFlip);
+            STBImage.stbi_set_flip_vertically_on_load(flipImage);
             ByteBuffer buffer = STBImage.stbi_load(files[i], xBuffer, yBuffer, channelsBuffer, 4);
 
             if (buffer != null) {

@@ -57,6 +57,8 @@ in vec3 fragPos;
 in vec2 texCoord;
 in vec4 dirLightFragPosLightSpace;
 in vec4 spotLightFragPosLightSpace;
+in vec3 tangentViewPos;
+in vec3 tangentFragPos;
 in mat3 TBN;
 
 uniform vec3 viewPos;
@@ -75,6 +77,7 @@ vec2 parallaxMapping(vec2 texCoords, vec3 viewDir) {
     float numLayers = mix(maxLayers, minLayers, max(dot(vec3(0.0f, 0.0f, 1.0f), viewDir), 0.0f));
     float layerDepth = 1.0f / numLayers;
     float currentLayerDepth = 0.0f;
+    viewDir.y = -viewDir.y;
     vec2 P = viewDir.xy / viewDir.z * heightScale;
     vec2 deltaTexCoords = P / numLayers;
 
@@ -238,7 +241,7 @@ void main() {
     vec3 normalColor;
 
     if (reflectionWeight < 1.0f) {
-        vec3 tangentViewDir = normalize((TBN * viewPos) - (TBN * fragPos));
+        vec3 tangentViewDir = normalize(tangentViewPos - tangentFragPos);
         vec2 parallaxMappedTexCoords = parallaxMapping(texCoord, tangentViewDir);
         if (parallaxMappedTexCoords.x > 1.0 || parallaxMappedTexCoords.y > 1.0 || parallaxMappedTexCoords.x < 0.0 || parallaxMappedTexCoords.y < 0.0)
             discard;
