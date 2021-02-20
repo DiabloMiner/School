@@ -19,11 +19,12 @@ public class Texture {
     public static List<Texture> allTextures = new ArrayList<>();
     public static int activeTextureOffset = 0;
 
-    public Texture(String filename, String type, boolean isInSRGBColorSpace) {
+    public Texture(String filename, String type, boolean isInSRGBColorSpace, boolean flipImage) {
         // The image is loaded and read out into a ByteBuffer
         IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
         IntBuffer yBuffer = MemoryUtil.memAllocInt(1);
         IntBuffer channelsBuffer = MemoryUtil.memAllocInt(1);
+        STBImage.stbi_set_flip_vertically_on_load(flipImage);
         ByteBuffer buffer = STBImage.stbi_load(filename, xBuffer, yBuffer, channelsBuffer, 4);
 
         if (buffer != null) {

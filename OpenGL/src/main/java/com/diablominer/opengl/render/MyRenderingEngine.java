@@ -366,7 +366,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
 
-            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg");
+            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox", ".jpg", false);
 
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {

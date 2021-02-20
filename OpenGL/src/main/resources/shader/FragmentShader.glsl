@@ -58,6 +58,9 @@ in vec4 dirLightFragPosLightSpace;
 in vec4 spotLightFragPosLightSpace;
 in mat3 TBN;
 
+in vec3 tangentViewPos;
+in vec3 tangentFragPos;
+
 uniform vec3 viewPos;
 uniform Material material;
 uniform DirectionaLight dirLight;
@@ -72,6 +75,7 @@ vec2 parallaxMapping(vec2 texCoords, vec3 viewDir) {
     float numLayers = mix(maxLayers, minLayers, max(dot(vec3(0.0f, 0.0f, 1.0f), viewDir), 0.0f));
     float layerDepth = 1.0f / numLayers;
     float currentLayerDepth = 0.0f;
+    viewDir.y = -viewDir.y;
     vec2 P = viewDir.xy / viewDir.z * heightScale;
     vec2 deltaTexCoords = P / numLayers;
 
@@ -223,13 +227,12 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir,
 }
 
 void main() {
-    vec3 tangentViewDir = normalize(TBN * (viewPos - fragPos));
+    vec3 tangentViewDir = normalize(tangentFragPos - tangentViewPos);
     vec2 parallaxMappedTexCoords = parallaxMapping(texCoord, tangentViewDir);
     if (parallaxMappedTexCoords.x > 1.0 || parallaxMappedTexCoords.y > 1.0 || parallaxMappedTexCoords.x < 0.0 || parallaxMappedTexCoords.y < 0.0)
         discard;
 
-    vec3 rgbNormal = texture(material.texture_normal1, parallaxMappedTexCoords).rgb;
-    rgbNormal = rgbNormal * 2.0f - 1.0f;
+    vec3 rgbNormal = texture(material.texture_normal1, parallaxMappedTexCoords).rgb * 2.0f - 1.0f;
     vec3 norm = normalize(TBN * rgbNormal);
     vec3 viewDir = normalize(viewPos - fragPos);
 

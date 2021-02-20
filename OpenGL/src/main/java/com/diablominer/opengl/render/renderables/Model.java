@@ -114,7 +114,7 @@ public class Model extends Renderable {
                 }
             }
             if (!skip) {
-                Texture texture = new Texture(path, typeName, true);
+                Texture texture = new Texture(path, typeName, true, true);
                 textures.add(texture);
                 loadedTextures.add(texture);
             }
