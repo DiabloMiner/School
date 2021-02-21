@@ -240,6 +240,7 @@ void main() {
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
 
     // TODO: Investigate issue: Edges of cube are blue
+    // After that implement Bloom
 
     fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
 }

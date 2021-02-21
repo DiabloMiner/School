@@ -41,8 +41,6 @@ public class MyRenderingEngine extends RenderingEngine {
     private SpotLight spotLight;
     private Texture shadowTexture, shadowTexture2;
     private CubeMap environmentCubeMap, shadowCubeMap;
-    private int frames = 0;
-    private long time = System.currentTimeMillis();
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         this.window = window;
@@ -440,6 +438,7 @@ public class MyRenderingEngine extends RenderingEngine {
         Texture.unbindAll();
         CubeMap.unbindAll();
 
+        // Environment-mapping
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
         GL33.glViewport(0, 0, 1024, 1024);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -454,6 +453,7 @@ public class MyRenderingEngine extends RenderingEngine {
         CubeMap.unbindAll();
 
 
+        // Normal rendering
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
@@ -471,6 +471,7 @@ public class MyRenderingEngine extends RenderingEngine {
         Texture.unbindAll();
         CubeMap.unbindAll();
 
+        // Normal rendering for the back "mirror"
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
@@ -492,6 +493,7 @@ public class MyRenderingEngine extends RenderingEngine {
         CubeMap.unbindAll();
 
 
+        // Rendering the result onto a quad
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
@@ -499,9 +501,9 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glEnable(GL33.GL_FRAMEBUFFER_SRGB);
 
-        GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        GL33.glActiveTexture(GL33.GL_TEXTURE20);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
-        sP.setUniform1I("screenTexture", 0);
+        sP.setUniform1I("screenTexture", 20);
         sP.setUniform1F("exposure", MyRenderingEngine.exposure);
 
         sP.bind();
@@ -520,14 +522,6 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glEnable(GL33.GL_STENCIL_TEST);
 
         GLFW.glfwSwapBuffers(window.getId());
-
-        if (System.currentTimeMillis() >= (time + 1000.0)) {
-            System.out.println("FPS: " + frames);
-            time = System.currentTimeMillis();
-            frames = 0;
-        } else {
-            frames++;
-        }
     }
 
     @Override

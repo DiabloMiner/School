@@ -16,6 +16,8 @@ public class MyGame implements Game {
     private MyRenderingEngine renderingEngine;
     private MyLogicalEngine logicalEngine;
     private float lastTime = (float) GLFW.glfwGetTime();
+    private int frames = 0;
+    private long time = System.currentTimeMillis();
 
     public static void main(String[] args) throws Exception {
         new MyGame();
@@ -75,6 +77,14 @@ public class MyGame implements Game {
     public void render() {
         renderingEngine.update();
         renderingEngine.render();
+
+        if (System.currentTimeMillis() >= (time + 1000.0)) {
+            System.out.println("FPS: " + frames);
+            time = System.currentTimeMillis();
+            frames = 0;
+        } else {
+            frames++;
+        }
     }
 
     public void update() {
