@@ -501,9 +501,9 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glEnable(GL33.GL_FRAMEBUFFER_SRGB);
 
-        GL33.glActiveTexture(GL33.GL_TEXTURE20);
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
-        sP.setUniform1I("screenTexture", 20);
+        sP.setUniform1I("screenTexture", 0);
         sP.setUniform1F("exposure", MyRenderingEngine.exposure);
 
         sP.bind();
