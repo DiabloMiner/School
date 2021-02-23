@@ -46,5 +46,5 @@ void main() {
     vec3 normalColor = texture(screenTexture, texCoords).xyz;
     normalColor += texture(bloomBlur, texCoords).xyz;
     normalColor = toneMapping(normalColor);
-    fragmentColor = vec4(texture(bloomBlur, texCoords).xyz, 1.0f);
+    fragmentColor = vec4(normalColor, 1.0f);
 }

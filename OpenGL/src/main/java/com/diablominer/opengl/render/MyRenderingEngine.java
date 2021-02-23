@@ -68,7 +68,7 @@ public class MyRenderingEngine extends RenderingEngine {
         sP = new ShaderProgram("SimpleVertexShader", "SimpleFragmentShader");
         shadowShaderProgram = new ShaderProgram("SimpleDepthVertexShader", "SimpleDepthFragmentShader");
         shadowShaderProgram2 = new ShaderProgram("ShadowVertexShader", "ShadowGeometryShader", "ShadowFragmentShader");
-        gaussianBlurShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "gaussianBlurFragmentShader");
+        gaussianBlurShaderProgram = new ShaderProgram("SimpleVertexShader", "gaussianBlurFragmentShader");
 
             matricesUniformBufferBlockShaderPrograms.add(shaderProgram);
             matricesUniformBufferBlockShaderPrograms.add(lightSourceShaderProgram);
@@ -530,22 +530,24 @@ public class MyRenderingEngine extends RenderingEngine {
 
 
         // Blurring the final picture for the bloom effect
+        GL33.glDisable(GL33.GL_DEPTH_TEST);
+        GL33.glDisable(GL33.GL_STENCIL_TEST);
         pingpongBlur(gaussianBlurShaderProgram, pingpongFBOs, pingpongColorBuffers, brightColorBuffer);
+        Texture.unbindAll();
+        CubeMap.unbindAll();
 
 
         // Rendering the result onto a quad
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glEnable(GL33.GL_FRAMEBUFFER_SRGB);
 
         GL33.glActiveTexture(GL33.GL_TEXTURE0);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, texColorBuffer2);
         sP.setUniform1I("screenTexture", 0);
         GL33.glActiveTexture(GL33.GL_TEXTURE1);
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, brightColorBuffer);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, pingpongColorBuffers[0]);
         sP.setUniform1I("bloomBlur", 1);
         sP.setUniform1F("exposure", MyRenderingEngine.exposure);
 
@@ -739,19 +741,6 @@ public class MyRenderingEngine extends RenderingEngine {
         }
     }
 
-    private void renderQuad(ShaderProgram shaderProgram) {
-        shaderProgram.bind();
-        GL33.glBindVertexArray(VAO);
-        GL33.glEnableVertexAttribArray(0);
-        GL33.glEnableVertexAttribArray(1);
-        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
-        GL33.glBindVertexArray(0);
-        shaderProgram.unbind();
-
-        Texture.unbindAll();
-        CubeMap.unbindAll();
-    }
-
     private void blitFramebuffers(int frameBuffer1, int frameBuffer2, int srcX0, int srcY0, int srcX1, int srcY1, int destX0, int destY0, int destX1, int destY1) {
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer1);
         GL33.glReadBuffer(GL33.GL_COLOR_ATTACHMENT0);
@@ -770,16 +759,19 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, destX0, destY0, destX1, destY1, GL33.GL_COLOR_BUFFER_BIT, GL33.GL_LINEAR);
     }
 
-    private void pingpongBlur(ShaderProgram blurShaderProgram, int[] pingpongFBOs, int[] pingpongBuffers, int initalTexture) {
+    private void pingpongBlur(ShaderProgram blurShaderProgram, int[] pingpongFBOs, int[] pingpongBuffers, int initialTexture) {
         boolean horizontal = true, firstIteration = true;
+        blurShaderProgram.bind();
         for (int i = 0; i < 10; i++) {
             GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, pingpongFBOs[(horizontal ? 1 : 0)]);
-            blurShaderProgram.setUniform1I("horizontal", (horizontal ? 1 : 0));
-            GL33.glActiveTexture(GL33.GL_TEXTURE20);
-            GL33.glBindTexture(GL33.GL_TEXTURE_2D, firstIteration ? initalTexture : pingpongBuffers[(horizontal ? 0 : 1)]);
-            blurShaderProgram.setUniform1I("image", 20);
+            GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
 
-            blurShaderProgram.bind();
+            blurShaderProgram.setUniform1I("horizontal", (horizontal ? 1 : 0));
+            GL33.glActiveTexture(GL33.GL_TEXTURE0);
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, firstIteration ? initialTexture : pingpongBuffers[(horizontal ? 0 : 1)]);
+            blurShaderProgram.setUniform1I("image", 0);
+
             renderQuad(blurShaderProgram);
 
             horizontal = !horizontal;
@@ -788,6 +780,21 @@ public class MyRenderingEngine extends RenderingEngine {
             }
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+    }
+
+    private void renderQuad(ShaderProgram shaderProgram) {
+        shaderProgram.bind();
+        GL33.glBindVertexArray(VAO);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glEnableVertexAttribArray(1);
+
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 6);
+
+        GL33.glBindVertexArray(0);
+        shaderProgram.unbind();
+
+        Texture.unbindAll();
+        CubeMap.unbindAll();
     }
 
     private void renderAllEngineUnitsWithoutRenderablesAlternative(Set<Renderable> renderables) {
