@@ -1,5 +1,6 @@
 #version 330 core
-out vec4 fragmentColor;
+layout (location = 0) out vec4 fragmentColor;
+layout (location = 1) out vec4 brightColor;
 
 struct Material {
     sampler2D texture_diffuse1;
@@ -226,6 +227,7 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir,
 }
 
 void main() {
+    // Normal rendering
     vec3 tangentViewDir = normalize(tangentViewPos - tangentFragPos);
     vec2 parallaxMappedTexCoords = parallaxMapping(texCoord, tangentViewDir);
     if (parallaxMappedTexCoords.x > 1.0 || parallaxMappedTexCoords.y > 1.0 || parallaxMappedTexCoords.x < 0.0 || parallaxMappedTexCoords.y < 0.0)
@@ -238,9 +240,15 @@ void main() {
     vec3 result = calcDirLight(dirLight, norm, viewDir, parallaxMappedTexCoords);
     result += calcPointLight(pointLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
     result += calcSpotLight(spotLight, norm, fragPos, viewDir, parallaxMappedTexCoords);
+    fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
+
+    // Brightness color is determined
+    float brightness = dot(fragmentColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 1.0f) {
+        brightColor = vec4(fragmentColor.rgb, 1.0f);
+    } else {
+        brightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
 
     // TODO: Investigate issue: Edges of cube are blue
-    // After that implement Bloom
-
-    fragmentColor = vec4(result, texture(material.texture_diffuse1, parallaxMappedTexCoords).w);
 }

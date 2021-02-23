@@ -4,6 +4,7 @@ out vec4 fragmentColor;
 in vec2 texCoords;
 
 uniform sampler2D screenTexture;
+uniform sampler2D bloomBlur;
 uniform float exposure;
 
 const float offset = 1.0f / 300.0f;
@@ -34,11 +35,16 @@ void main() {
 
     vec3 sampleTex[9];
     for(int i = 0; i < 9; i++) {
-        sampleTex[i] = toneMapping(vec3(texture(screenTexture, texCoords.xy + offsets[i])));
+        sampleTex[i] = texture(screenTexture, texCoords.xy + offsets[i]).xyz;
+        sampleTex[i] += texture(bloomBlur, texCoords.xy + offsets[i]).xyz;
+        sampleTex[i] = toneMapping(sampleTex[i]);
     }
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * kernel[i];
 
-    fragmentColor = vec4(toneMapping(texture(screenTexture, texCoords).xyz), 1.0f);
+    vec3 normalColor = texture(screenTexture, texCoords).xyz;
+    normalColor += texture(bloomBlur, texCoords).xyz;
+    normalColor = toneMapping(normalColor);
+    fragmentColor = vec4(texture(bloomBlur, texCoords).xyz, 1.0f);
 }
