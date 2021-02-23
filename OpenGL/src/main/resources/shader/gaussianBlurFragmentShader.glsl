@@ -8,18 +8,33 @@ uniform sampler2D image;
 uniform bool horizontal;
 uniform float weight[5] = float[5] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 
+float calculateLinearOffset(float offset1, float offset2, float weight1, float weight2) {
+    return (offset1 * weight1 + offset2 * weight2) / (weight1 + weight2);
+}
+
 void main() {
     vec2 texOffset = 1.0f / textureSize(image, 0);
     vec3 result = texture(image, texCoords).rgb * weight[0];
+
+    float offsets[3];
+
     if (horizontal) {
-        for(int i = 1; i < 5; ++i) {
-            result += texture(image, texCoords + vec2(texOffset.x * i, 0.0)).rgb * weight[i];
-            result += texture(image, texCoords - vec2(texOffset.x * i, 0.0)).rgb * weight[i];
+        offsets[0] = 0.0f;
+        offsets[1] = calculateLinearOffset(texOffset.x, (2 * texOffset.x), weight[1], weight[2]);
+        offsets[2] = calculateLinearOffset((3 * texOffset.x), (4 * texOffset.x), weight[3], weight[4]);
+
+        for(int i = 1; i < 3; ++i) {
+            result += texture(image, texCoords + vec2(offsets[i], 0.0)).rgb * weight[i];
+            result += texture(image, texCoords - vec2(offsets[i], 0.0)).rgb * weight[i];
         }
     } else {
-        for(int i = 1; i < 5; ++i) {
-            result += texture(image, texCoords + vec2(0.0, texOffset.y * i)).rgb * weight[i];
-            result += texture(image, texCoords - vec2(0.0, texOffset.y * i)).rgb * weight[i];
+        offsets[0] = 0.0f;
+        offsets[1] = calculateLinearOffset(texOffset.y, (2 * texOffset.x), weight[1], weight[2]);
+        offsets[2] = calculateLinearOffset((3 * texOffset.y), (4 * texOffset.x), weight[3], weight[4]);
+
+        for(int i = 1; i < 3; ++i) {
+            result += texture(image, texCoords + vec2(0.0, offsets[i])).rgb * weight[i];
+            result += texture(image, texCoords - vec2(0.0, offsets[i])).rgb * weight[i];
         }
     }
     fragmentColor = vec4(result, 1.0f);
