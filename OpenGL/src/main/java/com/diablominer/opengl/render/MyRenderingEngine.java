@@ -95,12 +95,12 @@ public class MyRenderingEngine extends RenderingEngine {
         pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, 35.0f);
         spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, Math.cos(Math.toRadians(17.5f)), Math.cos(Math.toRadians(19.5f)));
 
-        StencilTestRenderingEngineUnit renderingEngineUnit0 = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
-        MyRenderingEngineUnit renderingEngineUnit1 = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
+        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
+        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
         MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight);
         MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight);
-        RenderingEngineUnit renderingEngineUnit2 = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
+        RenderingEngineUnit lightSourceRenderingEngineUnit = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 shaderProgram.setUniformVec3F("color", 1.0f, 1.0f, 1.0f);
@@ -116,7 +116,7 @@ public class MyRenderingEngine extends RenderingEngine {
                 renderAllRenderablesAlternative();
             }
         };
-        RenderingEngineUnit renderingEngineUnit3 = new RenderingEngineUnit(oneColorShaderProgram, alternativeOneColorShaderProgram) {
+        RenderingEngineUnit stencilObjectRenderingEngineUnit = new RenderingEngineUnit(oneColorShaderProgram, alternativeOneColorShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 shaderProgram.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
@@ -143,20 +143,20 @@ public class MyRenderingEngine extends RenderingEngine {
             }
         };
 
-        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 0.0f));
-        new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", renderingEngineUnit1, new Vector3f(0.0f, 0.0f, 20.0f));
-        new Model("./src/main/resources/models/HelloWorld/cube.obj", renderingEngineUnit0, new Vector3f(8.0f, 0.0f, 16.0f));
-        new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", renderingEngineUnit3, new Vector3f(8.0f, 0.0f, 16.0f));
+        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 20.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube.obj", stencilTestRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
+        new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", stencilObjectRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
         Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
         Renderable refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 2.0f, 20.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
-        new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, renderingEngineUnit2);
+        new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
 
-        addNewEngineUnit(renderingEngineUnit0);
-        addNewEngineUnit(renderingEngineUnit1);
-        addNewEngineUnit(renderingEngineUnit2);
-        addNewEngineUnit(renderingEngineUnit3);
+        addNewEngineUnit(stencilTestRenderingEngineUnit);
+        addNewEngineUnit(normalRenderingEngineUnit);
+        addNewEngineUnit(lightSourceRenderingEngineUnit);
+        addNewEngineUnit(stencilObjectRenderingEngineUnit);
         addNewEngineUnit(reflectionRenderingEngineUnit);
         addNewEngineUnit(refractionRenderingEngineUnit);
 

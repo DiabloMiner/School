@@ -43,8 +43,8 @@ public class Model extends Renderable {
 
     @Override
     public void draw(ShaderProgram shaderProgram) {
-        super.setPositionAsModelMatrix(shaderProgram);
         for (Mesh mesh : meshes) {
+            super.setPositionAsModelMatrix(shaderProgram);
             mesh.draw(shaderProgram);
         }
     }

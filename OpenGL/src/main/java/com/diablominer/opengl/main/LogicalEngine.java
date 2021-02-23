@@ -5,7 +5,7 @@ import java.util.List;
 
 public abstract class LogicalEngine {
 
-    private List<GameObject> gameObjects;
+    protected List<GameObject> gameObjects;
 
     public LogicalEngine() {
         gameObjects = new ArrayList<>();

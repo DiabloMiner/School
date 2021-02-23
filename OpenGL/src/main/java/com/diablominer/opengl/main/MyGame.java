@@ -12,7 +12,6 @@ import org.lwjgl.opengl.GL33;
 
 public class MyGame implements Game {
 
-
     private MyRenderingEngine renderingEngine;
     private MyLogicalEngine logicalEngine;
     private float lastTime = (float) GLFW.glfwGetTime();

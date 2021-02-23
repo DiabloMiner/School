@@ -95,7 +95,6 @@ public class Mesh {
         int specularCounter = 1;
         int normalCounter = 1;
         int displacementCounter = 1;
-        Texture displacementTexture = null;
         for (Texture currentTexture : textures) {
             int number = 0;
             String name = currentTexture.type;
@@ -111,7 +110,6 @@ public class Mesh {
                     break;
                 case "texture_displacement":
                     number = displacementCounter++;
-                    displacementTexture = currentTexture;
                     break;
             }
             if (number != 0) {
@@ -151,16 +149,16 @@ public class Mesh {
             String name = currentTexture.type;
             switch (name) {
                 case "texture_diffuse":
-                    number = diffuseCounter++;
+                    number = diffuseCounter;
                     break;
                 case "texture_specular":
-                    number = specularCounter++;
+                    number = specularCounter;
                     break;
                 case "texture_normal":
-                    number = normalCounter++;
+                    number = normalCounter;
                     break;
                 case "texture_displacement":
-                    number = displacementCounter++;
+                    number = displacementCounter;
                     break;
             }
             if (number != 0) {
