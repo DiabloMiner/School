@@ -22,8 +22,8 @@ public class MyGame implements Game {
         new MyGame();
     }
 
-    public MyGame() {
-        try { init(); } catch (Exception e) { System.err.println("An exception has occurred while initializing the game: " + e.getMessage()); }
+    public MyGame() throws Exception {
+        init();
         mainLoop();
         cleanUp();
     }
