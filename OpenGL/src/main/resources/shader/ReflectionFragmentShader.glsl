@@ -262,9 +262,12 @@ void main() {
 
     fragmentColor = vec4(finalColor, 1.0f);
 
-    float brightness = dot(fragmentColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0f) {
-        brightColor = vec4(fragmentColor.rgb, 1.0f);
+    float reflectionColorBrightness = dot(reflectionColor, vec3(0.2126, 0.7152, 0.0722)) * ceil(reflectionWeight);
+    float brightness = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 1.5f) {
+        brightColor = vec4(finalColor, 1.0f);
+    } else if (reflectionColorBrightness > 1.5f) {
+        brightColor = vec4(reflectionColor, 1.0f);
     } else {
         brightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }

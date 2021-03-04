@@ -244,11 +244,11 @@ void main() {
 
     // Brightness color is determined
     float brightness = dot(fragmentColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0f) {
+    if (brightness > 1.5f) {
         brightColor = vec4(fragmentColor.rgb, 1.0f);
     } else {
         brightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
 
-    // TODO: Investigate issue: Edges of cube are blue
+    // TODO: Investigate issue: Edges of cube are blue; In Reflection Bloom doesnt work
 }
