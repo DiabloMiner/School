@@ -250,5 +250,5 @@ void main() {
         brightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
 
-    // TODO: Investigate issue: Edges of cube are blue; In Reflection Bloom doesnt work
+    // TODO: Investigate issue: Edges of cube are blue
 }
