@@ -33,26 +33,14 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniform1F("material.shininess", shininess);
 
         shaderProgram.setUniformVec3F("dirLight.direction", dirLight.getDirection());
-        shaderProgram.setUniformVec3F("dirLight.ambient", dirLight.getAmbient());
-        shaderProgram.setUniformVec3F("dirLight.diffuse", dirLight.getDiffuse());
-        shaderProgram.setUniformVec3F("dirLight.specular", dirLight.getSpecular());
+        shaderProgram.setUniformVec3F("dirLight.color", dirLight.getDiffuse());
 
         shaderProgram.setUniformVec3F("pointLight.position", pointLight.getPosition());
-        shaderProgram.setUniformVec3F("pointLight.ambient", pointLight.getAmbient());
-        shaderProgram.setUniformVec3F("pointLight.diffuse", pointLight.getDiffuse());
-        shaderProgram.setUniformVec3F("pointLight.specular", pointLight.getSpecular());
-        shaderProgram.setUniform1F("pointLight.constant", pointLight.getConstant());
-        shaderProgram.setUniform1F("pointLight.linear", pointLight.getLinear());
-        shaderProgram.setUniform1F("pointLight.quadratic", pointLight.getQuadratic());
+        shaderProgram.setUniformVec3F("pointLight.color", pointLight.getDiffuse());
 
         shaderProgram.setUniformVec3F("spotLight.position", camera.position);
         shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
-        shaderProgram.setUniformVec3F("spotLight.ambient", spotLight.getAmbient());
-        shaderProgram.setUniformVec3F("spotLight.diffuse", spotLight.getDiffuse());
-        shaderProgram.setUniformVec3F("spotLight.specular", spotLight.getSpecular());
-        shaderProgram.setUniform1F("spotLight.constant", spotLight.getConstant());
-        shaderProgram.setUniform1F("spotLight.linear", spotLight.getLinear());
-        shaderProgram.setUniform1F("spotLight.quadratic", spotLight.getQuadratic());
+        shaderProgram.setUniformVec3F("spotLight.color", spotLight.getDiffuse());
         shaderProgram.setUniform1F("spotLight.cutOff", spotLight.getCutOff());
         shaderProgram.setUniform1F("spotLight.outerCutOff", spotLight.getOuterCutOff());
 

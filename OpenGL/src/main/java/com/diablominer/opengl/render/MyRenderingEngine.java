@@ -25,8 +25,6 @@ import java.util.Set;
 
 public class MyRenderingEngine extends RenderingEngine {
 
-    private static float exposure = 1.0f;
-
     private Camera camera;
     private Window window;
     private int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer, shadowFrameBuffer2, shadowFrameBuffer3;
@@ -549,7 +547,6 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glActiveTexture(GL33.GL_TEXTURE1);
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, pingpongColorBuffers[0]);
         sP.setUniform1I("bloomBlur", 1);
-        sP.setUniform1F("exposure", MyRenderingEngine.exposure);
 
         renderQuad(sP);
 

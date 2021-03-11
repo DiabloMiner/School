@@ -5,12 +5,11 @@ in vec2 texCoords;
 
 uniform sampler2D screenTexture;
 uniform sampler2D bloomBlur;
-uniform float exposure;
 
 const float offset = 1.0f / 300.0f;
 
 vec3 toneMapping(vec3 hdrColor) {
-    vec3 result = vec3(1.0f) - exp(-hdrColor * exposure);
+    vec3 result = hdrColor / (hdrColor + vec3(1.0));
     return result;
 }
 

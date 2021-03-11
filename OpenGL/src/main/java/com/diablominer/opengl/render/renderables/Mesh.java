@@ -92,9 +92,11 @@ public class Mesh {
 
     public void draw(ShaderProgram shaderProgram) {
         int diffuseCounter = 1;
-        int specularCounter = 1;
         int normalCounter = 1;
         int displacementCounter = 1;
+        int roughnessCounter = 1;
+        int metallicCounter = 1;
+        int aoCounter = 1;
         for (Texture currentTexture : textures) {
             int number = 0;
             String name = currentTexture.type;
@@ -102,14 +104,20 @@ public class Mesh {
                 case "texture_diffuse":
                     number = diffuseCounter++;
                     break;
-                case "texture_specular":
-                    number = specularCounter++;
-                    break;
                 case "texture_normal":
                     number = normalCounter++;
                     break;
                 case "texture_displacement":
                     number = displacementCounter++;
+                    break;
+                case "texture_roughness":
+                    number = roughnessCounter++;
+                    break;
+                case "texture_metallic":
+                    number = metallicCounter++;
+                    break;
+                case "texture_ao":
+                    number = aoCounter++;
                     break;
             }
             if (number != 0) {
@@ -151,14 +159,20 @@ public class Mesh {
                 case "texture_diffuse":
                     number = diffuseCounter;
                     break;
-                case "texture_specular":
-                    number = specularCounter;
-                    break;
                 case "texture_normal":
                     number = normalCounter;
                     break;
                 case "texture_displacement":
                     number = displacementCounter;
+                    break;
+                case "texture_roughness":
+                    number = roughnessCounter;
+                    break;
+                case "texture_metallic":
+                    number = metallicCounter;
+                    break;
+                case "texture_ao":
+                    number = aoCounter;
                     break;
             }
             if (number != 0) {

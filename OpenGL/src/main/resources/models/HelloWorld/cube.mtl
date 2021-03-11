@@ -12,4 +12,7 @@ d 1.000000
 illum 2
 map_Kn containerNormal.png
 map_Kd container.png
-map_Ks containerSpecular.png
+disp containerDisplacement.png
+map_Ks containerRoughness.png
+map_emissive containerMetallic.png
+map_Ka containerAo.png
