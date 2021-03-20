@@ -16,3 +16,4 @@ disp blackDisplacement.png
 map_Ks marbleRoughness.png
 map_emissive marbleMetallic.png
 map_Ka marbleAo.png
+map_d refractionSpecular.png

@@ -11,7 +11,6 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kn blending_transparent_windowNormal.png
-map_Kn blending_transparent_windowNormal.png
 map_Kd blending_transparent_window.png
 disp blackDisplacement.png
 map_Ks windowRoughness.png

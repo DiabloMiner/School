@@ -88,17 +88,20 @@ public class Model extends Renderable {
         if (mesh.mMaterialIndex() >= 0) {
             AIMaterial material = AIMaterial.create(scene.mMaterials().get(mesh.mMaterialIndex()));
             List<Texture> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_diffuse");
-            textures.addAll(diffuseMaps);
             List<Texture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal");
-            textures.addAll(normalMaps);
             List<Texture> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement");
-            textures.addAll(displacementMaps);
             List<Texture> roughnessMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_roughness");
-            textures.addAll(roughnessMaps);
             List<Texture> metallicMaps = loadMaterialTexture(material, Assimp.aiTextureType_EMISSIVE, "texture_metallic");
-            textures.addAll(metallicMaps);
             List<Texture> aoMaps = loadMaterialTexture(material, Assimp.aiTextureType_AMBIENT, "texture_ao");
+            List<Texture> reflectionAndRefractionMaps = loadMaterialTexture(material, Assimp.aiTextureType_OPACITY, "texture_reflection");
+
+            textures.addAll(diffuseMaps);
+            textures.addAll(normalMaps);
+            textures.addAll(displacementMaps);
+            textures.addAll(roughnessMaps);
+            textures.addAll(metallicMaps);
             textures.addAll(aoMaps);
+            textures.addAll(reflectionAndRefractionMaps);
         }
         return new Mesh(ListUtil.convertListToArray(vertices), ListUtil.convertListToArray(normals), ListUtil.convertListToArray(textureCoordinates), ListUtil.convertListToArray(tangents), ListUtil.convertListToArray(biTangents), indices.stream().mapToInt(i -> i).toArray(), textures);
     }

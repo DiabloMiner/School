@@ -97,6 +97,7 @@ public class Mesh {
         int roughnessCounter = 1;
         int metallicCounter = 1;
         int aoCounter = 1;
+        int reflectionCounter = 1;
         for (Texture currentTexture : textures) {
             int number = 0;
             String name = currentTexture.type;
@@ -118,6 +119,9 @@ public class Mesh {
                     break;
                 case "texture_ao":
                     number = aoCounter++;
+                    break;
+                case "texture_reflection":
+                    number = reflectionCounter++;
                     break;
             }
             if (number != 0) {
@@ -173,6 +177,9 @@ public class Mesh {
                     break;
                 case "texture_ao":
                     number = aoCounter;
+                    break;
+                case "texture_reflection":
+                    number = reflectionCounter;
                     break;
             }
             if (number != 0) {

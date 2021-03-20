@@ -16,3 +16,4 @@ disp blackDisplacement.png
 map_Ks containerRoughness.png
 map_emissive containerMetallic.png
 map_Ka containerAo.png
+map_d containerSpecular.png
