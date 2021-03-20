@@ -30,7 +30,7 @@ public class Model {
         AIScene scene = Assimp.aiImportFile(path, Assimp.aiProcess_Triangulate | Assimp.aiProcess_FlipUVs);
 
         if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) != 0 || scene.mRootNode() == null) {
-            System.err.println("An Assimp loading error has been encountered: " + Assimp.aiGetErrorString());
+            System.err.println("An AdvancedLighting loading error has been encountered: " + Assimp.aiGetErrorString());
         }
 
         processScene(scene);

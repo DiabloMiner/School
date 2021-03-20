@@ -13,3 +13,6 @@ illum 2
 map_Kn bricks2_normal.jpg
 map_Kd bricks2.jpg
 disp bricks2_disp.jpg
+map_Ks bricks2_roughness.png
+map_emissive bricks2_metallic.png
+map_Ka bricks2_ao.png

@@ -54,7 +54,7 @@ public class Assimp {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Model Loading with Assimp",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Model Loading with AdvancedLighting",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");
@@ -138,7 +138,7 @@ public class Assimp {
 
 
         model = new Model("./src/main/resources/models/backpack/backpack.obj");
-        lightSourceModel = new Model("./src/main/resources/models/cube/cube.obj");
+        lightSourceModel = new Model("./src/main/java/com/diablominer/opengl/examples/models/cube/cube.obj");
 
 
         cameraPosition = new Vector3f(0.0f, 0.0f, 3.0f);

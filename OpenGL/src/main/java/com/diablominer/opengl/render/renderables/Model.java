@@ -53,7 +53,7 @@ public class Model extends Renderable {
         // Import the file on the given path
         AIScene aiScene = Assimp.aiImportFile(path, Assimp.aiProcess_Triangulate | Assimp.aiProcess_FlipUVs | Assimp.aiProcess_CalcTangentSpace);
         if (aiScene == null || (aiScene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) != 0 || aiScene.mRootNode() == null) {
-            System.err.println("An Assimp loading error has been encountered: " + Assimp.aiGetErrorString());
+            System.err.println("An AdvancedLighting loading error has been encountered: " + Assimp.aiGetErrorString());
         }
 
         // Process the scene

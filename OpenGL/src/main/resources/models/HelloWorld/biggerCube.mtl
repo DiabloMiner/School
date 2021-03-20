@@ -12,3 +12,7 @@ d 1.000000
 illum 2
 map_Kn containerNormal.png
 map_Kd container.png
+disp blackDisplacement.png
+map_Ks marbleRoughness.png
+map_emissive marbleMetallic.png
+map_Ka marbleAo.png

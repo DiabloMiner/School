@@ -93,9 +93,9 @@ public class MyRenderingEngine extends RenderingEngine {
             shadowMappingShaderPrograms.add(reflectionShaderProgram);
             shadowMappingShaderPrograms.add(refractionShaderProgram);
 
-        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -0.1f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.3f, 0.3f, 0.3f),  new Vector3f(0.8f, 0.8f, 0.8f));
-        pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(1.0f, 1.0f, 1.0f),  new Vector3f(1.2f, 1.2f, 1.2f), 1.0f, 0.35f, 0.7f, 35.0f);
-        spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(0.8f, 0.8f, 0.8f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, Math.cos(Math.toRadians(17.5f)), Math.cos(Math.toRadians(19.5f)));
+        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -0.15f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.6f, 0.6f, 0.6f),  new Vector3f(0.8f, 0.8f, 0.8f));
+        pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(200.0f, 200.0f, 200.0f),  new Vector3f(1.2f, 1.2f, 1.2f), 1.0f, 0.35f, 0.7f, 35.0f);
+        spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(5.0f, 5.0f, 5.0f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, Math.cos(Math.toRadians(17.5f)), Math.cos(Math.toRadians(19.5f)));
 
         StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
@@ -145,7 +145,7 @@ public class MyRenderingEngine extends RenderingEngine {
             }
         };
 
-        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 0.0f));
+        new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 1.0f));
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 20.0f));
         new Model("./src/main/resources/models/HelloWorld/cube.obj", stencilTestRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", stencilObjectRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));

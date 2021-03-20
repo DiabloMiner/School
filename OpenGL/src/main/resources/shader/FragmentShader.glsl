@@ -60,22 +60,22 @@ uniform SpotLight spotLight;
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
+    float NdotH = max(dot(N, H), 0.0f);
     float NdotH2 = NdotH * NdotH;
 
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    float nom  = a2;
+    float denom = (NdotH2 * (a2 - 1.0f) + 1.0f);
     denom = pi * denom * denom;
 
-    return num / denom;
+    return nom / max(denom, 0.00001f);
 }
 
 float geometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
+    float r = (roughness + 1.0f);
+    float k = (r * r) / 8.0f;
 
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+    float num = NdotV;
+    float denom = NdotV * (1.0f - k) + k;
 
     return num / denom;
 }
@@ -90,7 +90,7 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
+    return max(F0 + (1.0f - F0) * pow(max(1.0f - cosTheta, 0.0f), 5.0f), 0.0f);
 }
 
 vec2 parallaxMapping(vec2 texCoords, vec3 viewDir) {
@@ -188,22 +188,24 @@ vec3 calcDirLight(DirectionaLight dirLight, vec3 normal, vec3 viewDir, vec2 texC
 
     float NDF = distributionGGX(normal, halfwayDir, roughness);
     float G = geometrySmith(normal, viewDir, lightDir, roughness);
-    vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.0f), F0);
+    vec3 F = fresnelSchlick(clamp(dot(halfwayDir, viewDir), 0.0f, 1.0f), F0);
 
     vec3 kS = F;
     vec3 kD = vec3(1.0f) - kS;
     kD *= (1.0f - metallic);
 
-    vec3 numerator = NDF * G * F;
+    vec3 nominator = NDF * G * F;
     float denominatior = 4.0f * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
-    vec3 specular = numerator / max(denominatior, 0.001f);
+    vec3 specular = nominator / max(denominatior, 0.001f);
 
     float shadow = directionalShadowCalculation(dirLightFragPosLightSpace, dirLight.direction, normal, dirLight.shadowMap);
     shadow *= floor(texture(material.texture_diffuse1, texCoords).w);
 
     float NdotL = max(dot(normal, lightDir), 0.0f);
     vec3 albedo = texture(material.texture_diffuse1, texCoords).rgb;
-    vec3 Lo = (kD * albedo / pi + specular) * radiance * NdotL;
+    albedo *= (1.0f - shadow);
+    specular *= (1.0f - shadow);
+    vec3 Lo = ((kD * (albedo / pi)) + specular) * radiance * NdotL;
     return Lo;
 }
 
@@ -212,19 +214,19 @@ vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
     vec3 halfwayDir = normalize(viewDir + lightDir);
     float distance = length(pointLight.position - fragPos);
     float attenuation = 1.0f / (distance * distance);
-    vec3 radiance = dirLight.color * attenuation;
+    vec3 radiance = pointLight.color * attenuation;
 
     float NDF = distributionGGX(normal, halfwayDir, roughness);
     float G = geometrySmith(normal, viewDir, lightDir, roughness);
-    vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.0f), F0);
+    vec3 F = fresnelSchlick(clamp(dot(halfwayDir, viewDir), 0.0f, 1.0f), F0);
 
     vec3 kS = F;
     vec3 kD = vec3(1.0f) - kS;
     kD *= (1.0f - metallic);
 
-    vec3 numerator = NDF * G * F;
+    vec3 nominator = NDF * G * F;
     float denominatior = 4.0f * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
-    vec3 specular = numerator / max(denominatior, 0.001f);
+    vec3 specular = nominator / max(denominatior, 0.001f);
 
     float shadow = omnidirectionalShadowCalculation(fragPos, pointLight.position, normal, pointLight.shadowMap, pointLight.farPlane);
     shadow *= floor(texture(material.texture_diffuse1, texCoords).w);
@@ -233,7 +235,7 @@ vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
     vec3 albedo = texture(material.texture_diffuse1, texCoords).rgb;
     albedo *= (1.0f - shadow);
     specular *= (1.0f - shadow);
-    vec3 Lo = (kD * albedo / pi + specular) * radiance * NdotL;
+    vec3 Lo = ((kD * (albedo / pi)) + specular) * radiance * NdotL;
     return Lo;
 }
 
@@ -242,23 +244,22 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir,
     vec3 halfwayDir = normalize(viewDir + lightDir);
 
     float theta = dot(lightDir, normalize(-spotLight.direction));
-    float epsilon = spotLight.cutOff - spotLight.outerCutOff;
-    float intensity = clamp((theta - spotLight.outerCutOff) / epsilon, 0.0f, 1.0f);
+    float intensity = clamp(dot(normalize(fragPos - spotLight.position), spotLight.direction), 0.0f, 1.0f);
     float distance = length(spotLight.position - fragPos);
     float attenuation = 1.0f / (distance * distance);
-    vec3 radiance = dirLight.color * attenuation * intensity;
+    vec3 radiance = spotLight.color * attenuation * intensity;
 
     float NDF = distributionGGX(normal, halfwayDir, roughness);
     float G = geometrySmith(normal, viewDir, lightDir, roughness);
-    vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.0f), F0);
+    vec3 F = fresnelSchlick(clamp(dot(halfwayDir, viewDir), 0.0f, 1.0f), F0);
 
     vec3 kS = F;
     vec3 kD = vec3(1.0f) - kS;
     kD *= (1.0f - metallic);
 
-    vec3 numerator = NDF * G * F;
+    vec3 nominator = NDF * G * F;
     float denominatior = 4.0f * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
-    vec3 specular = numerator / max(denominatior, 0.001f);
+    vec3 specular = nominator / max(denominatior, 0.001f);
 
     float shadow = directionalShadowCalculation(spotLightFragPosLightSpace, spotLight.direction, normal, spotLight.shadowMap);
     shadow *= floor(texture(material.texture_diffuse1, texCoords).w);
@@ -268,7 +269,7 @@ vec3 calcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir,
     vec3 albedo = texture(material.texture_diffuse1, texCoords).rgb;
     albedo *= (1.0f - shadow);
     specular *= (1.0f - shadow);
-    vec3 Lo = (kD * albedo / pi + specular) * radiance * NdotL;
+    vec3 Lo = ((kD * (albedo / pi)) + specular) * radiance * NdotL;
     return Lo;
 }
 
@@ -308,6 +309,6 @@ void main() {
     }
 
     // TODO: Investigate issue: Edges of cube are blue
-    // Another issue: Generate new roughness map for cube. set black map as disp
-    // Find another way to implement spotlight radius
+    // Refactor light source data storage system
+    // Refactor all other shaders to work with new textures
 }
