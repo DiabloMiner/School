@@ -23,7 +23,7 @@ public class RenderablePointLight implements GameObject {
 
     @Override
     public void updateObjectState() {
-        // pointLight.setPosition(Transforms.getSumOf2Vectors(new Vector3f(10.0f * (float) Math.cos(GLFW.glfwGetTime()), 5.0f * (float) Math.sin(GLFW.glfwGetTime()), (float) Math.cos(GLFW.glfwGetTime())), constantPosition));
+        pointLight.setPosition(Transforms.getSumOf2Vectors(new Vector3f(10.0f * (float) Math.cos(GLFW.glfwGetTime()), 5.0f * (float) Math.sin(GLFW.glfwGetTime()), (float) Math.cos(GLFW.glfwGetTime())), constantPosition));
         model.setPosition(pointLight.getPosition());
     }
 
