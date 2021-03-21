@@ -9,7 +9,6 @@ struct Material {
     sampler2D texture_metallic1;
     sampler2D texture_roughness1;
     sampler2D texture_ao1;
-    float shininess;
 };
 
 struct DirectionaLight {
@@ -311,4 +310,5 @@ void main() {
     // TODO: Investigate issue: Edges of cube are blue
     // Refactor light source data storage system
     // Refactor all other shaders to work with new textures
+    // Debug error with meshes loading other textures
 }

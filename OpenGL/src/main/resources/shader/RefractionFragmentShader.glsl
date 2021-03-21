@@ -10,7 +10,6 @@ struct Material {
     sampler2D texture_roughness1;
     sampler2D texture_ao1;
     sampler2D texture_reflection1;
-    float shininess;
 };
 
 struct DirectionaLight {

@@ -154,6 +154,7 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
+        new Model("./src/main/resources/models/HelloWorld/sphere.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 5.0f));
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);
@@ -685,10 +686,10 @@ public class MyRenderingEngine extends RenderingEngine {
         shadowTexture2.bind();
         shadowCubeMap.bind();
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
-            shaderProgram.setUniform1I("dirLight.shadowMap", Texture.getIndexForTexture(shadowTexture));
+            shaderProgram.setUniform1I("dirLight.shadowMap", shadowTexture.index);
             shaderProgram.setUniform1I("pointLight.shadowMap", CubeMap.getIndexForTexture(shadowCubeMap));
             shaderProgram.setUniform1F("pointLight.farPlane", pointLight.getFarPlane());
-            shaderProgram.setUniform1I("spotLight.shadowMap", Texture.getIndexForTexture(shadowTexture2));
+            shaderProgram.setUniform1I("spotLight.shadowMap", shadowTexture2.index);
             shaderProgram.setUniformMat4F("dirLightLightSpaceMatrix", directionalLight.getLightSpaceMatrix());
             shaderProgram.setUniformMat4F("spotLightLightSpaceMatrix", spotLight.getLightSpaceMatrix());
         }

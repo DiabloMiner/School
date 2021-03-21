@@ -12,6 +12,7 @@ import org.lwjgl.system.MemoryUtil;
 public class Texture {
 
     public int id;
+    public int index;
     public String path;
     public String type;
 
@@ -20,6 +21,8 @@ public class Texture {
     public static int activeTextureOffset = 0;
 
     public Texture(String filename, String type, boolean isInSRGBColorSpace, boolean flipImage) {
+        index = 0;
+
         // The image is loaded and read out into a ByteBuffer
         IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
         IntBuffer yBuffer = MemoryUtil.memAllocInt(1);
@@ -71,6 +74,7 @@ public class Texture {
     public void bind() {
         activeTextureOffset = CubeMap.alreadyBound.size();
         if (!alreadyBound.contains(this)) {
+            index = alreadyBound.size() + activeTextureOffset;
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size() + activeTextureOffset);
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, this.id);
             alreadyBound.add(this);
@@ -78,9 +82,19 @@ public class Texture {
     }
 
     public void unbind() {
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
-        GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.indexOf(this));
-        alreadyBound.remove(this);
+        if (index != 0) {
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
+            alreadyBound.remove(this);
+        }
+    }
+
+    protected void nonModifyingUnbind() {
+        // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
+        if (index != 0) {
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
+        }
     }
 
     public void destroy() {
@@ -88,17 +102,10 @@ public class Texture {
     }
 
     public static void unbindAll() {
-        for (int i = 0; i < alreadyBound.size(); i++) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + i);
-            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        for (Texture texture : alreadyBound) {
+            texture.nonModifyingUnbind();
         }
         alreadyBound.clear();
-    }
-
-    public static int getIndexForTexture(Texture texture) {
-        // For this method to work the texture from which the index is requested has to be bound already,
-        // if this is not the case -1 will be returned
-        return alreadyBound.indexOf(texture) + activeTextureOffset;
     }
 
     public static void destroyAllTextures() {

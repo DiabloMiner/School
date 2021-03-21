@@ -1,7 +1,7 @@
 # Blender MTL File: 'None'
 # Material Count: 1
 
-newmtl Material.001
+newmtl Mat
 Ns 225.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -10,9 +10,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kn marbleNormal.png
-map_Kd marble.png
+map_Kn sphereNormal.png
+map_Kd sphere.png
 disp blackDisplacement.png
-map_Ks marbleRoughness.png
-map_emissive marbleMetallic.png
-map_Ka marbleAo.png
+map_Ks sphereRoughness.png
+map_emissive sphereMetallic.png
+map_Ka sphereAo.png
