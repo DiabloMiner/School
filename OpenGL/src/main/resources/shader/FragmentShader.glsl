@@ -32,9 +32,6 @@ struct SpotLight {
     vec3 position;
     vec3 direction;
 
-    float cutOff;
-    float outerCutOff;
-
     vec3 color;
 
     sampler2D shadowMap;
@@ -308,7 +305,4 @@ void main() {
     }
 
     // TODO: Investigate issue: Edges of cube are blue
-    // Refactor light source data storage system
-    // Refactor all other shaders to work with new textures
-    // Debug error with meshes loading other textures
 }

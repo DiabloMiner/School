@@ -5,14 +5,12 @@ import org.joml.Vector3f;
 
 public class DirectionalLight {
 
-    private Vector3f direction, ambient, diffuse, specular;
+    private Vector3f direction, color;
     private Matrix4f lightSpaceMatrix;
 
-    public DirectionalLight(Vector3f dir, Vector3f ambient, Vector3f diffuse, Vector3f specular) {
+    public DirectionalLight(Vector3f dir, Vector3f color) {
         this.direction = dir;
-        this.ambient = ambient;
-        this.diffuse = diffuse;
-        this.specular = specular;
+        this.color = color;
         lightSpaceMatrix = new Matrix4f().identity();
     }
 
@@ -24,28 +22,12 @@ public class DirectionalLight {
         this.direction = direction;
     }
 
-    public Vector3f getAmbient() {
-        return ambient;
+    public Vector3f getColor() {
+        return color;
     }
 
-    public void setAmbient(Vector3f ambient) {
-        this.ambient = ambient;
-    }
-
-    public Vector3f getDiffuse() {
-        return diffuse;
-    }
-
-    public void setDiffuse(Vector3f diffuse) {
-        this.diffuse = diffuse;
-    }
-
-    public Vector3f getSpecular() {
-        return specular;
-    }
-
-    public void setSpecular(Vector3f specular) {
-        this.specular = specular;
+    public void setColor(Vector3f color) {
+        this.color = color;
     }
 
     public Matrix4f getLightSpaceMatrix() {

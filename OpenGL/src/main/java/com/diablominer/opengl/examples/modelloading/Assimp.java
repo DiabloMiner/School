@@ -54,7 +54,7 @@ public class Assimp {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 
-        window = GLFW.glfwCreateWindow(1280, 720, "Model Loading with AdvancedLighting",0, 0);
+        window = GLFW.glfwCreateWindow(1280, 720, "Model Loading with Assimp",0, 0);
         if (window == 0) {
             GLFW.glfwTerminate();
             throw new IllegalStateException("Failed to create a GLFW window");

@@ -93,9 +93,9 @@ public class MyRenderingEngine extends RenderingEngine {
             shadowMappingShaderPrograms.add(reflectionShaderProgram);
             shadowMappingShaderPrograms.add(refractionShaderProgram);
 
-        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -0.15f), new Vector3f(0.1f, 0.1f, 0.1f), new Vector3f(0.6f, 0.6f, 0.6f),  new Vector3f(0.8f, 0.8f, 0.8f));
-        pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(0.3f, 0.3f, 0.3f), new Vector3f(200.0f, 200.0f, 200.0f),  new Vector3f(1.2f, 1.2f, 1.2f), 1.0f, 0.35f, 0.7f, 35.0f);
-        spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(0.0f), new Vector3f(0.2f, 0.2f, 0.2f), new Vector3f(5.0f, 5.0f, 5.0f),  new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 0.35f, 0.7f, Math.cos(Math.toRadians(17.5f)), Math.cos(Math.toRadians(19.5f)));
+        directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -0.15f), new Vector3f(0.6f, 0.6f, 0.6f));
+        pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(200.0f, 200.0f, 200.0f), 35.0f);
+        spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(5.0f, 5.0f, 5.0f));
 
         StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
         MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
@@ -154,7 +154,6 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
-        new Model("./src/main/resources/models/HelloWorld/sphere.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 5.0f));
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);

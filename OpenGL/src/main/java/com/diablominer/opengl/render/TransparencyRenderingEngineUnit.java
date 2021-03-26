@@ -29,16 +29,15 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniform1F("material.shininess", shininess);
 
         shaderProgram.setUniformVec3F("dirLight.direction", dirLight.getDirection());
-        shaderProgram.setUniformVec3F("dirLight.color", dirLight.getDiffuse());
+        shaderProgram.setUniformVec3F("dirLight.color", dirLight.getColor());
 
         shaderProgram.setUniformVec3F("pointLight.position", pointLight.getPosition());
-        shaderProgram.setUniformVec3F("pointLight.color", pointLight.getDiffuse());
+        shaderProgram.setUniformVec3F("pointLight.color", pointLight.getColor());
 
         shaderProgram.setUniformVec3F("spotLight.position", camera.position);
         shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
-        shaderProgram.setUniformVec3F("spotLight.color", spotLight.getDiffuse());
-        shaderProgram.setUniform1F("spotLight.cutOff", spotLight.getCutOff());
-        shaderProgram.setUniform1F("spotLight.outerCutOff", spotLight.getOuterCutOff());
+        shaderProgram.setUniformVec3F("spotLight.color", spotLight.getColor());
+
 
         this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
 
