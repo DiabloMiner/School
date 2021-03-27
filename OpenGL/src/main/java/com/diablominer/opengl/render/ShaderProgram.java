@@ -164,4 +164,14 @@ public class ShaderProgram {
         unbind();
     }
 
+    public void setUniformMat4FArray(String name, Matrix4f[] data) {
+        bind();
+        for (int i = 0; i < data.length; i++) {
+            float[] value = new float[4 * 4];
+            data[i].get(value);
+            GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name + "[" + i + "]"), false, value);
+        }
+        unbind();
+    }
+
 }
