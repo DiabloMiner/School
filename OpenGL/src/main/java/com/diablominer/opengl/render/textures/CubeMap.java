@@ -17,11 +17,13 @@ public class CubeMap {
     public static int activeTextureOffset = 0;
 
     public int id;
+    public int index;
 
     public CubeMap(String directory, String fileType, boolean flipImage) {
         String[] files = {directory + File.separator + "right" + fileType, directory + File.separator + "left" + fileType, directory + File.separator + "top" + fileType,
                 directory + File.separator + "bottom" + fileType, directory + File.separator + "front" + fileType, directory + File.separator + "back" + fileType};
         this.id = GL33.glGenTextures();
+        this.index = 0;
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, id);
 
         for (int i = 0; i < files.length; i++) {
@@ -70,8 +72,25 @@ public class CubeMap {
         activeTextureOffset = Texture.alreadyBound.size();
         if (!alreadyBound.contains(this)) {
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size() + activeTextureOffset);
+            this.index = alreadyBound.size() + activeTextureOffset;
             GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
             alreadyBound.add(this);
+        }
+    }
+
+    public void unbind() {
+        if (index != 0) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
+            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+            alreadyBound.remove(this);
+        }
+    }
+
+    protected void nonModifyingUnbind() {
+        // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
+        if (index != 0) {
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
         }
     }
 
@@ -79,14 +98,9 @@ public class CubeMap {
         GL33.glDeleteTextures(id);
     }
 
-    public static int getIndexForTexture(CubeMap texture) {
-        return alreadyBound.indexOf(texture) + activeTextureOffset;
-    }
-
     public static void unbindAll() {
-        for (int i = 0; i < alreadyBound.size(); i++) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + i);
-            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+        for (CubeMap cubeMap : alreadyBound) {
+            cubeMap.nonModifyingUnbind();
         }
         alreadyBound.clear();
     }

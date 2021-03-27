@@ -407,7 +407,7 @@ public class MyRenderingEngine extends RenderingEngine {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 cubeMap.bind();
-                shaderProgram.setUniform1I("skybox", CubeMap.getIndexForTexture(cubeMap));
+                shaderProgram.setUniform1I("skybox", cubeMap.index);
             }
 
             @Override
@@ -675,8 +675,8 @@ public class MyRenderingEngine extends RenderingEngine {
         updateShadowMaps();
 
         environmentCubeMap.bind();
-        reflectionShaderProgram.setUniform1I("cubeMap", CubeMap.getIndexForTexture(environmentCubeMap));
-        refractionShaderProgram.setUniform1I("cubeMap", CubeMap.getIndexForTexture(environmentCubeMap));
+        reflectionShaderProgram.setUniform1I("cubeMap", environmentCubeMap.index);
+        refractionShaderProgram.setUniform1I("cubeMap", environmentCubeMap.index);
     }
 
     private void updateShadowMaps() {
@@ -686,7 +686,7 @@ public class MyRenderingEngine extends RenderingEngine {
         shadowCubeMap.bind();
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
             shaderProgram.setUniform1I("dirLight.shadowMap", shadowTexture.index);
-            shaderProgram.setUniform1I("pointLight.shadowMap", CubeMap.getIndexForTexture(shadowCubeMap));
+            shaderProgram.setUniform1I("pointLight.shadowMap", shadowCubeMap.index);
             shaderProgram.setUniform1F("pointLight.farPlane", pointLight.getFarPlane());
             shaderProgram.setUniform1I("spotLight.shadowMap", shadowTexture2.index);
             shaderProgram.setUniformMat4F("dirLightLightSpaceMatrix", directionalLight.getLightSpaceMatrix());
