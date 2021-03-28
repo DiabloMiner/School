@@ -305,4 +305,5 @@ void main() {
     }
 
     // TODO: Investigate issue: Edges of cube are blue
+    // Complete implementing IBL
 }

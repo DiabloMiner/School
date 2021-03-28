@@ -402,7 +402,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
 
-            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox/Newport_Loft.hdr", false);
+            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox/Newport_Loft_8k.jpg", true, 1024);
 
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {

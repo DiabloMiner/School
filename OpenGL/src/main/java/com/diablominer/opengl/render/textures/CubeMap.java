@@ -58,7 +58,7 @@ public class CubeMap {
         allTextures.add(this);
     }
 
-    public CubeMap(String file, boolean flipImage) throws Exception {
+    public CubeMap(String file, boolean flipImage, int size) throws Exception {
         // Should only be used for equirectangular maps
         // This constructor maps these maps to normal cube maps
 
@@ -90,10 +90,10 @@ public class CubeMap {
         int frameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
 
-        cubeMapTexture = new CubeMap(512, 512, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
+        cubeMapTexture = new CubeMap(size, size, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, cubeMapTexture.id, 0);
 
-        CubeMap depthTexture = new CubeMap(512, 512, GL33.GL_DEPTH_COMPONENT24, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT);
+        CubeMap depthTexture = new CubeMap(size, size, GL33.GL_DEPTH_COMPONENT24, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_ATTACHMENT, depthTexture.id, 0);
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
@@ -174,7 +174,7 @@ public class CubeMap {
         GL33.glBindVertexArray(0);
 
         // Rendering the equirectangular map onto a cube and saving the result as a cubemap
-        GL33.glViewport(0, 0, 512, 512);
+        GL33.glViewport(0, 0, size, size);
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
