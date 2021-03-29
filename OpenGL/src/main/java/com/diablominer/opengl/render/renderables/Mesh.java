@@ -91,7 +91,7 @@ public class Mesh {
     }
 
     public void draw(ShaderProgram shaderProgram) {
-        int diffuseCounter = 1;
+        int colorCounter = 1;
         int normalCounter = 1;
         int displacementCounter = 1;
         int roughnessCounter = 1;
@@ -102,8 +102,8 @@ public class Mesh {
             int number = 0;
             String name = currentTwoDimensionalTexture.type;
             switch (name) {
-                case "texture_diffuse":
-                    number = diffuseCounter++;
+                case "texture_color":
+                    number = colorCounter++;
                     break;
                 case "texture_normal":
                     number = normalCounter++;
@@ -160,8 +160,8 @@ public class Mesh {
             int number = 0;
             String name = currentTwoDimensionalTexture.type;
             switch (name) {
-                case "texture_diffuse":
-                    number = diffuseCounter;
+                case "texture_color":
+                    number = colorCounter;
                     break;
                 case "texture_normal":
                     number = normalCounter;

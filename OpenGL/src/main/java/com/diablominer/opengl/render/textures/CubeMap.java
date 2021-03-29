@@ -50,7 +50,59 @@ public class CubeMap implements Texture {
         allTextures.add(this);
     }
 
-    private CubeMap(String file, int size, boolean flipImage) throws Exception {
+    private CubeMap(int id) {
+        // WARNING: This constructor can only be used if a cubemap has already been generated for OpenGL and needs to be registered in this texture handling system
+        this.id = id;
+        this.index = 0;
+        allTextures.add(this);
+    }
+
+    public CubeMap(int width, int height, int internalFormat, int format, int type) {
+        this.id = GL33.glGenTextures();
+        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, id);
+        for (int i = 0; i < 6; i++) {
+            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
+        }
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_R, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+
+        allTextures.add(this);
+    }
+
+    public void bind() {
+        if (!alreadyBound.contains(this)) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
+            this.index = alreadyBound.size();
+            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
+            alreadyBound.add(this);
+        }
+    }
+
+    public void unbind() {
+        if (index != 0) {
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
+            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+            alreadyBound.remove(this);
+        }
+    }
+
+    public void nonModifyingUnbind() {
+        // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
+        if (index != 0) {
+            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
+        }
+    }
+
+    public void destroy() {
+        GL33.glDeleteTextures(id);
+    }
+
+    public static CubeMap equirectangularMapToCubeMap(String file, int size, boolean flipImage) throws Exception {
         // Should only be used for equirectangular maps
         // This constructor maps equirectangular maps to normal cube maps
 
@@ -61,7 +113,6 @@ public class CubeMap implements Texture {
         STBImage.stbi_set_flip_vertically_on_load(flipImage);
         FloatBuffer buffer = STBImage.stbi_loadf(file, xBuffer, yBuffer, channelsBuffer, 4);
         int texture = 0;
-        this.index = 0;
         if (buffer != null) {
             texture = GL33.glGenTextures();
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture);
@@ -185,57 +236,137 @@ public class CubeMap implements Texture {
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
         GL33.glDisable(GL33.GL_DEPTH_TEST);
 
-        this.id = cubeMapTexture.id;
-        allTextures.add(this);
+        // Create final cubemap
+        CubeMap result = new CubeMap(cubeMapTexture.id);
+
+        // Delete all unneeded components
+        GL33.glDeleteVertexArrays(VAO);
+        GL33.glDeleteBuffers(VBO);
+        GL33.glDeleteFramebuffers(frameBuffer);
+        GL33.glDeleteTextures(texture);
+        GL33.glDeleteTextures(depthTexture.id);
+
+        return result;
     }
 
-    public CubeMap(int width, int height, int internalFormat, int format, int type) {
-        this.id = GL33.glGenTextures();
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, id);
-        for (int i = 0; i < 6; i++) {
-            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
-        }
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_R, GL33.GL_CLAMP_TO_EDGE);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
-        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
-        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
+    public static CubeMap cubeMapConvolution(CubeMap cubeMap) throws Exception {
+        // Create a framebuffer
+        int frameBuffer = GL33.glGenFramebuffers();
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
 
-        allTextures.add(this);
-    }
+        CubeMap cubeMapTexture = new CubeMap(32, 32, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, cubeMapTexture.id, 0);
 
-    public void bind() {
-        if (!alreadyBound.contains(this)) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
-            this.index = alreadyBound.size();
-            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
-            alreadyBound.add(this);
-        }
-    }
+        CubeMap depthTexture = new CubeMap(32, 32, GL33.GL_DEPTH_COMPONENT24, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT);
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_ATTACHMENT, depthTexture.id, 0);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
-    public void unbind() {
-        if (index != 0) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
-            GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
-            alreadyBound.remove(this);
-        }
-    }
+        // Create needed matrices for mapping
+        Matrix4f projection = new Matrix4f().identity().perspective(Math.toRadians(90.0f), 1.0f, 0.1f, 10.0f);
+        Matrix4f[] viewMatrices = new Matrix4f[] {
+                new Matrix4f().identity().lookAt(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f( 1.0f,  0.0f,  0.0f), new Vector3f(0.0f, -1.0f,  0.0f)),
+                new Matrix4f().identity().lookAt(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(-1.0f,  0.0f,  0.0f), new Vector3f(0.0f, -1.0f,  0.0f)),
+                new Matrix4f().identity().lookAt(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f( 0.0f,  1.0f,  0.0f), new Vector3f(0.0f,  0.0f,  1.0f)),
+                new Matrix4f().identity().lookAt(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f( 0.0f, -1.0f,  0.0f), new Vector3f(0.0f,  0.0f, -1.0f)),
+                new Matrix4f().identity().lookAt(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f( 0.0f,  0.0f,  1.0f), new Vector3f(0.0f, -1.0f,  0.0f)),
+                new Matrix4f().identity().lookAt(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f( 0.0f,  0.0f, -1.0f), new Vector3f(0.0f, -1.0f,  0.0f))
+        };
 
-    public void nonModifyingUnbind() {
-        // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
-        if (index != 0) {
-            GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
-        }
-    }
+        // Create shaderprogram and set uniforms
+        ShaderProgram shaderProgram = new ShaderProgram("./cubeMapConvolution/VertexShader", "./cubeMapConvolution/GeometryShader", "./cubeMapConvolution/FragmentShader");
 
-    public void destroy() {
-        GL33.glDeleteTextures(id);
-    }
+        shaderProgram.setUniformMat4F("projection", projection);
+        shaderProgram.setUniformMat4FArray("viewMatrices", viewMatrices);
+        GL33.glActiveTexture(GL33.GL_TEXTURE30);
+        GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, cubeMap.id);
+        shaderProgram.setUniform1I("environmentMap", 30);
 
-    public static CubeMap equirectangularMapToCubeMap(String file, int size, boolean flipImage) throws Exception {
-        return new CubeMap(file, size, flipImage);
+        // Define Cube vertices
+        float[] cubeVertices = {
+                -1.0f,  1.0f, -1.0f,
+                -1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f,  1.0f, -1.0f,
+                -1.0f,  1.0f, -1.0f,
+
+                -1.0f, -1.0f,  1.0f,
+                -1.0f, -1.0f, -1.0f,
+                -1.0f,  1.0f, -1.0f,
+                -1.0f,  1.0f, -1.0f,
+                -1.0f,  1.0f,  1.0f,
+                -1.0f, -1.0f,  1.0f,
+
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+
+                -1.0f, -1.0f,  1.0f,
+                -1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f, -1.0f,  1.0f,
+                -1.0f, -1.0f,  1.0f,
+
+                -1.0f,  1.0f, -1.0f,
+                1.0f,  1.0f, -1.0f,
+                1.0f,  1.0f,  1.0f,
+                1.0f,  1.0f,  1.0f,
+                -1.0f,  1.0f,  1.0f,
+                -1.0f,  1.0f, -1.0f,
+
+                -1.0f, -1.0f, -1.0f,
+                -1.0f, -1.0f,  1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                -1.0f, -1.0f,  1.0f,
+                1.0f, -1.0f,  1.0f
+        };
+
+        // Preparing the cube to be rendered
+        int VAO = GL33.glGenVertexArrays();
+        int VBO = GL33.glGenBuffers();
+
+        GL33.glBindVertexArray(VAO);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, cubeVertices, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 3 * Float.BYTES, 0);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
+        GL33.glBindVertexArray(0);
+
+        // Rendering and saving the result as a cubemap
+        GL33.glViewport(0, 0, 32, 32);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
+        GL33.glDepthFunc(GL33.GL_LEQUAL);
+
+        shaderProgram.bind();
+        GL33.glBindVertexArray(VAO);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, 36);
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glBindVertexArray(0);
+        shaderProgram.unbind();
+
+        GL33.glDepthFunc(GL33.GL_LESS);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+        GL33.glDisable(GL33.GL_DEPTH_TEST);
+
+        // Create final cubemap
+        CubeMap result = new CubeMap(cubeMapTexture.id);
+
+        // Delete all unneeded components
+        GL33.glDeleteVertexArrays(VAO);
+        GL33.glDeleteBuffers(VBO);
+        GL33.glDeleteFramebuffers(frameBuffer);
+        GL33.glDeleteTextures(depthTexture.id);
+
+        return result;
     }
 
 }

@@ -41,7 +41,7 @@ public class MyRenderingEngine extends RenderingEngine {
     private PointLight pointLight;
     private SpotLight spotLight;
     private TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2;
-    private CubeMap environmentCubeMap, shadowCubeMap;
+    private CubeMap environmentCubeMap, shadowCubeMap, convolutedCubeMap;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         this.window = window;
@@ -98,11 +98,14 @@ public class MyRenderingEngine extends RenderingEngine {
         pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(200.0f, 200.0f, 200.0f), 35.0f);
         spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(5.0f, 5.0f, 5.0f));
 
-        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
-        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight);
-        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight);
-        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight);
-        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight);
+        CubeMap cubeMap = CubeMap.equirectangularMapToCubeMap("./src/main/resources/textures/skybox/Newport_Loft_4k.jpg",1024, true);
+        convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap);
+
+        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap);
+        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap);
+        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap);
+        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap);
+        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap);
         RenderingEngineUnit lightSourceRenderingEngineUnit = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
@@ -403,8 +406,6 @@ public class MyRenderingEngine extends RenderingEngine {
 
         RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
 
-            private CubeMap cubeMap = CubeMap.equirectangularMapToCubeMap("./src/main/resources/textures/skybox/Newport_Loft_8k.jpg",1024, true);
-
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 cubeMap.bind();
@@ -425,6 +426,7 @@ public class MyRenderingEngine extends RenderingEngine {
                 GL33.glDepthFunc(GL33.GL_LESS);
             }
         };
+
         shadowNotToBeRendered = new HashSet<>();
         shadowNotToBeRendered.add(skybox);
         shadowNotToBeRendered.add(refractionText);

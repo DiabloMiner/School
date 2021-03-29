@@ -87,7 +87,7 @@ public class Model extends Renderable {
         // Here twoDimensionalTextures are processed if they exist
         if (mesh.mMaterialIndex() >= 0) {
             AIMaterial material = AIMaterial.create(scene.mMaterials().get(mesh.mMaterialIndex()));
-            List<TwoDimensionalTexture> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_diffuse");
+            List<TwoDimensionalTexture> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_color");
             List<TwoDimensionalTexture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal");
             List<TwoDimensionalTexture> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement");
             List<TwoDimensionalTexture> roughnessMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_roughness");
