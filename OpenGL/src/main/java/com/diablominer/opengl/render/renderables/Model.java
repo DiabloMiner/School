@@ -2,7 +2,7 @@ package com.diablominer.opengl.render.renderables;
 
 import com.diablominer.opengl.render.RenderingEngineUnit;
 import com.diablominer.opengl.render.ShaderProgram;
-import com.diablominer.opengl.render.textures.Texture;
+import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import com.diablominer.opengl.utils.ListUtil;
 import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
@@ -16,13 +16,13 @@ public class Model extends Renderable {
 
     private List<Mesh> meshes;
     private String path;
-    private List<Texture> loadedTextures;
+    private List<TwoDimensionalTexture> loadedTwoDimensionalTextures;
 
     public Model(String path, RenderingEngineUnit renderingEngineUnit, Vector3f position) {
         super(position);
         renderingEngineUnit.addNewRenderable(this);
         meshes = new ArrayList<>();
-        loadedTextures = new ArrayList<>();
+        loadedTwoDimensionalTextures = new ArrayList<>();
         this.path = path;
         loadModel(path);
     }
@@ -30,7 +30,7 @@ public class Model extends Renderable {
     public Model(String path, Vector3f position) {
         super(position);
         meshes = new ArrayList<>();
-        loadedTextures = new ArrayList<>();
+        loadedTwoDimensionalTextures = new ArrayList<>();
         this.path = path;
         loadModel(path);
     }
@@ -74,60 +74,60 @@ public class Model extends Renderable {
         List<Float> normals = processVertexAttribute3F(mesh.mNormals());
         List<Float> textureCoordinates = new ArrayList<>();
         List<Integer> indices = processIndices(mesh);
-        List<Texture> textures = new ArrayList<>();
+        List<TwoDimensionalTexture> twoDimensionalTextures = new ArrayList<>();
         List<Float> tangents = processVertexAttribute3F(mesh.mTangents());
         List<Float> biTangents = processVertexAttribute3F(mesh.mBitangents());
 
 
-        // Texture coordinates are processed here if they exist
+        // TwoDimensionalTexture coordinates are processed here if they exist
         if (mesh.mTextureCoords(0) != null) {
             textureCoordinates = processVertexAttribute2F(mesh.mTextureCoords(0));
         }
 
-        // Here textures are processed if they exist
+        // Here twoDimensionalTextures are processed if they exist
         if (mesh.mMaterialIndex() >= 0) {
             AIMaterial material = AIMaterial.create(scene.mMaterials().get(mesh.mMaterialIndex()));
-            List<Texture> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_diffuse");
-            List<Texture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal");
-            List<Texture> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement");
-            List<Texture> roughnessMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_roughness");
-            List<Texture> metallicMaps = loadMaterialTexture(material, Assimp.aiTextureType_EMISSIVE, "texture_metallic");
-            List<Texture> aoMaps = loadMaterialTexture(material, Assimp.aiTextureType_AMBIENT, "texture_ao");
-            List<Texture> reflectionAndRefractionMaps = loadMaterialTexture(material, Assimp.aiTextureType_OPACITY, "texture_reflection");
+            List<TwoDimensionalTexture> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_diffuse");
+            List<TwoDimensionalTexture> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal");
+            List<TwoDimensionalTexture> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement");
+            List<TwoDimensionalTexture> roughnessMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_roughness");
+            List<TwoDimensionalTexture> metallicMaps = loadMaterialTexture(material, Assimp.aiTextureType_EMISSIVE, "texture_metallic");
+            List<TwoDimensionalTexture> aoMaps = loadMaterialTexture(material, Assimp.aiTextureType_AMBIENT, "texture_ao");
+            List<TwoDimensionalTexture> reflectionAndRefractionMaps = loadMaterialTexture(material, Assimp.aiTextureType_OPACITY, "texture_reflection");
 
-            textures.addAll(diffuseMaps);
-            textures.addAll(normalMaps);
-            textures.addAll(displacementMaps);
-            textures.addAll(roughnessMaps);
-            textures.addAll(metallicMaps);
-            textures.addAll(aoMaps);
-            textures.addAll(reflectionAndRefractionMaps);
+            twoDimensionalTextures.addAll(diffuseMaps);
+            twoDimensionalTextures.addAll(normalMaps);
+            twoDimensionalTextures.addAll(displacementMaps);
+            twoDimensionalTextures.addAll(roughnessMaps);
+            twoDimensionalTextures.addAll(metallicMaps);
+            twoDimensionalTextures.addAll(aoMaps);
+            twoDimensionalTextures.addAll(reflectionAndRefractionMaps);
         }
-        return new Mesh(ListUtil.convertListToArray(vertices), ListUtil.convertListToArray(normals), ListUtil.convertListToArray(textureCoordinates), ListUtil.convertListToArray(tangents), ListUtil.convertListToArray(biTangents), indices.stream().mapToInt(i -> i).toArray(), textures);
+        return new Mesh(ListUtil.convertListToArray(vertices), ListUtil.convertListToArray(normals), ListUtil.convertListToArray(textureCoordinates), ListUtil.convertListToArray(tangents), ListUtil.convertListToArray(biTangents), indices.stream().mapToInt(i -> i).toArray(), twoDimensionalTextures);
     }
 
-    private List<Texture> loadMaterialTexture(AIMaterial material, int type, String typeName) {
-        List<Texture> textures = new ArrayList<>();
+    private List<TwoDimensionalTexture> loadMaterialTexture(AIMaterial material, int type, String typeName) {
+        List<TwoDimensionalTexture> twoDimensionalTextures = new ArrayList<>();
         for (int i = 0; i < Assimp.aiGetMaterialTextureCount(material, type); i++) {
             AIString str = AIString.calloc();
             Assimp.aiGetMaterialTexture(material, type, 0, str, (IntBuffer) null, null, null, null, null, null);
             boolean skip = false;
             String path = new File(this.path).getParent() + File.separator + str.dataString();
-            for (Texture texture : loadedTextures) {
-                if (texture.path.equals(path)) {
-                    textures.add(texture);
+            for (TwoDimensionalTexture twoDimensionalTexture : loadedTwoDimensionalTextures) {
+                if (twoDimensionalTexture.path.equals(path)) {
+                    twoDimensionalTextures.add(twoDimensionalTexture);
                     skip = true;
                     break;
                 }
             }
             if (!skip) {
-                Texture texture = new Texture(path, typeName, true, true);
-                textures.add(texture);
-                loadedTextures.add(texture);
+                TwoDimensionalTexture twoDimensionalTexture = new TwoDimensionalTexture(path, typeName, true, true);
+                twoDimensionalTextures.add(twoDimensionalTexture);
+                loadedTwoDimensionalTextures.add(twoDimensionalTexture);
             }
             str.free();
         }
-        return textures;
+        return twoDimensionalTextures;
     }
 
     private List<Float> processVertexAttribute3F(AIVector3D.Buffer buffer) {

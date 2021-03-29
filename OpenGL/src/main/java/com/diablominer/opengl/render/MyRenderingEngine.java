@@ -11,6 +11,7 @@ import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.renderables.Renderable;
 import com.diablominer.opengl.render.textures.CubeMap;
 import com.diablominer.opengl.render.textures.Texture;
+import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 import org.joml.Math;
@@ -39,7 +40,7 @@ public class MyRenderingEngine extends RenderingEngine {
     private DirectionalLight directionalLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    private Texture shadowTexture, shadowTexture2;
+    private TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2;
     private CubeMap environmentCubeMap, shadowCubeMap;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
@@ -248,9 +249,9 @@ public class MyRenderingEngine extends RenderingEngine {
         shadowFrameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
 
-        shadowTexture = Texture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
-        GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowTexture.id);
-        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_TEXTURE_2D, shadowTexture.id, 0);
+        shadowTwoDimensionalTexture = TwoDimensionalTexture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, shadowTwoDimensionalTexture.id);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_TEXTURE_2D, shadowTwoDimensionalTexture.id, 0);
         GL33.glDrawBuffer(GL33.GL_NONE);
         GL33.glReadBuffer(GL33.GL_NONE);
 
@@ -277,8 +278,8 @@ public class MyRenderingEngine extends RenderingEngine {
         shadowFrameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer3);
 
-        shadowTexture2 = Texture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowTexture2.id, 0);
+        shadowTwoDimensionalTexture2 = TwoDimensionalTexture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowTwoDimensionalTexture2.id, 0);
         GL33.glDrawBuffer(GL33.GL_NONE);
         GL33.glReadBuffer(GL33.GL_NONE);
 
@@ -402,7 +403,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
 
-            private CubeMap cubeMap = new CubeMap("./src/main/resources/textures/skybox/Newport_Loft_8k.jpg", true, 1024);
+            private CubeMap cubeMap = CubeMap.equirectangularMapToCubeMap("./src/main/resources/textures/skybox/Newport_Loft_8k.jpg",1024, true);
 
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
@@ -449,8 +450,7 @@ public class MyRenderingEngine extends RenderingEngine {
         renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram);
         GL33.glCullFace(GL33.GL_BACK);
 
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
         // Omnidirectional shadow-mapping for the point-light
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer2);
@@ -460,8 +460,7 @@ public class MyRenderingEngine extends RenderingEngine {
         updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram2);
         renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram2);
 
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
         // Directional shadow-mapping for the spot-light
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer3);
@@ -473,8 +472,7 @@ public class MyRenderingEngine extends RenderingEngine {
         renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram);
         GL33.glCullFace(GL33.GL_BACK);
 
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
         // Environment-mapping
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
@@ -487,8 +485,7 @@ public class MyRenderingEngine extends RenderingEngine {
         updateAllEngineUnitsAlternative(environmentMappingCamera);
         renderAllEngineUnitsWithoutRenderablesAlternative(notToBeRendered);
 
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
 
         // Normal rendering
@@ -504,8 +501,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         blitFramebuffers(frameBuffer, frameBuffer2, 0, 0, 1280, 720, 0, 0, 1280, 720);
 
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
         // Normal rendering for the back "mirror"
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
@@ -523,16 +519,14 @@ public class MyRenderingEngine extends RenderingEngine {
         blitFramebuffers(frameBuffer, frameBuffer2, 0, 0, 320, 180, 480, 540, 800, 720);
 
         GL33.glViewport(0, 0, 1280, 720);
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
 
         // Blurring the final picture for the bloom effect
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
         pingpongBlur(gaussianBlurShaderProgram, pingpongFBOs, pingpongColorBuffers, brightColorBuffer);
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
 
 
         // Rendering the result onto a quad
@@ -681,14 +675,14 @@ public class MyRenderingEngine extends RenderingEngine {
 
     private void updateShadowMaps() {
         // Here textures and uniforms needed for shadow mapping are set
-        shadowTexture.bind();
-        shadowTexture2.bind();
+        shadowTwoDimensionalTexture.bind();
+        shadowTwoDimensionalTexture2.bind();
         shadowCubeMap.bind();
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
-            shaderProgram.setUniform1I("dirLight.shadowMap", shadowTexture.index);
+            shaderProgram.setUniform1I("dirLight.shadowMap", shadowTwoDimensionalTexture.index);
             shaderProgram.setUniform1I("pointLight.shadowMap", shadowCubeMap.index);
             shaderProgram.setUniform1F("pointLight.farPlane", pointLight.getFarPlane());
-            shaderProgram.setUniform1I("spotLight.shadowMap", shadowTexture2.index);
+            shaderProgram.setUniform1I("spotLight.shadowMap", shadowTwoDimensionalTexture2.index);
             shaderProgram.setUniformMat4F("dirLightLightSpaceMatrix", directionalLight.getLightSpaceMatrix());
             shaderProgram.setUniformMat4F("spotLightLightSpaceMatrix", spotLight.getLightSpaceMatrix());
         }
@@ -790,8 +784,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBindVertexArray(0);
         shaderProgram.unbind();
 
-        Texture.unbindAll();
-        CubeMap.unbindAll();
+        Texture.unbindAllTextures();
     }
 
     private void renderAllEngineUnitsWithoutRenderablesAlternative(Set<Renderable> renderables) {

@@ -12,25 +12,17 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
-public class CubeMap {
-
-    public static List<CubeMap> alreadyBound = new ArrayList<>();
-    public static List<CubeMap> allTextures = new ArrayList<>();
-    public static int activeTextureOffset = 0;
+public class CubeMap implements Texture {
 
     public int id;
     public int index;
-    private CubeMap cubeMapTexture;
 
     public CubeMap(String directory, String fileType, boolean flipImage) {
         String[] files = {directory + File.separator + "right" + fileType, directory + File.separator + "left" + fileType, directory + File.separator + "top" + fileType,
                 directory + File.separator + "bottom" + fileType, directory + File.separator + "front" + fileType, directory + File.separator + "back" + fileType};
         this.id = GL33.glGenTextures();
         this.index = 0;
-        this.cubeMapTexture = null;
         GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, id);
 
         for (int i = 0; i < files.length; i++) {
@@ -58,9 +50,9 @@ public class CubeMap {
         allTextures.add(this);
     }
 
-    public CubeMap(String file, boolean flipImage, int size) throws Exception {
+    private CubeMap(String file, int size, boolean flipImage) throws Exception {
         // Should only be used for equirectangular maps
-        // This constructor maps these maps to normal cube maps
+        // This constructor maps equirectangular maps to normal cube maps
 
         // Create inital equirectangular 2d texture
         IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
@@ -90,7 +82,7 @@ public class CubeMap {
         int frameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
 
-        cubeMapTexture = new CubeMap(size, size, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
+        CubeMap cubeMapTexture = new CubeMap(size, size, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, cubeMapTexture.id, 0);
 
         CubeMap depthTexture = new CubeMap(size, size, GL33.GL_DEPTH_COMPONENT24, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT);
@@ -195,8 +187,6 @@ public class CubeMap {
 
         this.id = cubeMapTexture.id;
         allTextures.add(this);
-
-        System.out.println(GL33.glGetError());
     }
 
     public CubeMap(int width, int height, int internalFormat, int format, int type) {
@@ -216,10 +206,9 @@ public class CubeMap {
     }
 
     public void bind() {
-        activeTextureOffset = Texture.alreadyBound.size();
         if (!alreadyBound.contains(this)) {
-            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size() + activeTextureOffset);
-            this.index = alreadyBound.size() + activeTextureOffset;
+            GL33.glActiveTexture(GL33.GL_TEXTURE0 + alreadyBound.size());
+            this.index = alreadyBound.size();
             GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, this.id);
             alreadyBound.add(this);
         }
@@ -233,7 +222,7 @@ public class CubeMap {
         }
     }
 
-    protected void nonModifyingUnbind() {
+    public void nonModifyingUnbind() {
         // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
         if (index != 0) {
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
@@ -245,21 +234,8 @@ public class CubeMap {
         GL33.glDeleteTextures(id);
     }
 
-    public CubeMap getCubeMapTexture() {
-        return cubeMapTexture;
-    }
-
-    public static void unbindAll() {
-        for (CubeMap cubeMap : alreadyBound) {
-            cubeMap.nonModifyingUnbind();
-        }
-        alreadyBound.clear();
-    }
-
-    public static void destroyAllCubeMaps() {
-        for (CubeMap cubeMap : allTextures) {
-            cubeMap.destroy();
-        }
+    public static CubeMap equirectangularMapToCubeMap(String file, int size, boolean flipImage) throws Exception {
+        return new CubeMap(file, size, flipImage);
     }
 
 }

@@ -1,7 +1,7 @@
 package com.diablominer.opengl.render.renderables;
 
 import com.diablominer.opengl.render.ShaderProgram;
-import com.diablominer.opengl.render.textures.Texture;
+import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 
@@ -17,19 +17,19 @@ public class Mesh {
     public float[] tangents;
     public float[] biTangents;
     public int[] indices;
-    public List<Texture> textures;
+    public List<TwoDimensionalTexture> twoDimensionalTextures;
 
     private int VAO, VBO, NBO, TBO, EBO, tangentBufferObject, biTangentBufferObject;
     private IntBuffer indicesBuffer;
 
-    public Mesh(float[] vertices, float[] normals, float[] texCoords, float[] tangents, float[] biTangents,int[] indices, List<Texture> textures) {
+    public Mesh(float[] vertices, float[] normals, float[] texCoords, float[] tangents, float[] biTangents,int[] indices, List<TwoDimensionalTexture> twoDimensionalTextures) {
         this.vertices = vertices;
         this.normals = normals;
         this.texCoords = texCoords;
         this.tangents = tangents;
         this.biTangents = biTangents;
         this.indices = indices;
-        this.textures = textures;
+        this.twoDimensionalTextures = twoDimensionalTextures;
         setUpMesh();
     }
 
@@ -98,9 +98,9 @@ public class Mesh {
         int metallicCounter = 1;
         int aoCounter = 1;
         int reflectionCounter = 1;
-        for (Texture currentTexture : textures) {
+        for (TwoDimensionalTexture currentTwoDimensionalTexture : twoDimensionalTextures) {
             int number = 0;
-            String name = currentTexture.type;
+            String name = currentTwoDimensionalTexture.type;
             switch (name) {
                 case "texture_diffuse":
                     number = diffuseCounter++;
@@ -125,8 +125,8 @@ public class Mesh {
                     break;
             }
             if (number != 0) {
-                currentTexture.bind();
-                shaderProgram.setUniform1I("material." + name + number, currentTexture.index);
+                currentTwoDimensionalTexture.bind();
+                shaderProgram.setUniform1I("material." + name + number, currentTwoDimensionalTexture.index);
             }
         }
 
@@ -155,10 +155,10 @@ public class Mesh {
         // Unbind the shaderProgram
         shaderProgram.unbind();
 
-        // Unbind all textures used for this mesh
-        for (Texture currentTexture : textures) {
+        // Unbind all twoDimensionalTextures used for this mesh
+        for (TwoDimensionalTexture currentTwoDimensionalTexture : twoDimensionalTextures) {
             int number = 0;
-            String name = currentTexture.type;
+            String name = currentTwoDimensionalTexture.type;
             switch (name) {
                 case "texture_diffuse":
                     number = diffuseCounter;
@@ -183,8 +183,8 @@ public class Mesh {
                     break;
             }
             if (number != 0) {
-                currentTexture.unbind();
-                shaderProgram.setUniform1I("material." + name + number, currentTexture.index);
+                currentTwoDimensionalTexture.unbind();
+                shaderProgram.setUniform1I("material." + name + number, currentTwoDimensionalTexture.index);
             }
         }
     }

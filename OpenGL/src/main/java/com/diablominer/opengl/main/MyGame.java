@@ -5,6 +5,7 @@ import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.*;
 import com.diablominer.opengl.render.textures.CubeMap;
 import com.diablominer.opengl.render.textures.Texture;
+import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
@@ -95,7 +96,6 @@ public class MyGame implements Game {
     @Override
     public void cleanUp() {
         Texture.destroyAllTextures();
-        CubeMap.destroyAllCubeMaps();
 
         renderingEngine.destroy();
 
