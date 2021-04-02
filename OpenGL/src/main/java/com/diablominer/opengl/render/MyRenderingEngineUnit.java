@@ -5,6 +5,7 @@ import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.render.textures.CubeMap;
+import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import org.joml.Matrix4f;
 
 public class MyRenderingEngineUnit extends RenderingEngineUnit {
@@ -12,22 +13,27 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
     protected DirectionalLight dirLight;
     protected PointLight pointLight;
     protected SpotLight spotLight;
-    protected CubeMap convolutedCubeMap;
+    protected CubeMap convolutedCubeMap, prefilteredCubeMap;
+    protected TwoDimensionalTexture brdfLookUpTexture;
 
-    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap) {
+    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
         super(shaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
         this.convolutedCubeMap = convolutedCubeMap;
+        this.prefilteredCubeMap = prefilteredCubeMap;
+        this.brdfLookUpTexture = brdfLookUpTexture;
     }
 
-    public MyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap) {
+    public MyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
         super(shaderProgram, alternativeShaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
         this.convolutedCubeMap = convolutedCubeMap;
+        this.prefilteredCubeMap = prefilteredCubeMap;
+        this.brdfLookUpTexture = brdfLookUpTexture;
     }
 
     @Override
@@ -45,21 +51,22 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniformVec3F("spotLight.color", spotLight.getColor());
 
         shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
+
+        convolutedCubeMap.bind();
+        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
+        prefilteredCubeMap.bind();
+        shaderProgram.setUniform1I("prefilterMap", prefilteredCubeMap.index);
+        brdfLookUpTexture.bind();
+        shaderProgram.setUniform1I("brdfLUT", brdfLookUpTexture.index);
     }
 
     @Override
     public void render() {
-        convolutedCubeMap.bind();
-        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
         renderAllRenderables();
-        convolutedCubeMap.unbind();
     }
 
     @Override
     public void renderAlternative() {
-        convolutedCubeMap.bind();
-        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
         renderAllRenderablesAlternative();
-        convolutedCubeMap.unbind();
     }
 }

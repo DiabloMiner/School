@@ -3,13 +3,12 @@ package com.diablominer.opengl.main;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.*;
-import com.diablominer.opengl.render.textures.CubeMap;
 import com.diablominer.opengl.render.textures.Texture;
-import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.*;
+import org.lwjgl.system.MemoryUtil;
 
 public class MyGame implements Game {
 
@@ -38,6 +37,7 @@ public class MyGame implements Game {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
         GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 4);
+        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_DEBUG_CONTEXT, GLFW.GLFW_TRUE);
 
         Camera camera = new Camera(45.0f, new Vector3f(1.0f, 1.0f, 5.0f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, 1.0f, 0.0f), 1280.0f / 720.0f);
         Window window = new Window(1280, 720, "OpenGL", camera);
@@ -54,6 +54,83 @@ public class MyGame implements Game {
         GL33.glCullFace(GL33.GL_BACK);
         GL33.glFrontFace(GL33.GL_CCW);
         GL33.glEnable(GL33.GL_MULTISAMPLE);
+        GL33.glEnable(GL33.GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        GLDebugMessageCallback callback = new GLDebugMessageCallback() {
+            @Override
+            public void invoke(int source, int type, int id, int severity, int length, long message, long userParam) {
+                if (severity != GL43.GL_DEBUG_SEVERITY_NOTIFICATION) {
+                    System.err.println("|  Error / Debug message  |");
+                    switch (source) {
+                        case GL43.GL_DEBUG_SOURCE_API:
+                            System.err.println("Source: API");
+                            break;
+                        case GL43.GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+                            System.err.println("Source: Window System");
+                            break;
+                        case GL43.GL_DEBUG_SOURCE_SHADER_COMPILER:
+                            System.err.println("Source: Shader Compiler");
+                            break;
+                        case GL43.GL_DEBUG_SOURCE_THIRD_PARTY:
+                            System.err.println("Source: Third Party");
+                            break;
+                        case GL43.GL_DEBUG_SOURCE_APPLICATION:
+                            System.err.println("Source: Application");
+                            break;
+                        case GL43.GL_DEBUG_SOURCE_OTHER:
+                            System.err.println("Source: Other");
+                            break;
+                    }
+
+                    switch (type) {
+                        case GL43.GL_DEBUG_TYPE_ERROR:
+                            System.err.println("Type: Error");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+                            System.err.println("Type: Deprecated Behavior");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+                            System.err.println("Type: Undefined Behavior");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_PORTABILITY:
+                            System.err.println("Type: Portability");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_PERFORMANCE:
+                            System.err.println("Type: Performance");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_MARKER:
+                            System.err.println("Type: Marker");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_PUSH_GROUP:
+                            System.err.println("Type: Push Group");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_POP_GROUP:
+                            System.err.println("Type: Pop Group");
+                            break;
+                        case GL43.GL_DEBUG_TYPE_OTHER:
+                            System.err.println("Type: Other");
+                            break;
+                    }
+
+                    switch (severity) {
+                        case GL43.GL_DEBUG_SEVERITY_HIGH:
+                            System.err.println("Severity: High");
+                            break;
+                        case GL43.GL_DEBUG_SEVERITY_MEDIUM:
+                            System.err.println("Severity: Medium");
+                            break;
+                        case GL43.GL_DEBUG_SEVERITY_LOW:
+                            System.err.println("Severity: Low");
+                            break;
+                        case GL43.GL_DEBUG_SEVERITY_NOTIFICATION:
+                            System.err.println("Severity: Notification");
+                            break;
+                    }
+                    System.err.println("Message: " + MemoryUtil.memUTF8(message));
+                }
+            }
+        };
+        GL43.glDebugMessageCallback(callback, 0);
 
         logicalEngine = new MyLogicalEngine();
         renderingEngine = new MyRenderingEngine(logicalEngine, window, camera);

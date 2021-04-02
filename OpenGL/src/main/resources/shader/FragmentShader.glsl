@@ -53,6 +53,8 @@ uniform DirectionaLight dirLight;
 uniform PointLight pointLight;
 uniform SpotLight spotLight;
 uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
@@ -301,7 +303,15 @@ void main() {
     vec3 kD = 1.0f - kS;
     vec3 irradiance = texture(irradianceMap, norm).rgb;
     vec3 diffuse = irradiance * texture(material.texture_color1, parallaxMappedTexCoords).rgb;
-    vec3 ambient = (kD * diffuse) * ao;
+
+    vec3 reflectionVector = reflect(-viewDir, norm);
+    const float MAX_REFLECTION_LOD = 4.0f;
+    vec3 prefilteredColor = textureLod(prefilterMap, reflectionVector, roughness * MAX_REFLECTION_LOD).rgb;
+    vec3 F = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
+    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(norm, viewDir), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+    vec3 ambient = (kD * diffuse + specular) * ao;
     Lo += ambient;
 
     fragmentColor = vec4(Lo, texture(material.texture_color1, parallaxMappedTexCoords).w);
@@ -316,4 +326,5 @@ void main() {
 
     // TODO: Investigate issue: Edges of cube are blue
     // Complete implementing IBL
+    // Implement index stuff for unbinding and -1 init in 2dtexture
 }

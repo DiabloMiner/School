@@ -3,5 +3,8 @@ modern-crab/
 AltesPingPong/
 OpenGL/.idea/
 OpenGL/target/
+OpenGL/out/
+OpenGL/OpenGL.jar
+OpenGL/OpenGL.bat
 *.class
 *.zip

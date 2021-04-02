@@ -1,8 +1,11 @@
 package com.diablominer.opengl.render.textures;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import com.diablominer.opengl.render.ShaderProgram;
+import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
@@ -92,6 +95,13 @@ public class TwoDimensionalTexture implements Texture {
 
     public void destroy() {
         GL33.glDeleteTextures(id);
+        allTextures.remove(this);
+        alreadyBound.remove(this);
+    }
+
+    public void nonModifyingDestroy() {
+        GL33.glDeleteTextures(id);
+        alreadyBound.remove(this);
     }
 
     public static TwoDimensionalTexture createShadowTexture(int width, int height, int internalFormat, int format, int type) {
@@ -105,5 +115,85 @@ public class TwoDimensionalTexture implements Texture {
 
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
         return twoDimensionalTexture;
+    }
+
+    public static TwoDimensionalTexture createBrdfConvolutionTexture(int size) throws Exception {
+        // Create framebuffer
+        int frameBuffer = GL33.glGenFramebuffers();
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
+
+        TwoDimensionalTexture texture = new TwoDimensionalTexture(size, size, GL33.GL_RG16F, GL33.GL_RG, GL33.GL_FLOAT);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, texture.id);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D, texture.id, 0);
+
+        TwoDimensionalTexture renderBuffer = new TwoDimensionalTexture(size, size, GL33.GL_DEPTH_COMPONENT24, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
+        GL33.glBindTexture(GL33.GL_TEXTURE_2D, renderBuffer.id);
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_ATTACHMENT, GL33.GL_TEXTURE_2D, renderBuffer.id, 0);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+
+        // Create shaderprogram
+        ShaderProgram shaderProgram = new ShaderProgram("./brdfConvolution/VertexShader", "./brdfConvolution/FragmentShader");
+
+        // Define vertices
+        float[] rectangleVertices = {
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+            1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+            1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        FloatBuffer vertices = BufferUtil.createBuffer(rectangleVertices);
+
+        // Prepare for rendering
+        int VAO = GL33.glGenVertexArrays();
+        int VBO = GL33.glGenBuffers();
+
+        GL33.glBindVertexArray(VAO);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, VBO);
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, vertices, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 5 * Float.BYTES, 0);
+        GL33.glVertexAttribPointer(1, 2, GL33.GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
+        GL33.glBindVertexArray(0);
+
+        // Render the rectangle
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
+        GL33.glViewport(0, 0, size, size);
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
+        GL33.glDepthFunc(GL33.GL_LEQUAL);
+
+        shaderProgram.bind();
+        GL33.glBindVertexArray(VAO);
+        GL33.glEnableVertexAttribArray(0);
+        GL33.glEnableVertexAttribArray(1);
+        GL33.glDrawArrays(GL33.GL_TRIANGLE_STRIP, 0, 4);
+        GL33.glDisableVertexAttribArray(0);
+        GL33.glDisableVertexAttribArray(1);
+        GL33.glBindVertexArray(0);
+        shaderProgram.unbind();
+
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+        GL33.glDepthFunc(GL33.GL_LESS);
+        GL33.glDisable(GL33.GL_DEPTH_TEST);
+
+        // Delete unneeded components
+        GL33.glDeleteVertexArrays(VAO);
+        GL33.glDeleteBuffers(VBO);
+        GL33.glDeleteFramebuffers(frameBuffer);
+        renderBuffer.destroy();
+        shaderProgram.destroy();
+
+        return texture;
     }
 }

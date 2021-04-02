@@ -105,7 +105,7 @@ public class ShaderProgram {
 
     public void destroy() {
         unbind();
-        if (programId != 0) {
+        if (programId != 0 && GL33.glIsProgram(programId)) {
             GL33.glDeleteProgram(programId);
         }
     }

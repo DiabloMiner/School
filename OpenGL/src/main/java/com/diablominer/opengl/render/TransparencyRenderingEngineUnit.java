@@ -5,6 +5,7 @@ import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.render.textures.CubeMap;
+import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL33;
 
@@ -15,14 +16,17 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    private CubeMap convolutedCubeMap;
+    protected CubeMap convolutedCubeMap, prefilteredCubeMap;
+    protected TwoDimensionalTexture brdfLookUpTexture;
 
-    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap) {
+    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
         super(shaderProgram, alternativeShaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
         this.convolutedCubeMap = convolutedCubeMap;
+        this.prefilteredCubeMap = prefilteredCubeMap;
+        this.brdfLookUpTexture = brdfLookUpTexture;
     }
 
     @Override
@@ -39,6 +43,13 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
         shaderProgram.setUniformVec3F("spotLight.color", spotLight.getColor());
 
+        convolutedCubeMap.bind();
+        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
+        prefilteredCubeMap.bind();
+        shaderProgram.setUniform1I("prefilterMap", prefilteredCubeMap.index);
+        brdfLookUpTexture.bind();
+        shaderProgram.setUniform1I("brdfLUT", brdfLookUpTexture.index);
+
 
         this.getShaderProgram().setUniformMat4F("model", new Matrix4f().identity());
 
@@ -52,21 +63,15 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render() {
-        convolutedCubeMap.bind();
-        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
         GL33.glDisable(GL33.GL_CULL_FACE);
         renderAllRenderables();
         GL33.glEnable(GL33.GL_CULL_FACE);
-        convolutedCubeMap.unbind();
     }
 
     @Override
     public void renderAlternative() {
-        convolutedCubeMap.bind();
-        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
         GL33.glDisable(GL33.GL_CULL_FACE);
         renderAllRenderablesAlternative();
         GL33.glEnable(GL33.GL_CULL_FACE);
-        convolutedCubeMap.unbind();
     }
 }

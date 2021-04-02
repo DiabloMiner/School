@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryUtil;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ public class MyRenderingEngine extends RenderingEngine {
     private int texColorBuffer, texColorBuffer2, brightColorBuffer;
     private int[] pingpongColorBuffers = new int[2];
     private int VAO;
+    private int uniformBufferBlock = GL33.glGenBuffers();
     private Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
     private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram, shadowShaderProgram2, gaussianBlurShaderProgram;
     private Set<Renderable> notToBeRendered, shadowNotToBeRendered;
@@ -40,10 +42,11 @@ public class MyRenderingEngine extends RenderingEngine {
     private DirectionalLight directionalLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    private TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2;
-    private CubeMap environmentCubeMap, shadowCubeMap, convolutedCubeMap;
+    private TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2, brdfConvolutionLookUpMap;
+    private CubeMap environmentCubeMap, shadowCubeMap, convolutedCubeMap, prefilteredCubeMap;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
+        BigInteger time = BigInteger.valueOf(System.currentTimeMillis());
         this.window = window;
         this.camera = camera;
         environmentMappingCamera = new Camera(90.0f, new Vector3f(-15.0f, 0.0f, 20.0f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f), 1.0f);
@@ -82,7 +85,6 @@ public class MyRenderingEngine extends RenderingEngine {
             matricesUniformBufferBlockShaderPrograms.add(reflectionShaderProgram);
             matricesUniformBufferBlockShaderPrograms.add(refractionShaderProgram);
             matricesUniformBufferBlockShaderPrograms.add(shadowShaderProgram);
-            matricesUniformBufferBlockShaderPrograms.add(gaussianBlurShaderProgram);
 
             environmentMappingUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
             environmentMappingUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
@@ -98,14 +100,25 @@ public class MyRenderingEngine extends RenderingEngine {
         pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(200.0f, 200.0f, 200.0f), 35.0f);
         spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(5.0f, 5.0f, 5.0f));
 
+        BigInteger time3 = BigInteger.valueOf(System.currentTimeMillis());
+        System.out.println("1. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time).toString());
         CubeMap cubeMap = CubeMap.equirectangularMapToCubeMap("./src/main/resources/textures/skybox/Newport_Loft_4k.jpg",1024, true);
-        convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap);
+        Texture.unbindAllTextures();
+        convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap, 32);
+        Texture.unbindAllTextures();
+        prefilteredCubeMap = CubeMap.cubeMapPreFiltering(cubeMap, 128);
+        Texture.unbindAllTextures();
+        brdfConvolutionLookUpMap = TwoDimensionalTexture.createBrdfConvolutionTexture(512);
+        Texture.unbindAllTextures();
+        BigInteger time4 = BigInteger.valueOf(System.currentTimeMillis()).subtract(time3);
+        System.out.println("Cubemap/PBR-IBL preparation time: " + time4.toString());
+        BigInteger time5 = BigInteger.valueOf(System.currentTimeMillis());
 
-        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap);
-        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap);
-        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap);
-        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap);
-        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap);
+        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
+        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
+        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
+        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
+        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
         RenderingEngineUnit lightSourceRenderingEngineUnit = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
@@ -148,6 +161,8 @@ public class MyRenderingEngine extends RenderingEngine {
                 GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
             }
         };
+        System.out.println("   RenderingEngineUnit Setup time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time5).toString());
+        BigInteger time7 =  BigInteger.valueOf(System.currentTimeMillis());
 
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 1.0f));
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 20.0f));
@@ -169,6 +184,11 @@ public class MyRenderingEngine extends RenderingEngine {
         notToBeRendered = new HashSet<>();
         notToBeRendered.add(reflectionCube);
         notToBeRendered.add(refractionText);
+
+
+        System.out.println("   Model Setup time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time7).toString());
+        System.out.println("2. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time5).toString());
+        BigInteger time6 = BigInteger.valueOf(System.currentTimeMillis());
 
 
         frameBuffer = GL33.glGenFramebuffers();
@@ -237,10 +257,10 @@ public class MyRenderingEngine extends RenderingEngine {
         frameBuffer3 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
 
-        environmentCubeMap = new CubeMap(1024, 1024, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT);
+        environmentCubeMap = new CubeMap(1024, 1024, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, GL33.GL_LINEAR);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, environmentCubeMap.id, 0);
 
-        CubeMap depthAndStencilTexture = new CubeMap(1024, 1024, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        CubeMap depthAndStencilTexture = new CubeMap(1024, 1024, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, GL33.GL_LINEAR);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, depthAndStencilTexture.id, 0);
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -267,7 +287,7 @@ public class MyRenderingEngine extends RenderingEngine {
         shadowFrameBuffer2 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer2);
 
-        shadowCubeMap = new CubeMap(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
+        shadowCubeMap = new CubeMap(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, GL33.GL_LINEAR);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowCubeMap.id, 0);
         GL33.glDrawBuffer(GL33.GL_NONE);
         GL33.glReadBuffer(GL33.GL_NONE);
@@ -434,6 +454,9 @@ public class MyRenderingEngine extends RenderingEngine {
         skyboxRenderingEngineUnit.addNewRenderable(skybox);
         addNewEngineUnit(skyboxRenderingEngineUnit);
         addNewEngineUnit(transparencyRenderingEngineUnit);
+        BigInteger time2 = BigInteger.valueOf(System.currentTimeMillis()).subtract(time);
+        System.out.println("3. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time6).toString());
+        System.out.println("Startup time: " + time2.toString());
     }
 
     @Override
@@ -507,7 +530,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         // Normal rendering for the back "mirror"
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
-        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL33.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glViewport(0, 0, 320, 180);
 
@@ -585,9 +608,8 @@ public class MyRenderingEngine extends RenderingEngine {
     }
 
     private void updateUniformBufferBlocks(Camera cam) {
-        int uniformBufferBlock = GL33.glGenBuffers();
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, uniformBufferBlock);
-        GL33.glBufferData(GL33.GL_UNIFORM_BUFFER, 128, GL33.GL_STATIC_DRAW);
+        GL33.glBufferData(GL33.GL_UNIFORM_BUFFER, 128, GL33.GL_DYNAMIC_DRAW);
 
         Matrix4f view = new Matrix4f().identity().lookAt(cam.position, cam.getLookAtPosition(), cam.up);
         Matrix4f projection = Transforms.createProjectionMatrix(cam.fov, true, cam.aspect, 0.1f, 100.0f);
@@ -611,6 +633,7 @@ public class MyRenderingEngine extends RenderingEngine {
         }
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, 0);
 
+        // Delete unneeded components
         MemoryUtil.memFree(buffer);
     }
 
@@ -821,6 +844,8 @@ public class MyRenderingEngine extends RenderingEngine {
 
     @Override
     public void destroy() {
+        GL33.glDeleteBuffers(uniformBufferBlock);
+
         this.destroyAllEngineUnits();
 
         GL33.glDeleteFramebuffers(new int[] {frameBuffer, frameBuffer2, frameBuffer3});

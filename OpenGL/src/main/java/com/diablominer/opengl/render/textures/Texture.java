@@ -16,6 +16,8 @@ public interface Texture {
 
     void destroy();
 
+    void nonModifyingDestroy();
+
     static void unbindAllTextures() {
         for (Texture texture : alreadyBound) {
             texture.nonModifyingUnbind();
@@ -25,7 +27,7 @@ public interface Texture {
 
     static void destroyAllTextures() {
         for (Texture texture : allTextures) {
-            texture.destroy();
+            texture.nonModifyingDestroy();
         }
         allTextures.clear();
     }
