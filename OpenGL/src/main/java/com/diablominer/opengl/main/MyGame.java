@@ -131,6 +131,7 @@ public class MyGame implements Game {
             }
         };
         GL43.glDebugMessageCallback(callback, 0);
+        GL43.glEnable(GL43.GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
         logicalEngine = new MyLogicalEngine();
         renderingEngine = new MyRenderingEngine(logicalEngine, window, camera);

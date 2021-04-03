@@ -18,7 +18,7 @@ public class TwoDimensionalTexture implements Texture {
     public String type;
 
     public TwoDimensionalTexture(String filename, String type, boolean isInSRGBColorSpace, boolean flipImage) {
-        index = 0;
+        index = -1;
 
         // The image is loaded and read out into a ByteBuffer
         IntBuffer xBuffer = MemoryUtil.memAllocInt(1);
@@ -66,6 +66,7 @@ public class TwoDimensionalTexture implements Texture {
 
         this.type = "";
         this.path = "";
+        this.index = -1;
     }
 
     public void bind() {
@@ -78,7 +79,7 @@ public class TwoDimensionalTexture implements Texture {
     }
 
     public void unbind() {
-        if (index != 0) {
+        if (index != -1) {
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
             alreadyBound.remove(this);
@@ -87,7 +88,7 @@ public class TwoDimensionalTexture implements Texture {
 
     public void nonModifyingUnbind() {
         // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
-        if (index != 0) {
+        if (index != -1) {
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
         }
@@ -100,6 +101,7 @@ public class TwoDimensionalTexture implements Texture {
     }
 
     public void nonModifyingDestroy() {
+        // Doesn't cause a ConcurrentModificationException, because it doesn't alter allTextures
         GL33.glDeleteTextures(id);
         alreadyBound.remove(this);
     }

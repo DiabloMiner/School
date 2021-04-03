@@ -86,17 +86,17 @@ public class CubeMap implements Texture {
     }
 
     public void unbind() {
-        if (index != 0) {
+        if (index != -1) {
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
             GL33.glBindTexture(GL33.GL_TEXTURE_CUBE_MAP, 0);
             alreadyBound.remove(this);
-            this.index = 0;
+            this.index = -1;
         }
     }
 
     public void nonModifyingUnbind() {
         // Doesn't cause a ConcurrentModificationException, because it doesn't alter alreadyBound
-        if (index != 0) {
+        if (index != -1) {
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
             this.index = 0;
@@ -110,6 +110,7 @@ public class CubeMap implements Texture {
     }
 
     public void nonModifyingDestroy() {
+        // Doesn't cause a ConcurrentModificationException, because it doesn't alter allTextures
         GL33.glDeleteTextures(id);
         alreadyBound.remove(this);
     }

@@ -13,10 +13,12 @@ public interface Texture {
     void unbind();
 
     void nonModifyingUnbind();
+    // The implementation may not alter alreadyBound
 
     void destroy();
 
     void nonModifyingDestroy();
+    // The implementation may not alter allTextures
 
     static void unbindAllTextures() {
         for (Texture texture : alreadyBound) {

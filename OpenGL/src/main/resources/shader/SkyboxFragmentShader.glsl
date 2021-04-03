@@ -7,7 +7,7 @@ in vec3 texCoords;
 uniform samplerCube skybox;
 
 void main() {
-    fragmentColor = texture(skybox, texCoords);
+    fragmentColor = textureLod(skybox, texCoords, 0.0);
 
     float brightness = dot(fragmentColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     if (brightness > 1.0f) {

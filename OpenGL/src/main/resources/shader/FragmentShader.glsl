@@ -325,6 +325,5 @@ void main() {
     }
 
     // TODO: Investigate issue: Edges of cube are blue
-    // Complete implementing IBL
-    // Implement index stuff for unbinding and -1 init in 2dtexture
+    // Fix bugs shown by OpenGL debug
 }

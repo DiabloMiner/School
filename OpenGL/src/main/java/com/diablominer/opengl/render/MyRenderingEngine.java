@@ -106,7 +106,7 @@ public class MyRenderingEngine extends RenderingEngine {
         Texture.unbindAllTextures();
         convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap, 32);
         Texture.unbindAllTextures();
-        prefilteredCubeMap = CubeMap.cubeMapPreFiltering(cubeMap, 128);
+        prefilteredCubeMap = CubeMap.cubeMapPreFiltering(cubeMap, 256);
         Texture.unbindAllTextures();
         brdfConvolutionLookUpMap = TwoDimensionalTexture.createBrdfConvolutionTexture(512);
         Texture.unbindAllTextures();
