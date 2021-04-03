@@ -166,7 +166,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 1.0f));
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 20.0f));
-        new Model("./src/main/resources/models/HelloWorld/cube.obj", stencilTestRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
+        new Model("./src/main/resources/models/HelloWorld/cube2.obj", stencilTestRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", stencilObjectRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
         Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
         Renderable refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 2.0f, 20.0f));

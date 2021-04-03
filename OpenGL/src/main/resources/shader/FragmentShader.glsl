@@ -325,5 +325,4 @@ void main() {
     }
 
     // TODO: Investigate issue: Edges of cube are blue
-    // Fix bugs shown by OpenGL debug
 }
