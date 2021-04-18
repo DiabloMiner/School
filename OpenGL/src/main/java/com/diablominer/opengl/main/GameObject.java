@@ -2,6 +2,6 @@ package com.diablominer.opengl.main;
 
 public interface GameObject {
 
-    void updateObjectState();
+    void updateObjectState(double timeStep);
 
 }

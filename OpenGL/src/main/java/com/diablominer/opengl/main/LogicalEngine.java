@@ -19,10 +19,12 @@ public abstract class LogicalEngine {
         return gameObjects;
     }
 
-    public void updateAllGameObjects() {
+    public void updateAllGameObjects(double time) {
         for (GameObject gameObject : gameObjects) {
-            gameObject.updateObjectState();
+            gameObject.updateObjectState(time);
         }
     }
+
+    public abstract void update(double time);
 
 }

@@ -5,7 +5,6 @@ import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.render.*;
 import com.diablominer.opengl.render.textures.Texture;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
@@ -14,9 +13,11 @@ public class MyGame implements Game {
 
     private MyRenderingEngine renderingEngine;
     private MyLogicalEngine logicalEngine;
-    private float lastTime = (float) GLFW.glfwGetTime();
     private int frames = 0;
-    private long time = System.currentTimeMillis();
+    private long frameTime = System.currentTimeMillis();
+    private long lastTime = System.currentTimeMillis();
+
+    private static final long millisecondsPerFrame = 16;
 
     public static void main(String[] args) throws Exception {
         new MyGame();
@@ -138,17 +139,20 @@ public class MyGame implements Game {
     }
 
     @Override
-    public void mainLoop() {
+    public void mainLoop() throws Exception {
         while (!renderingEngine.getWindow().shouldClose()) {
-            float currentTime = (float) GLFW.glfwGetTime();
-            float deltaTime = currentTime - lastTime;
+            long currentTime = System.currentTimeMillis();
+            long deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
-            renderingEngine.handleInputs(deltaTime);
+            renderingEngine.handleInputs(((float) deltaTime) / 1000.0f);
 
-            update();
+            update(((double) deltaTime) / 1000.0);
+            System.out.println(((double) deltaTime) / 1000.0);
 
             render();
+
+            sleep(currentTime + millisecondsPerFrame - System.currentTimeMillis());
         }
     }
 
@@ -156,17 +160,17 @@ public class MyGame implements Game {
         renderingEngine.update();
         renderingEngine.render();
 
-        if (System.currentTimeMillis() >= (time + 1000.0)) {
+        if (System.currentTimeMillis() >= (frameTime + 1000)) {
             System.out.println("FPS: " + frames);
-            time = System.currentTimeMillis();
+            frameTime = System.currentTimeMillis();
             frames = 0;
         } else {
             frames++;
         }
     }
 
-    public void update() {
-        logicalEngine.update();
+    public void update(double time) {
+        logicalEngine.update(time);
 
         GLFW.glfwPollEvents();
     }
@@ -178,5 +182,11 @@ public class MyGame implements Game {
         renderingEngine.destroy();
 
         GLFW.glfwTerminate();
+    }
+
+    private void sleep(long time) throws InterruptedException {
+        if (time > 0) {
+            Thread.sleep(time);
+        }
     }
 }

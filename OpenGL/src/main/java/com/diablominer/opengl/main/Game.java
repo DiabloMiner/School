@@ -4,7 +4,7 @@ public interface Game {
 
     void init() throws Exception;
 
-    void mainLoop();
+    void mainLoop() throws Exception;
 
     void cleanUp();
 

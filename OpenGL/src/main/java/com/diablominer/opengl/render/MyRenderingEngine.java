@@ -425,7 +425,6 @@ public class MyRenderingEngine extends RenderingEngine {
         };
 
         RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
-
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 cubeMap.bind();
