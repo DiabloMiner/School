@@ -16,8 +16,10 @@ public class MyGame implements Game {
     private int frames = 0;
     private long frameTime;
     private long lastTime;
+    private long accumulator;
 
     private static final long millisecondsPerFrame = 16;
+    private static final long millisecondsPerSimulationFrame = 16;
 
     public static void main(String[] args) throws Exception {
         new MyGame();
@@ -148,17 +150,23 @@ public class MyGame implements Game {
             long deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
+            accumulator += deltaTime;
+
             renderingEngine.handleInputs(((float) deltaTime) / 1000.0f);
 
-            update(((double) deltaTime) / 1000.0);
+            while (accumulator >= millisecondsPerSimulationFrame) {
+                update(millisecondsPerSimulationFrame / 1000.0);
+                accumulator -= millisecondsPerFrame;
+            }
 
-            render();
+            render(accumulator / 1000.0);
 
             sleep(currentTime + millisecondsPerFrame - System.currentTimeMillis());
         }
     }
 
-    public void render() {
+    public void render(double leftOverTime) {
+        logicalEngine.predict(leftOverTime);
         renderingEngine.update();
         renderingEngine.render();
 

@@ -19,12 +19,20 @@ public abstract class LogicalEngine {
         return gameObjects;
     }
 
-    public void updateAllGameObjects(double time) {
+    public void updateAllGameObjects(double timeStep) {
         for (GameObject gameObject : gameObjects) {
-            gameObject.updateObjectState(time);
+            gameObject.updateObjectState(timeStep);
         }
     }
 
-    public abstract void update(double time);
+    public void predictAllGameObjects(double timeStep) {
+        for (GameObject gameObject : gameObjects) {
+            gameObject.predictGameObjectState(timeStep);
+        }
+    }
+
+    public abstract void update(double timeStep);
+
+    public abstract void predict(double timeStep);
 
 }

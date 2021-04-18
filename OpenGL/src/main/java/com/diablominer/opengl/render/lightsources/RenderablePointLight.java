@@ -7,6 +7,7 @@ import com.diablominer.opengl.render.RenderingEngineUnit;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.CallbackI;
 
 public class RenderablePointLight implements GameObject {
 
@@ -33,6 +34,15 @@ public class RenderablePointLight implements GameObject {
 
         pointLight.setPosition(position);
         model.setPosition(pointLight.getPosition());
+    }
+
+    @Override
+    public void predictGameObjectState(double timeStep) {
+        Vector3f vel = new Vector3f(velocity).add(new Vector3f(force).div(mass).mul((float) timeStep));
+        Vector3f predictedPosition = new Vector3f(position).add(new Vector3f(vel).mul((float) timeStep));
+
+        pointLight.setPosition(predictedPosition);
+        model.setPosition(predictedPosition);
     }
 
     public Model getModel() {
