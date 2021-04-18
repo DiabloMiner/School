@@ -14,8 +14,8 @@ public class MyGame implements Game {
     private MyRenderingEngine renderingEngine;
     private MyLogicalEngine logicalEngine;
     private int frames = 0;
-    private long frameTime = System.currentTimeMillis();
-    private long lastTime = System.currentTimeMillis();
+    private long frameTime;
+    private long lastTime;
 
     private static final long millisecondsPerFrame = 16;
 
@@ -136,6 +136,9 @@ public class MyGame implements Game {
 
         logicalEngine = new MyLogicalEngine();
         renderingEngine = new MyRenderingEngine(logicalEngine, window, camera);
+
+        frameTime = System.currentTimeMillis();
+        lastTime = System.currentTimeMillis();
     }
 
     @Override
@@ -148,7 +151,6 @@ public class MyGame implements Game {
             renderingEngine.handleInputs(((float) deltaTime) / 1000.0f);
 
             update(((double) deltaTime) / 1000.0);
-            System.out.println(((double) deltaTime) / 1000.0);
 
             render();
 

@@ -30,6 +30,12 @@ public class Transforms {
         return product;
     }
 
+    public static Vector3f getQuotientOf2Vectors(Vector3f vec1, Vector3f vec2) {
+        Vector3f product = new Vector3f();
+        vec1.div(vec2, product);
+        return product;
+    }
+
     public static Matrix4f createProjectionMatrix(float fovy, boolean givenInDegrees, float aspect, float zNear, float zFar) {
         // If givenInDegrees is true fovy has to be given in degrees else it has to be given in radians
         fovy = givenInDegrees ? Math.toRadians(fovy) : fovy;

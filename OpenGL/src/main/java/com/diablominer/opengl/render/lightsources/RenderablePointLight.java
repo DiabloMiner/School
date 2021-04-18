@@ -12,18 +12,26 @@ public class RenderablePointLight implements GameObject {
 
     private Model model;
     private PointLight pointLight;
-    private final Vector3f constantPosition;
+
+    private float mass = 1.0f;
+    private Vector3f force = new Vector3f(0.0f, 0.0f, 1.0f);
+    private Vector3f velocity = new Vector3f(0.0f);
+    private Vector3f position;
 
     public RenderablePointLight(PointLight pointLight, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
         logicalEngine.addGameObject(this);
-        constantPosition = pointLight.getPosition();
+        position = pointLight.getPosition();
+        System.out.println("Starting position: " + position);
         model = new Model(path, renderingEngineUnit, new Vector3f(0.0f, 0.0f, 0.0f));
         this.pointLight = pointLight;
     }
 
     @Override
     public void updateObjectState(double timeStep) {
-        pointLight.setPosition(Transforms.getSumOf2Vectors(new Vector3f(10.0f * (float) Math.cos(timeStep), 5.0f * (float) Math.sin(timeStep), (float) Math.cos(timeStep)), constantPosition));
+        velocity.add(new Vector3f(force).div(mass).mul((float) timeStep));
+        position.add(new Vector3f(velocity).mul((float) timeStep));
+
+        pointLight.setPosition(position);
         model.setPosition(pointLight.getPosition());
     }
 
