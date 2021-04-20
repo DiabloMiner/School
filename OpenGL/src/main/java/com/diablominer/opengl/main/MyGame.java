@@ -19,7 +19,7 @@ public class MyGame implements Game {
     private long accumulator;
 
     private static final long millisecondsPerFrame = 16;
-    private static final long millisecondsPerSimulationFrame = 16;
+    private static final long millisecondsPerSimulationFrame = 10;
 
     public static void main(String[] args) throws Exception {
         new MyGame();
@@ -156,7 +156,7 @@ public class MyGame implements Game {
 
             while (accumulator >= millisecondsPerSimulationFrame) {
                 update(millisecondsPerSimulationFrame / 1000.0);
-                accumulator -= millisecondsPerFrame;
+                accumulator -= millisecondsPerSimulationFrame;
             }
 
             render(accumulator / 1000.0);
@@ -171,7 +171,7 @@ public class MyGame implements Game {
         renderingEngine.render();
 
         if (System.currentTimeMillis() >= (frameTime + 1000)) {
-            System.out.println("FPS: " + frames);
+            System.out.println("FPS: " + frames / ((System.currentTimeMillis() - frameTime) / 1000));
             frameTime = System.currentTimeMillis();
             frames = 0;
         } else {
