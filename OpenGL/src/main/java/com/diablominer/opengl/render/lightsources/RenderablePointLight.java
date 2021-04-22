@@ -13,28 +13,18 @@ public class RenderablePointLight implements GameObject {
     private Model model;
     private PointLight pointLight;
 
-    private static final Vector3f[] points = {
-            new Vector3f(1.0f, 1.0f, -1.0f),
-            new Vector3f(-1.0f, 1.0f, -1.0f),
-            new Vector3f(-1.0f, 1.0f, 1.0f),
-            new Vector3f(1.0f, 1.0f, 1.0f),
-            new Vector3f(1.0f, -1.0f, 1.0f),
-            new Vector3f(-1.0f, -1.0f, 1.0f),
-            new Vector3f(-1.0f, -1.0f, -1.0f),
-            new Vector3f(1.0f, -1.0f, -1.0f)
-    };
+    private Vector3f pointForceIsAppliedOn = new Vector3f(0.0f, 0.5f, 0.5f);
 
     // Primary values
     private Vector3f position;
     private Vector3f momentum = new Vector3f(0.0f);
-    private Vector3f force = new Vector3f(0.0f, 0.0f, 0.0f);
+    private Vector3f force = new Vector3f(0.0f, 0.0f, 0.5f);
     private Quaternionf orientation = new Quaternionf();
     private Vector3f angularMomentum = new Vector3f(0.0f);
     private Vector3f torque = new Vector3f(0.0f, 0.0f, 0.0f);
 
     // Secondary values
     private Vector3f velocity = new Vector3f(0.0f);
-    private Quaternionf spin = new Quaternionf();
     private Vector3f angularVelocity = new Vector3f(0.0f);
     private Matrix4f modelMatrix = new Matrix4f().identity();
 
@@ -51,11 +41,11 @@ public class RenderablePointLight implements GameObject {
 
     @Override
     public void updateObjectState(double timeStep) {
+        torque = new Vector3f(pointForceIsAppliedOn).cross(new Vector3f(force));
+
         angularMomentum = new Vector3f(torque).mul((float) timeStep);
         angularVelocity.add(new Vector3f(angularMomentum).div(inertia));
         orientation.integrate((float) timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
-
-        // Z-Torque ist etwas komisch
 
         momentum = new Vector3f(force).mul((float) timeStep);
         velocity.add(new Vector3f(momentum).div(mass));
