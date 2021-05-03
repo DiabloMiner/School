@@ -1,14 +1,18 @@
 package com.diablominer.opengl.main;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class LogicalEngine {
 
-    protected List<GameObject> gameObjects;
+    protected static List<GameObject> gameObjects;
+    protected static Set<PhysicsObject> allPhysicsObjects;
 
     public LogicalEngine() {
         gameObjects = new ArrayList<>();
+        allPhysicsObjects = new HashSet<>();
     }
 
     public void addGameObject(GameObject gameObject) {
@@ -17,6 +21,14 @@ public abstract class LogicalEngine {
 
     public List<GameObject> getGameObjects() {
         return gameObjects;
+    }
+
+    public void collisionTestAllPhysicsObjects() {
+        for (PhysicsObject physicsObject : allPhysicsObjects) {
+            Set<PhysicsObject> temporarySet = new HashSet<>(allPhysicsObjects);
+            temporarySet.remove(physicsObject);
+            physicsObject.collisionDetectionAndResponse(temporarySet);
+        }
     }
 
     public void updateAllGameObjects(double timeStep) {

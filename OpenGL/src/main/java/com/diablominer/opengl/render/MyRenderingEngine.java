@@ -7,6 +7,7 @@ import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.RenderablePointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
+import com.diablominer.opengl.render.renderables.MinimumModel;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.renderables.Renderable;
 import com.diablominer.opengl.render.textures.CubeMap;
@@ -27,23 +28,25 @@ import java.util.Set;
 
 public class MyRenderingEngine extends RenderingEngine {
 
-    private Camera camera;
-    private Window window;
-    private int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer, shadowFrameBuffer2, shadowFrameBuffer3;
-    private int[] pingpongFBOs = new int[2];
-    private int texColorBuffer, texColorBuffer2, brightColorBuffer;
-    private int[] pingpongColorBuffers = new int[2];
-    private int VAO;
-    private int uniformBufferBlock = GL33.glGenBuffers();
-    private Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
-    private ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram, shadowShaderProgram2, gaussianBlurShaderProgram;
-    private Set<Renderable> notToBeRendered, shadowNotToBeRendered;
-    private Camera environmentMappingCamera;
-    private DirectionalLight directionalLight;
-    private PointLight pointLight;
-    private SpotLight spotLight;
-    private TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2, brdfConvolutionLookUpMap;
-    private CubeMap environmentCubeMap, shadowCubeMap, convolutedCubeMap, prefilteredCubeMap;
+    private final Camera camera;
+    private final Window window;
+    private final int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer, shadowFrameBuffer2, shadowFrameBuffer3;
+    private final int[] pingpongFBOs = new int[2];
+    private final int texColorBuffer, texColorBuffer2, brightColorBuffer;
+    private final int[] pingpongColorBuffers = new int[2];
+    private final int VAO;
+    private final int uniformBufferBlock = GL33.glGenBuffers();
+    private final Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
+    private final ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram, shadowShaderProgram2, gaussianBlurShaderProgram;
+    private final Set<Renderable> notToBeRendered, shadowNotToBeRendered;
+    private final Camera environmentMappingCamera;
+    private final DirectionalLight directionalLight;
+    private final PointLight pointLight;
+    private final SpotLight spotLight;
+    private final TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2, brdfConvolutionLookUpMap;
+    private final CubeMap environmentCubeMap, shadowCubeMap, convolutedCubeMap, prefilteredCubeMap;
+
+    private MinimumModel minimumModel;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         BigInteger time = BigInteger.valueOf(System.currentTimeMillis());
@@ -173,6 +176,11 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
+
+        Model quickhullTest = new Model("./src/main/resources/models/HelloWorld/cube2.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 10.0f, 0.0f));
+        QuickHull quickHull = new QuickHull(quickhullTest.getAllVertices());
+        minimumModel = new MinimumModel(quickHull.getDefiningPoints());
+        matricesUniformBufferBlockShaderPrograms.add(minimumModel.shaderProgram);
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);
@@ -521,6 +529,7 @@ public class MyRenderingEngine extends RenderingEngine {
         updateUniformBufferBlocks(camera);
         updateAllEngineUnits(camera);
         updateUniforms();
+        minimumModel.draw();
         renderAllEngineUnits();
 
         blitFramebuffers(frameBuffer, frameBuffer2, 0, 0, 1280, 720, 0, 0, 1280, 720);

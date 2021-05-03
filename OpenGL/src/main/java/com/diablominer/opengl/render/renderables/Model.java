@@ -161,4 +161,14 @@ public class Model extends Renderable {
         }
         return indices;
     }
+
+    public List<Vector3f> getAllVertices() {
+        List<Vector3f> result = new ArrayList<>();
+        for (Mesh mesh : meshes) {
+            for (int i = 0; i < mesh.vertices.length; i += 3) {
+                result.add(new Vector3f(mesh.vertices[i], mesh.vertices[i + 1], mesh.vertices[i + 2]));
+            }
+        }
+        return result;
+    }
 }
