@@ -1,5 +1,6 @@
 package com.diablominer.opengl.render;
 
+import com.diablominer.opengl.collisiondetection.QuickHull;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.main.LogicalEngine;

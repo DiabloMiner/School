@@ -2,7 +2,7 @@ package com.diablominer.opengl.render.lightsources;
 
 import com.diablominer.opengl.main.LogicalEngine;
 import com.diablominer.opengl.main.PhysicsObject;
-import com.diablominer.opengl.render.AxisAlignedBoundingBox;
+import com.diablominer.opengl.collisiondetection.AxisAlignedBoundingBox;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
 import org.joml.Matrix4f;

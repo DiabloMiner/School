@@ -1,4 +1,4 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.collisiondetection;
 
 import org.joml.Vector3f;
 

@@ -1,10 +1,11 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.collisiondetection;
 
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class QuickHull {
 
@@ -145,20 +146,7 @@ public class QuickHull {
                    }
 
                    toBeDeleted.addAll(visibleFaces);
-                   remainingVertices.removeIf(vertex -> {
-                       for (Face testingFace : faces) {
-                           if (testingFace.signedDistance(vertex) < epsilon) {
-                               return true;
-                           }
-                       }
-                       return false;
-                   });
                    toBeAdded.addAll(newFaces);
-                   for (Face newFace : newFaces) {
-                       for (Face potentialNeighbourFace : faces) {
-                           newFace.addNewNeighbouringFace(potentialNeighbourFace);
-                       }
-                   }
 
                    visibleFaces.clear();
                    horizonEdges.clear();
@@ -166,7 +154,35 @@ public class QuickHull {
                }
            }
            faces.removeAll(toBeDeleted);
+           for (Face face : faces) {
+               face.removeNeighbouringFaces(toBeDeleted);
+           }
            faces.addAll(toBeAdded);
+           for (Face newFace : toBeAdded) {
+                for (Face potentialNeighbourFace : faces) {
+                    newFace.addNewNeighbouringFace(potentialNeighbourFace);
+                    potentialNeighbourFace.addNewNeighbouringFace(newFace);
+                }
+           }
+           for (Face faceWithRedundantConflictVertices : faces) {
+               faceWithRedundantConflictVertices.returnConflictList().removeIf(conflictVertex -> {
+                   for (Face testingFace : faces) {
+                       if (testingFace.signedDistance(conflictVertex) > epsilon) {
+                           return false;
+                       }
+                   }
+                   return true;
+               });
+           }
+           remainingVertices.removeIf(vertex -> {
+                for (Face testingFace : faces) {
+                    if (testingFace.signedDistance(vertex) > epsilon) {
+                        return false;
+                    }
+                }
+                return true;
+           });
+           System.out.println(remainingVertices.size());
         }
         for (Face face : faces) {
             definingPoints.addAll(face.returnDefiningVertices());

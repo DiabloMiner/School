@@ -1,6 +1,6 @@
 package com.diablominer.opengl.main;
 
-import com.diablominer.opengl.render.BoundingVolume;
+import com.diablominer.opengl.collisiondetection.BoundingVolume;
 import org.joml.Vector3f;
 
 import java.util.Set;

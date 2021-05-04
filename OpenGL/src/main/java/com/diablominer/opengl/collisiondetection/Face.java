@@ -1,9 +1,11 @@
-package com.diablominer.opengl.render;
+package com.diablominer.opengl.collisiondetection;
 
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class Face {
 
@@ -96,6 +98,10 @@ public class Face {
 
     public List<Vector3f> returnDefiningVertices() {
         return definingVertices;
+    }
+
+    public void removeNeighbouringFaces(Collection<Face> faces) {
+        this.neighbouringFaces.removeIf(face -> faces.contains(face));
     }
 
     public float returnSignedDistanceFromCenterPoint(Face face) {
