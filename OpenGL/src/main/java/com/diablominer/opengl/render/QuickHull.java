@@ -48,8 +48,8 @@ public class QuickHull {
         List<Vector3f> startingPoints = new ArrayList<>();
         startingPoints.add(new Vector3f(0.00000001f));
         startingPoints.add(new Vector3f(-0.00000001f));
-        startingPoints.add(new Vector3f());
-        startingPoints.add(new Vector3f());
+        startingPoints.add(new Vector3f(0.0f));
+        startingPoints.add(new Vector3f(0.0f));
         for (Vector3f maxPoint: maxPoints) {
             for (Vector3f minPoint : minPoints) {
                 if (maxPoint.distance(minPoint) > startingPoints.get(0).distance(startingPoints.get(1))) {
@@ -59,20 +59,22 @@ public class QuickHull {
             }
         }
 
-        startingPoints.set(2, new Vector3f(startingPoints.get(0)).add(new Vector3f(0.01f)));
+        startingPoints.set(2, new Vector3f(startingPoints.get(0)).add(new Vector3f(0.00001f)));
         for (Vector3f vertex : remainingVertices) {
-            float distance1 = new Vector3f(vertex).sub(new Vector3f(startingPoints.get(0))).cross(new Vector3f(startingPoints.get(0)).sub(new Vector3f(startingPoints.get(1))).normalize()).length();
-            float distance2 = new Vector3f(vertex).sub(new Vector3f(startingPoints.get(2))).cross(new Vector3f(startingPoints.get(0)).sub(new Vector3f(startingPoints.get(1))).normalize()).length();
-            if (distance1 > distance2) {
+            float newDistance = new Vector3f(vertex).sub(startingPoints.get(0)).cross(new Vector3f(vertex).sub(startingPoints.get(1))).length() / new Vector3f(startingPoints.get(1)).set(new Vector3f(startingPoints.get(0))).length();
+            float oldDistance = new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(1))).length() / new Vector3f(startingPoints.get(1)).set(new Vector3f(startingPoints.get(0))).length();
+            if (newDistance > oldDistance) {
                 startingPoints.set(2, vertex);
             }
         }
 
-        startingPoints.set(3, new Vector3f(startingPoints.get(2)).add(new Vector3f(0.01f)));
+        startingPoints.set(3, new Vector3f(startingPoints.get(2)).add(new Vector3f(0.00001f)));
         for (Vector3f vertex : remainingVertices) {
-            float distance1 = new Vector3f(vertex).sub(new Vector3f(startingPoints.get(0))).dot(new Vector3f(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(1))).normalize());
-            float distance2 = new Vector3f(vertex).sub(new Vector3f(startingPoints.get(3))).dot(new Vector3f(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(1))).normalize());
-            if (distance1 > distance2) {
+            Vector3f constantTerm = new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).
+                                    div(new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).length());
+            float newDistance = constantTerm.dot(new Vector3f(vertex).sub(startingPoints.get(0)));
+            float oldDistance = constantTerm.dot(new Vector3f(startingPoints.get(3)).sub(startingPoints.get(0)));
+            if (newDistance > oldDistance) {
                 startingPoints.set(3, vertex);
             }
         }
@@ -93,7 +95,7 @@ public class QuickHull {
 
         LinkedList<Vector3f> toBeRemoved = new LinkedList<>();
         for (Vector3f vertex : remainingVertices) {
-            if (!isPointInsideTetrahedron(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2), startingPoints.get(3), vertex) && !toBeRemoved.contains(vertex)) {
+            if (isPointInsideTetrahedron(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2), startingPoints.get(3), vertex) && !toBeRemoved.contains(vertex)) {
                 toBeRemoved.add(vertex);
             } else if (!toBeRemoved.contains(vertex)) {
                 for (Face face : faces) {
@@ -106,8 +108,10 @@ public class QuickHull {
         remainingVertices.removeAll(toBeRemoved);
 
         while (!remainingVertices.isEmpty()) {
+           Set<Face> toBeDeleted = new HashSet<>();
+           Set<Face> toBeAdded = new HashSet<>();
            for (Face face : faces) {
-               if (!face.isConflictListEmpty()) {
+               if (!face.isConflictListEmpty() && !toBeDeleted.contains(face)) {
                    Set<Face> visibleFaces = new HashSet<>();
                    Set<Edge> horizonEdges = new HashSet<>();
                    List<Face> newFaces = new ArrayList<>();
@@ -140,7 +144,7 @@ public class QuickHull {
                        }
                    }
 
-                   faces.removeAll(visibleFaces);
+                   toBeDeleted.addAll(visibleFaces);
                    remainingVertices.removeIf(vertex -> {
                        for (Face testingFace : faces) {
                            if (testingFace.signedDistance(vertex) < epsilon) {
@@ -149,7 +153,7 @@ public class QuickHull {
                        }
                        return false;
                    });
-                   faces.addAll(newFaces);
+                   toBeAdded.addAll(newFaces);
                    for (Face newFace : newFaces) {
                        for (Face potentialNeighbourFace : faces) {
                            newFace.addNewNeighbouringFace(potentialNeighbourFace);
@@ -161,6 +165,8 @@ public class QuickHull {
                    newFaces.clear();
                }
            }
+           faces.removeAll(toBeDeleted);
+           faces.addAll(toBeAdded);
         }
         for (Face face : faces) {
             definingPoints.addAll(face.returnDefiningVertices());
@@ -180,10 +186,15 @@ public class QuickHull {
         return points;
     }
 
+    /**
+     * For reference see: <a href="https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_tetrahedra">Barycentric coordinate system</a>
+     * @param r1 First vertex of the tetrahedron
+     * @param r2 Second vertex of the tetrahedron
+     * @param r3 Third vertex of the tetrahedron
+     * @param r4 Fourth vertex of the tetrahedron
+     * @param r Point that should be tested to see if it is in the tetrahedron
+     */
     private boolean isPointInsideTetrahedron(Vector3f r1, Vector3f r2, Vector3f r3, Vector3f r4, Vector3f r) {
-        /**
-        For reference see: https://en.wikipedia.org/wiki/Barycentric_coordinate_system
-         */
         Matrix3f T = new Matrix3f();
         T.set(r1.x - r4.x, r1.y - r4.y, r1.z - r4.z,
               r2.x - r4.x, r2.y - r4.y, r2.z - r4.z,
