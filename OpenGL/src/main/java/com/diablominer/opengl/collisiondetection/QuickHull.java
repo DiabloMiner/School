@@ -139,6 +139,7 @@ public class QuickHull {
                    // Problem seems to have something to do with the forloop: cube: 1 forloop and no problems,
                    // Inital faces are deleted, maybe false faces are generated and are deleted as they do not form a complete hull?
                    // One face goes through the origin
+                   // SOLUTION: Inital faces are wrong
                    for (Edge horizonEdge : horizonEdges) {
                        Face newFace = new Face(horizonEdge, furthestPoint);
                        newFaces.add(newFace);
