@@ -5,7 +5,6 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 public class QuickHull {
 
@@ -60,6 +59,8 @@ public class QuickHull {
             }
         }
 
+        remainingVertices.remove(startingPoints.get(0));
+        remainingVertices.remove(startingPoints.get(1));
         startingPoints.set(2, new Vector3f(startingPoints.get(0)).add(new Vector3f(0.00001f)));
         for (Vector3f vertex : remainingVertices) {
             float newDistance = new Vector3f(vertex).sub(startingPoints.get(0)).cross(new Vector3f(vertex).sub(startingPoints.get(1))).length() / new Vector3f(startingPoints.get(1)).set(new Vector3f(startingPoints.get(0))).length();
@@ -69,6 +70,7 @@ public class QuickHull {
             }
         }
 
+        remainingVertices.remove(startingPoints.get(2));
         startingPoints.set(3, new Vector3f(startingPoints.get(2)).add(new Vector3f(0.00001f)));
         for (Vector3f vertex : remainingVertices) {
             Vector3f constantTerm = new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).
@@ -79,6 +81,7 @@ public class QuickHull {
                 startingPoints.set(3, vertex);
             }
         }
+        remainingVertices.remove(startingPoints.get(3));
 
         Face face1 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2));
         Face face2 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(3));
@@ -96,7 +99,7 @@ public class QuickHull {
 
         LinkedList<Vector3f> toBeRemoved = new LinkedList<>();
         for (Vector3f vertex : remainingVertices) {
-            if (isPointInsideTetrahedron(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2), startingPoints.get(3), vertex) && !toBeRemoved.contains(vertex)) {
+            if (isPointInsideTetrahedron(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2), startingPoints.get(3), vertex)) {
                 toBeRemoved.add(vertex);
             } else if (!toBeRemoved.contains(vertex)) {
                 for (Face face : faces) {
@@ -113,76 +116,62 @@ public class QuickHull {
            Set<Face> toBeAdded = new HashSet<>();
            for (Face face : faces) {
                if (!face.isConflictListEmpty() && !toBeDeleted.contains(face)) {
-                   Set<Face> visibleFaces = new HashSet<>();
+                   List<Face> visibleFaces = new ArrayList<>();
                    Set<Edge> horizonEdges = new HashSet<>();
-                   List<Face> newFaces = new ArrayList<>();
+                   Set<Face> newFaces = new HashSet<>();
                    Vector3f furthestPoint = face.returnFurthestPoint();
                    visibleFaces.add(face);
 
-                   for (Face visibleFace : visibleFaces) {
+                   for (int i = 0; i < visibleFaces.size(); i++) {
+                       Face visibleFace = visibleFaces.get(i);
                        for (Face neighbouringFace : visibleFace.returnNeighbouringFaces()) {
-                           float signedDistance = neighbouringFace.signedDistance(furthestPoint);
-                           if (signedDistance > epsilon) {
-                               visibleFaces.add(neighbouringFace);
-                           } else if (signedDistance < -epsilon) {
-                               horizonEdges.add(visibleFace.returnEdgeFromNeighbouringFace(neighbouringFace));
-                           }
-                       }
-                   }
-
-                   for (Edge horizonEdge : horizonEdges) {
-                       Face newFace = new Face(horizonEdge.getTail(), horizonEdge.getTop(), furthestPoint);
-                       newFace.addNewNeighbouringFace(horizonEdge.getFace());
-                       newFaces.add(newFace);
-                   }
-                   for (Face newFace : newFaces) {
-                       for (Face otherFace : visibleFaces) {
-                           for (Vector3f vertex : otherFace.returnConflictList()) {
-                               if (newFace.signedDistance(vertex) > epsilon) {
-                                   newFace.addNewConflictVertex(vertex);
+                           if (!visibleFaces.contains(neighbouringFace)) {
+                               float signedDistance = neighbouringFace.signedDistance(furthestPoint);
+                               if (signedDistance > epsilon) {
+                                   visibleFaces.add(neighbouringFace);
+                               } else if (signedDistance < -epsilon) {
+                                   horizonEdges.add(visibleFace.returnEdgeWithNeighbouringFace(neighbouringFace));
                                }
                            }
                        }
                    }
 
+                   // Problem seems to have something to do with the forloop: cube: 1 forloop and no problems,
+                   // Inital faces are deleted, maybe false faces are generated and are deleted as they do not form a complete hull?
+                   // One face goes through the origin
+                   for (Edge horizonEdge : horizonEdges) {
+                       Face newFace = new Face(horizonEdge, furthestPoint);
+                       newFaces.add(newFace);
+                   }
+
                    toBeDeleted.addAll(visibleFaces);
                    toBeAdded.addAll(newFaces);
-
-                   visibleFaces.clear();
-                   horizonEdges.clear();
-                   newFaces.clear();
                }
            }
-           faces.removeAll(toBeDeleted);
-           for (Face face : faces) {
-               face.removeNeighbouringFaces(toBeDeleted);
-           }
            faces.addAll(toBeAdded);
+           faces.removeAll(toBeDeleted);
            for (Face newFace : toBeAdded) {
                 for (Face potentialNeighbourFace : faces) {
                     newFace.addNewNeighbouringFace(potentialNeighbourFace);
                     potentialNeighbourFace.addNewNeighbouringFace(newFace);
                 }
            }
+           for (Face face : faces) {
+               face.removeNeighbouringFaces(toBeDeleted);
+           }
+           remainingVertices.removeIf(vertex -> faces.stream().noneMatch(f -> f.signedDistance(vertex) > epsilon));
            for (Face faceWithRedundantConflictVertices : faces) {
-               faceWithRedundantConflictVertices.returnConflictList().removeIf(conflictVertex -> {
-                   for (Face testingFace : faces) {
-                       if (testingFace.signedDistance(conflictVertex) > epsilon) {
-                           return false;
+               faceWithRedundantConflictVertices.returnConflictList().removeIf(conflictVertex -> !remainingVertices.contains(conflictVertex));
+           }
+           for (Face newFace : toBeAdded) {
+               for (Face otherFace : toBeDeleted) {
+                   for (Vector3f vertex : otherFace.returnConflictList()) {
+                       if (newFace.signedDistance(vertex) > epsilon) {
+                           newFace.addNewConflictVertex(vertex);
                        }
                    }
-                   return true;
-               });
+               }
            }
-           remainingVertices.removeIf(vertex -> {
-                for (Face testingFace : faces) {
-                    if (testingFace.signedDistance(vertex) > epsilon) {
-                        return false;
-                    }
-                }
-                return true;
-           });
-           System.out.println(remainingVertices.size());
         }
         for (Face face : faces) {
             definingPoints.addAll(face.returnDefiningVertices());
@@ -203,7 +192,7 @@ public class QuickHull {
     }
 
     /**
-     * For reference see: <a href="https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_tetrahedra">Barycentric coordinate system</a>
+     * Test if point is in tetrahedron, for reference see: <a href="https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_tetrahedra">Barycentric coordinate system</a>
      * @param r1 First vertex of the tetrahedron
      * @param r2 Second vertex of the tetrahedron
      * @param r3 Third vertex of the tetrahedron

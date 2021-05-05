@@ -178,7 +178,7 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
 
-        Model quickhullTest = new Model("./src/main/resources/models/HelloWorld/cube2.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 10.0f, 0.0f));
+        Model quickhullTest = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 20.0f, 0.0f));
         QuickHull quickHull = new QuickHull(quickhullTest.getAllVertices());
         minimumModel = new MinimumModel(quickHull.getDefiningPoints());
         matricesUniformBufferBlockShaderPrograms.add(minimumModel.shaderProgram);

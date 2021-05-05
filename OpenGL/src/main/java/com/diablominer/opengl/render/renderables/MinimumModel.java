@@ -41,7 +41,7 @@ public class MinimumModel {
 
     public void draw() {
         GL33.glDisable(GL33.GL_CULL_FACE);
-        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(new Vector3f(0.0f, 1.0f, 0.0f)));
+        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(new Vector3f(0.0f, 5.0f, 0.0f)));
         shaderProgram.bind();
         GL33.glBindVertexArray(VAO);
         GL33.glEnableVertexAttribArray(0);
@@ -51,7 +51,6 @@ public class MinimumModel {
         GL33.glBindVertexArray(0);
         shaderProgram.unbind();
         GL33.glEnable(GL33.GL_CULL_FACE);
-        // Try to get the convex hull to draw
     }
 
 }

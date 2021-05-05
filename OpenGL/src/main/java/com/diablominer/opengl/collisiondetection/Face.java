@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Objects;
 
 public class Face {
 
@@ -17,6 +17,30 @@ public class Face {
     private final Vector3f supportVector;
     private final Vector3f normalizedNormal;
     private final float offset;
+
+    public Face(Edge edge, Vector3f vertex3) {
+        Vector3f vertex1 = edge.getTop();
+        Vector3f vertex2 = edge.getTail();
+        this.definingVertices.add(vertex1);
+        this.definingVertices.add(vertex2);
+        this.definingVertices.add(vertex3);
+
+        edges.add(new Edge(vertex1, vertex2, this));
+        edges.add(new Edge(vertex1, vertex3, this));
+        edges.add(new Edge(vertex2, vertex3, this));
+
+        supportVector = vertex2;
+        Vector3f normal = new Vector3f(new Vector3f(vertex2).sub(vertex1)).cross(new Vector3f(vertex3).sub(vertex1));
+        if (normal.dot(supportVector) >= 0) {
+            normalizedNormal = normal.normalize();
+        } else {
+            normalizedNormal = normal.normalize().mul(-1.0f);
+        }
+        offset = normalizedNormal.dot(supportVector);
+
+        addNewNeighbouringFace(edge.getFace());
+        edge.getFace().addNewNeighbouringFace(this);
+    }
 
     public Face(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3) {
         this.definingVertices.add(vertex1);
@@ -81,7 +105,7 @@ public class Face {
         return neighbouringFaces;
     }
 
-    public Edge returnEdgeFromNeighbouringFace(Face neighbouringFace) {
+    public Edge returnEdgeWithNeighbouringFace(Face neighbouringFace) {
         for (Edge edge : edges) {
             for (Edge neighbourFacesEdge : neighbouringFace.edges) {
                 if (edge.isOverlapping(neighbourFacesEdge)) {
@@ -170,4 +194,16 @@ public class Face {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Face face = (Face) o;
+        return Float.compare(face.offset, offset) == 0 && definingVertices.equals(face.definingVertices) && supportVector.equals(face.supportVector) && normalizedNormal.equals(face.normalizedNormal);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(definingVertices, supportVector, normalizedNormal, offset);
+    }
 }
