@@ -41,7 +41,7 @@ public class MinimumModel {
 
     public void draw() {
         GL33.glDisable(GL33.GL_CULL_FACE);
-        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(new Vector3f(0.0f, 5.0f, 0.0f)));
+        shaderProgram.setUniformMat4F("model", new Matrix4f().identity().translate(new Vector3f(0.0f, 0.0f, -2.0f)));
         shaderProgram.bind();
         GL33.glBindVertexArray(VAO);
         GL33.glEnableVertexAttribArray(0);
