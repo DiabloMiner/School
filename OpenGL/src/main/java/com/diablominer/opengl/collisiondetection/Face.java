@@ -25,7 +25,7 @@ public class Face {
         this.definingVertices.add(vertex2);
         this.definingVertices.add(vertex3);
 
-        edges.add(new Edge(vertex1, vertex2, this));
+        edges.add(edge);
         edges.add(new Edge(vertex1, vertex3, this));
         edges.add(new Edge(vertex2, vertex3, this));
 
@@ -37,9 +37,6 @@ public class Face {
             normalizedNormal = normal.normalize().mul(-1.0f);
         }
         offset = normalizedNormal.dot(supportVector);
-
-        addNewNeighbouringFace(edge.getFace());
-        edge.getFace().addNewNeighbouringFace(this);
     }
 
     public Face(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3) {
@@ -83,8 +80,12 @@ public class Face {
         conflictList.add(vertex);
     }
 
+    public void addNewConflictVertices(Collection<Vector3f> vertices) {
+        conflictList.addAll(vertices);
+    }
+
     public void addNewNeighbouringFace(Face face) {
-        if (!neighbouringFaces.contains(face)) {
+        if (!neighbouringFaces.contains(face) && !face.equals(this)) {
             boolean isPoint0ADefiningPoint = definingVertices.contains(face.definingVertices.get(0));
             boolean isPoint1ADefiningPoint = definingVertices.contains(face.definingVertices.get(1));
             boolean isPoint2ADefiningPoint = definingVertices.contains(face.definingVertices.get(2));
@@ -116,6 +117,10 @@ public class Face {
         return null;
     }
 
+    public Vector3f returnNormalizedNormal() {
+        return normalizedNormal;
+    }
+
     public List<Vector3f> returnConflictList() {
         return conflictList;
     }
@@ -124,8 +129,12 @@ public class Face {
         return definingVertices;
     }
 
-    public void removeNeighbouringFaces(Collection<Face> faces) {
-        this.neighbouringFaces.removeIf(face -> faces.contains(face));
+    public void removeNeighbouringFaces(Collection<Face> toBeDeletedFaces) {
+        this.neighbouringFaces.removeIf(toBeDeletedFaces::contains);
+    }
+
+    public void removeVerticesFromConflictList(Collection<Vector3f> verticesToBeRemoved) {
+        conflictList.removeAll(verticesToBeRemoved);
     }
 
     public float returnSignedDistanceFromCenterPoint(Face face) {

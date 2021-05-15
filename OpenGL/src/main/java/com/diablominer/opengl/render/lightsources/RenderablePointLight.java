@@ -16,7 +16,7 @@ public class RenderablePointLight extends PhysicsObject {
     private Model model;
     private PointLight pointLight;
 
-    private Vector3f pointForceIsAppliedOn = new Vector3f(0.0f, 1.0f, 1.0f);
+    private Vector3f torqueReferencePointToPointForceIsAppliedOn = new Vector3f(0.0f, -1.0f, -1.0f);
 
     // Primary values
     private Vector3f position;
@@ -49,7 +49,7 @@ public class RenderablePointLight extends PhysicsObject {
 
     @Override
     public void updateObjectState(double timeStep) {
-        // torque = new Vector3f(pointForceIsAppliedOn).cross(new Vector3f(force));
+        torque = new Vector3f(torqueReferencePointToPointForceIsAppliedOn).cross(new Vector3f(force));
 
         angularMomentum = new Vector3f(torque).mul((float) timeStep);
         angularVelocity.add(new Vector3f(angularMomentum).div(inertia));
@@ -88,7 +88,7 @@ public class RenderablePointLight extends PhysicsObject {
 
     @Override
     public void predictGameObjectState(double timeStep) {
-        // Vector3f torque = new Vector3f(pointForceIsAppliedOn).cross(new Vector3f(force));
+        Vector3f torque = new Vector3f(torqueReferencePointToPointForceIsAppliedOn).cross(new Vector3f(force));
 
         Vector3f angularMomentum = new Vector3f(torque).mul((float) timeStep);
         Vector3f angularVelocity = new Vector3f(this.angularVelocity).add(new Vector3f(angularMomentum).div(inertia));
