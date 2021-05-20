@@ -6,6 +6,7 @@ import org.joml.Vector4f;
 import org.lwjgl.system.CallbackI;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class QuickHull {
 
@@ -125,6 +126,9 @@ public class QuickHull {
 
         List<Edge> horizonEdgee = new ArrayList<>();
         List<Vector3f> furthestPoints = new ArrayList<>();
+        /*Face testFace = null;
+        Face testFace2 = null;
+        List<Face> deletedFaces = new ArrayList<>();*/
         int iteration = 0;
         while (iteration < 2) {
            Set<Face> toBeDeletedFaces = new HashSet<>();
@@ -142,23 +146,24 @@ public class QuickHull {
                        for (Face neighbouringFace : visibleFace.returnNeighbouringFaces()) {
                            if (!visibleFaces.contains(neighbouringFace)) {
                                float signedDistance = neighbouringFace.signedDistance(furthestPoint);
+                               List<Face> relevantFaces = new ArrayList<>(visibleFaces);
+                               relevantFaces.remove(visibleFace);
+                               Edge edge = visibleFace.returnEdgeWithNeighbouringFace(neighbouringFace);
                                if (signedDistance > epsilon) {
                                    visibleFaces.add(neighbouringFace);
-                               } else if (signedDistance < -epsilon) {
-                                   horizonEdges.add(visibleFace.returnEdgeWithNeighbouringFace(neighbouringFace));
+                               } else if (signedDistance < -epsilon && relevantFaces.stream().noneMatch(aFace -> aFace.hasEdge(edge))) {
+                                   horizonEdges.add(edge);
                                }
                            }
                        }
                    }
 
-                   // Problem seems to have something to do with the forloop: cube: 1 forloop and no problems,
-                   // Inital faces are deleted, maybe false faces are generated and are deleted as they do not form a complete hull?
-                   // One face goes through the origin
-                   // SOLUTION: Initial faces are wrong
-                   // Change coordinate system: A centroid should be computed and used
-                   // Compare horizon edges to wireframe mode
-                   // Newer Faces or points dont seem to be taken into account
-                   // False faces seem to be construced OR visible faces aren't deleted correctly
+                   // False faces seem to be constructed OR visible faces aren't deleted correctly
+                   // False Faces: Iteration 2; Indices: 13 and 2
+                   // Continue to investigate false faces
+                   // Problem seems to be caused by furthespoint being right of a face --> false horizonedge
+                   // Horizonedge detection process has to revised(take just the ones that aren't between other visible faces)
+                   // Hasnt fixed the bug see whats causing the problem
                    toBeDeletedFaces.addAll(visibleFaces);
                    for (Edge horizonEdge : horizonEdges) {
                        Face newFace = new Face(horizonEdge, furthestPoint);
@@ -188,6 +193,10 @@ public class QuickHull {
                }
            }
            faces.addAll(toBeAddedFaces);
+           /*if (iteration == 1) {
+               testFace2 = faces.get(32);
+               deletedFaces.addAll(toBeDeletedFaces);
+           }*/
            faces.removeAll(toBeDeletedFaces);
            remainingVertices.removeIf(this::isPointInsideConvexHull);
            for (Face faceWithRedundantConflictVertices : faces) {
@@ -208,13 +217,56 @@ public class QuickHull {
                newFace.addNewConflictVertices(verticesToBeAdded);
            }
            iteration++;
-           if (iteration == 1) {
+           /*if (iteration == 1) {
                furthestPoints.clear();
-           }
+               horizonEdgee.clear();
+               testFace = faces.get(7);
+           }*/
         }
+        /*definingPoints.addAll(testFace.returnDefiningVertices());
+        definingPoints.addAll(testFace2.returnDefiningVertices());*/
+        /*definingPoints.addAll(faces.get(13).returnDefiningVertices());
+        definingPoints.addAll(faces.get(16).returnDefiningVertices());*/
+        /*definingPoints.addAll(deletedFaces.get(1).returnDefiningVertices());
+        definingPoints.addAll(deletedFaces.get(3).returnDefiningVertices());
+        definingPoints.addAll(deletedFaces.get(4).returnDefiningVertices());
+        definingPoints.addAll(deletedFaces.get(9).returnDefiningVertices());
+        definingPoints.addAll(deletedFaces.get(11).returnDefiningVertices());
+        definingPoints.add(horizonEdgee.get(11).getTail());
+        definingPoints.add(horizonEdgee.get(11).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(12).getTail());
+        definingPoints.add(horizonEdgee.get(12).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(13).getTail());
+        definingPoints.add(horizonEdgee.get(13).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(14).getTail());
+        definingPoints.add(horizonEdgee.get(14).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(15).getTail());
+        definingPoints.add(horizonEdgee.get(15).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(16).getTail());
+        definingPoints.add(horizonEdgee.get(16).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(17).getTail());
+        definingPoints.add(horizonEdgee.get(17).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(18).getTail());
+        definingPoints.add(horizonEdgee.get(18).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
+        definingPoints.add(horizonEdgee.get(19).getTail());
+        definingPoints.add(horizonEdgee.get(19).getTop());
+        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));*/
+        /*definingPoints.addAll(faces.get(16).returnDefiningVertices());
+        definingPoints.addAll(faces.get(18).returnDefiningVertices());
+        definingPoints.addAll(faces.get(5).returnDefiningVertices());
+        definingPoints.addAll(faces.get(15).returnDefiningVertices());
+        definingPoints.addAll(faces.get(13).returnDefiningVertices());
+        definingPoints.addAll(faces.get(2).returnDefiningVertices());*/
         for (Face face : faces) {
             definingPoints.addAll(face.returnDefiningVertices());
-            // definingPoints.add(edge.getTop());
         }
         definingPoints.add(new Vector3f(0.0f));
         System.out.println("Time taken for Quickhull: " + (System.currentTimeMillis() - startingTime));

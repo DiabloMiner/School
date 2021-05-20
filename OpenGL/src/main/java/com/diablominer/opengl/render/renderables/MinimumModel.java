@@ -46,10 +46,10 @@ public class MinimumModel {
         GL33.glBindVertexArray(VAO);
         GL33.glEnableVertexAttribArray(0);
         GL33.glPointSize(20.0f);
-        GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_LINE);
+        // GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_LINE);
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0,  this.vertices.size());
         GL33.glDrawArrays(GL33.GL_POINTS, 0,  this.vertices.size());
-        GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_FILL);
+        // GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_FILL);
         GL33.glDisableVertexAttribArray(0);
         GL33.glBindVertexArray(0);
         shaderProgram.unbind();

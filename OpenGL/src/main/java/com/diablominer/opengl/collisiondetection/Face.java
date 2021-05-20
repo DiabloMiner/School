@@ -25,7 +25,7 @@ public class Face {
         this.definingVertices.add(vertex2);
         this.definingVertices.add(vertex3);
 
-        edges.add(edge);
+        edges.add(new Edge(vertex1, vertex2, this));
         edges.add(new Edge(vertex1, vertex3, this));
         edges.add(new Edge(vertex2, vertex3, this));
 
@@ -74,6 +74,15 @@ public class Face {
 
     public boolean isConflictListEmpty() {
         return conflictList.isEmpty();
+    }
+
+    public boolean hasEdge(Edge edgeToBeTested) {
+        for (Edge edge : edges) {
+            if (edge.isOverlapping(edgeToBeTested)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void addNewConflictVertex(Vector3f vertex) {
