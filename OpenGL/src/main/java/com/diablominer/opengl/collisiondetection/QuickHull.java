@@ -126,9 +126,9 @@ public class QuickHull {
 
         List<Edge> horizonEdgee = new ArrayList<>();
         List<Vector3f> furthestPoints = new ArrayList<>();
-        /*Face testFace = null;
+        Face testFace = null;
         Face testFace2 = null;
-        List<Face> deletedFaces = new ArrayList<>();*/
+        List<Face> deletedFaces = new ArrayList<>();
         int iteration = 0;
         while (iteration < 2) {
            Set<Face> toBeDeletedFaces = new HashSet<>();
@@ -163,7 +163,7 @@ public class QuickHull {
                    // Continue to investigate false faces
                    // Problem seems to be caused by furthespoint being right of a face --> false horizonedge
                    // Horizonedge detection process has to revised(take just the ones that aren't between other visible faces)
-                   // Hasnt fixed the bug see whats causing the problem
+                   // Hasnt fixed the bug see whats causing the problem: Maybe take the horizon edges only after all visible faces have been found
                    toBeDeletedFaces.addAll(visibleFaces);
                    for (Edge horizonEdge : horizonEdges) {
                        Face newFace = new Face(horizonEdge, furthestPoint);
@@ -193,10 +193,10 @@ public class QuickHull {
                }
            }
            faces.addAll(toBeAddedFaces);
-           /*if (iteration == 1) {
+           if (iteration == 1) {
                testFace2 = faces.get(32);
                deletedFaces.addAll(toBeDeletedFaces);
-           }*/
+           }
            faces.removeAll(toBeDeletedFaces);
            remainingVertices.removeIf(this::isPointInsideConvexHull);
            for (Face faceWithRedundantConflictVertices : faces) {
@@ -217,22 +217,24 @@ public class QuickHull {
                newFace.addNewConflictVertices(verticesToBeAdded);
            }
            iteration++;
-           /*if (iteration == 1) {
+           if (iteration == 1) {
                furthestPoints.clear();
                horizonEdgee.clear();
                testFace = faces.get(7);
-           }*/
+           }
         }
         /*definingPoints.addAll(testFace.returnDefiningVertices());
         definingPoints.addAll(testFace2.returnDefiningVertices());*/
         /*definingPoints.addAll(faces.get(13).returnDefiningVertices());
         definingPoints.addAll(faces.get(16).returnDefiningVertices());*/
-        /*definingPoints.addAll(deletedFaces.get(1).returnDefiningVertices());
-        definingPoints.addAll(deletedFaces.get(3).returnDefiningVertices());
+        //definingPoints.addAll(deletedFaces.get(1).returnDefiningVertices());
+        // definingPoints.addAll(deletedFaces.get(3).returnDefiningVertices());
         definingPoints.addAll(deletedFaces.get(4).returnDefiningVertices());
-        definingPoints.addAll(deletedFaces.get(9).returnDefiningVertices());
-        definingPoints.addAll(deletedFaces.get(11).returnDefiningVertices());
-        definingPoints.add(horizonEdgee.get(11).getTail());
+        definingPoints.addAll(deletedFaces.get(4).returnNeighbouringFaces().get(0).returnDefiningVertices());
+        // SuppVec: (-4,232E-1 -7,000E-1 -2,000E-2); Normal: (-1,952E-1  0,000E+0  9,808E-1); Offset: 0.062974274
+        // definingPoints.addAll(deletedFaces.get(9).returnDefiningVertices());
+        // definingPoints.addAll(deletedFaces.get(11).returnDefiningVertices());
+        /*definingPoints.add(horizonEdgee.get(11).getTail());
         definingPoints.add(horizonEdgee.get(11).getTop());
         definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
         definingPoints.add(horizonEdgee.get(12).getTail());
@@ -266,7 +268,7 @@ public class QuickHull {
         definingPoints.addAll(faces.get(13).returnDefiningVertices());
         definingPoints.addAll(faces.get(2).returnDefiningVertices());*/
         for (Face face : faces) {
-            definingPoints.addAll(face.returnDefiningVertices());
+            // definingPoints.addAll(face.returnDefiningVertices());
         }
         definingPoints.add(new Vector3f(0.0f));
         System.out.println("Time taken for Quickhull: " + (System.currentTimeMillis() - startingTime));
