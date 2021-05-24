@@ -3,10 +3,8 @@ package com.diablominer.opengl.collisiondetection;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.system.CallbackI;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 public class QuickHull {
 
@@ -23,6 +21,7 @@ public class QuickHull {
         points = new ArrayList<>(vertices);
         Vector3f[] maxPoints = {new Vector3f(-100000000.0f), new Vector3f(-100000000.0f), new Vector3f(-100000000.0f)};
         Vector3f[] minPoints = {new Vector3f(100000000.0f), new Vector3f(100000000.0f), new Vector3f(100000000.0f)};
+        // Determine the points with highest/lowest coordinates
         for (Vector3f vertex : remainingVertices) {
             if (vertex.x > maxPoints[0].x) {
                 maxPoints[0] = vertex;
@@ -53,6 +52,7 @@ public class QuickHull {
         startingPoints.add(new Vector3f(-0.00000001f));
         startingPoints.add(new Vector3f(0.0f));
         startingPoints.add(new Vector3f(0.0f));
+        // Determine the two points with max/min coordinates that have the longest distance between them
         for (Vector3f maxPoint: maxPoints) {
             for (Vector3f minPoint : minPoints) {
                 if (maxPoint.distance(minPoint) > startingPoints.get(0).distance(startingPoints.get(1))) {
@@ -65,6 +65,7 @@ public class QuickHull {
         remainingVertices.remove(startingPoints.get(0));
         remainingVertices.remove(startingPoints.get(1));
         startingPoints.set(2, new Vector3f(startingPoints.get(0)).add(new Vector3f(0.00001f)));
+        // Determine the point that has greatest distance from the line defined by the two points determined earlier
         for (Vector3f vertex : remainingVertices) {
             float newDistance = new Vector3f(vertex).sub(startingPoints.get(0)).cross(new Vector3f(vertex).sub(startingPoints.get(1))).length() / new Vector3f(startingPoints.get(1)).set(new Vector3f(startingPoints.get(0))).length();
             float oldDistance = new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(1))).length() / new Vector3f(startingPoints.get(1)).set(new Vector3f(startingPoints.get(0))).length();
@@ -75,23 +76,26 @@ public class QuickHull {
 
         remainingVertices.remove(startingPoints.get(2));
         startingPoints.set(3, new Vector3f(startingPoints.get(2)).add(new Vector3f(0.00001f)));
+        // Determine the point with the greatest distance to the plane defined by the three points determined earlier
+        Vector3f constantTerm = new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).
+                div(new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).length());
+        float oldDistance = constantTerm.dot(new Vector3f(startingPoints.get(3)).sub(startingPoints.get(0)));
         for (Vector3f vertex : remainingVertices) {
-            Vector3f constantTerm = new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).
-                                    div(new Vector3f(startingPoints.get(1)).sub(startingPoints.get(0)).cross(new Vector3f(startingPoints.get(2)).sub(startingPoints.get(0))).length());
             float newDistance = constantTerm.dot(new Vector3f(vertex).sub(startingPoints.get(0)));
-            float oldDistance = constantTerm.dot(new Vector3f(startingPoints.get(3)).sub(startingPoints.get(0)));
             if (newDistance > oldDistance) {
                 startingPoints.set(3, vertex);
             }
         }
         remainingVertices.remove(startingPoints.get(3));
 
+        // Determine the centroid of the tetrahedron and transform all points so it becomes the zero point of the coordinate system
         Vector3f centroid = new Vector3f(0.0f).add(startingPoints.get(0)).add(startingPoints.get(1)).add(startingPoints.get(2)).add(startingPoints.get(3));
         centroid.mul(1.0f / 4.0f);
         for (Vector3f vertex : points) {
             vertex.sub(centroid);
         }
 
+        // Add the first four faces and add their neighbours
         Face face1 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2));
         Face face2 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(3));
         Face face3 = new Face(startingPoints.get(0), startingPoints.get(2), startingPoints.get(3));
@@ -106,6 +110,7 @@ public class QuickHull {
             }
         }
 
+        // Assign those points that aren't in the tetrahedron to the faces that they lie before
         ArrayList<Vector3f> toBeRemovedPoints = new ArrayList<>();
         List<Vector3f> alreadyTakenConflictVertices = new ArrayList<>();
         for (Vector3f vertex : remainingVertices) {
@@ -124,13 +129,8 @@ public class QuickHull {
         }
         remainingVertices.removeAll(toBeRemovedPoints);
 
-        List<Edge> horizonEdgee = new ArrayList<>();
-        List<Vector3f> furthestPoints = new ArrayList<>();
-        Face testFace = null;
-        Face testFace2 = null;
-        List<Face> deletedFaces = new ArrayList<>();
-        int iteration = 0;
-        while (iteration < 2) {
+        // Execute the actual quickhull algorithm
+        while (!remainingVertices.isEmpty()) {
            Set<Face> toBeDeletedFaces = new HashSet<>();
            Set<Face> toBeAddedFaces = new HashSet<>();
            for (Face face : faces) {
@@ -138,75 +138,75 @@ public class QuickHull {
                    List<Face> visibleFaces = new ArrayList<>();
                    Set<Edge> horizonEdges = new HashSet<>();
                    Set<Face> newFaces = new HashSet<>();
-                   Vector3f furthestPoint = face.returnFurthestPoint();
+                   Vector3f furthestPoint = face.getFurthestPointFromConflictList();
                    visibleFaces.add(face);
 
+                   // Search for all visible faces
                    for (int i = 0; i < visibleFaces.size(); i++) {
                        Face visibleFace = visibleFaces.get(i);
-                       for (Face neighbouringFace : visibleFace.returnNeighbouringFaces()) {
+                       for (Face neighbouringFace : visibleFace.getNeighbouringFaces()) {
                            if (!visibleFaces.contains(neighbouringFace)) {
                                float signedDistance = neighbouringFace.signedDistance(furthestPoint);
-                               List<Face> relevantFaces = new ArrayList<>(visibleFaces);
-                               relevantFaces.remove(visibleFace);
-                               Edge edge = visibleFace.returnEdgeWithNeighbouringFace(neighbouringFace);
                                if (signedDistance > epsilon) {
                                    visibleFaces.add(neighbouringFace);
-                               } else if (signedDistance < -epsilon && relevantFaces.stream().noneMatch(aFace -> aFace.hasEdge(edge))) {
-                                   horizonEdges.add(edge);
                                }
                            }
                        }
                    }
 
-                   // False faces seem to be constructed OR visible faces aren't deleted correctly
-                   // False Faces: Iteration 2; Indices: 13 and 2
-                   // Continue to investigate false faces
-                   // Problem seems to be caused by furthespoint being right of a face --> false horizonedge
-                   // Horizonedge detection process has to revised(take just the ones that aren't between other visible faces)
-                   // Hasnt fixed the bug see whats causing the problem: Maybe take the horizon edges only after all visible faces have been found
-                   toBeDeletedFaces.addAll(visibleFaces);
-                   for (Edge horizonEdge : horizonEdges) {
-                       Face newFace = new Face(horizonEdge, furthestPoint);
-                       newFaces.add(newFace);
-                       if (!toBeDeletedFaces.contains(horizonEdge.getFace())) {
-                           newFace.addNewNeighbouringFace(horizonEdge.getFace());
-                           horizonEdge.getFace().addNewNeighbouringFace(newFace);
-                       }
-                   }
-                   toBeAddedFaces.addAll(newFaces);
-                   List<Face> allPotentialNeighbours = new ArrayList<>(faces);
-                   allPotentialNeighbours.addAll(toBeAddedFaces);
-                   for (Face newFace : toBeAddedFaces) {
-                       for (Face potentialNeighbourFace : allPotentialNeighbours) {
-                           if (!toBeDeletedFaces.contains(potentialNeighbourFace)) {
-                               newFace.addNewNeighbouringFace(potentialNeighbourFace);
-                               potentialNeighbourFace.addNewNeighbouringFace(newFace);
+                   // Determine the horizon edges, normal edges are shared between multiple visible faces
+                   for (Face visibleFace : visibleFaces) {
+                       for (Edge edge : visibleFace.getEdges()) {
+                           List<Face> visibleFacesWithOutTestedFace = new ArrayList<>(visibleFaces);
+                           visibleFacesWithOutTestedFace.remove(visibleFace);
+                           if (visibleFacesWithOutTestedFace.stream().noneMatch(toBeTestedFace -> toBeTestedFace.hasEdge(edge))) {
+                               horizonEdges.add(edge);
                            }
                        }
                    }
-                   for (Face faceWithPotentialRedundantNeighbours : faces) {
+
+                   // Create the new faces and add the faces that are to be deleted/added to their respective lists
+                   for (Edge horizonEdge : horizonEdges) {
+                       Face newFace = new Face(horizonEdge, furthestPoint);
+                       newFaces.add(newFace);
+                   }
+                   toBeDeletedFaces.addAll(visibleFaces);
+                   toBeAddedFaces.addAll(newFaces);
+
+                   // Check the neighbours; For new faces neighbours are determined and for old and new faces neighbouring faces are checked
+                   List<Face> allPotentialNeighbours = new ArrayList<>(faces);
+                   allPotentialNeighbours.addAll(toBeAddedFaces);
+                   allPotentialNeighbours.removeAll(toBeDeletedFaces);
+                   for (Face newFace : toBeAddedFaces) {
+                       for (Face potentialNeighbourFace : allPotentialNeighbours) {
+                           newFace.addNewNeighbouringFace(potentialNeighbourFace);
+                           potentialNeighbourFace.addNewNeighbouringFace(newFace);
+                       }
+                   }
+                   List<Face> currentFacesAndNewFaces = new ArrayList<>(faces);
+                   currentFacesAndNewFaces.addAll(toBeAddedFaces);
+                   currentFacesAndNewFaces.removeAll(visibleFaces);
+                   for (Face faceWithPotentialRedundantNeighbours : currentFacesAndNewFaces) {
                        faceWithPotentialRedundantNeighbours.removeNeighbouringFaces(toBeDeletedFaces);
                    }
-
-                   horizonEdgee.addAll(horizonEdges);
-                   furthestPoints.add(furthestPoint);
                }
            }
+           // Add/Remove all faces that need to be added/removed
            faces.addAll(toBeAddedFaces);
-           if (iteration == 1) {
-               testFace2 = faces.get(32);
-               deletedFaces.addAll(toBeDeletedFaces);
-           }
            faces.removeAll(toBeDeletedFaces);
+
+           // Remove vertices that are inside the convex hull and remove conflict vertices
            remainingVertices.removeIf(this::isPointInsideConvexHull);
            for (Face faceWithRedundantConflictVertices : faces) {
-               faceWithRedundantConflictVertices.returnConflictList().removeIf(conflictVertex -> !remainingVertices.contains(conflictVertex));
+               faceWithRedundantConflictVertices.getConflictList().removeIf(conflictVertex -> !remainingVertices.contains(conflictVertex));
            }
+
+           // Reassign the conflict vertices from deleted faces to newly created faces
            for (Face newFace : toBeAddedFaces) {
                Set<Vector3f> verticesToBeAdded = new HashSet<>();
                for (Face otherFace : toBeDeletedFaces) {
                    List<Vector3f> verticesToBeDeleted = new ArrayList<>();
-                   for (Vector3f vertex : otherFace.returnConflictList()) {
+                   for (Vector3f vertex : otherFace.getConflictList()) {
                        if (newFace.signedDistance(vertex) > epsilon) {
                            verticesToBeAdded.add(vertex);
                            verticesToBeDeleted.add(vertex);
@@ -216,59 +216,15 @@ public class QuickHull {
                }
                newFace.addNewConflictVertices(verticesToBeAdded);
            }
-           iteration++;
-           if (iteration == 1) {
-               furthestPoints.clear();
-               horizonEdgee.clear();
-               testFace = faces.get(7);
-           }
         }
-        /*definingPoints.addAll(testFace.returnDefiningVertices());
-        definingPoints.addAll(testFace2.returnDefiningVertices());*/
-        /*definingPoints.addAll(faces.get(13).returnDefiningVertices());
-        definingPoints.addAll(faces.get(16).returnDefiningVertices());*/
-        //definingPoints.addAll(deletedFaces.get(1).returnDefiningVertices());
-        // definingPoints.addAll(deletedFaces.get(3).returnDefiningVertices());
-        definingPoints.addAll(deletedFaces.get(4).returnDefiningVertices());
-        definingPoints.addAll(deletedFaces.get(4).returnNeighbouringFaces().get(0).returnDefiningVertices());
-        // SuppVec: (-4,232E-1 -7,000E-1 -2,000E-2); Normal: (-1,952E-1  0,000E+0  9,808E-1); Offset: 0.062974274
-        // definingPoints.addAll(deletedFaces.get(9).returnDefiningVertices());
-        // definingPoints.addAll(deletedFaces.get(11).returnDefiningVertices());
-        /*definingPoints.add(horizonEdgee.get(11).getTail());
-        definingPoints.add(horizonEdgee.get(11).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(12).getTail());
-        definingPoints.add(horizonEdgee.get(12).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(13).getTail());
-        definingPoints.add(horizonEdgee.get(13).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(14).getTail());
-        definingPoints.add(horizonEdgee.get(14).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(15).getTail());
-        definingPoints.add(horizonEdgee.get(15).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(16).getTail());
-        definingPoints.add(horizonEdgee.get(16).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(17).getTail());
-        definingPoints.add(horizonEdgee.get(17).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(18).getTail());
-        definingPoints.add(horizonEdgee.get(18).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));
-        definingPoints.add(horizonEdgee.get(19).getTail());
-        definingPoints.add(horizonEdgee.get(19).getTop());
-        definingPoints.add(new Vector3f(4.619E-1f, 6.087E-1f, -2.000E-2f));*/
-        /*definingPoints.addAll(faces.get(16).returnDefiningVertices());
-        definingPoints.addAll(faces.get(18).returnDefiningVertices());
-        definingPoints.addAll(faces.get(5).returnDefiningVertices());
-        definingPoints.addAll(faces.get(15).returnDefiningVertices());
-        definingPoints.addAll(faces.get(13).returnDefiningVertices());
-        definingPoints.addAll(faces.get(2).returnDefiningVertices());*/
+        // Transform the points back into the coordinate system they were given in
+        for (Vector3f vertex : points) {
+            vertex.add(centroid);
+        }
+
+        // Add all points from the faves to the defining points
         for (Face face : faces) {
-            // definingPoints.addAll(face.returnDefiningVertices());
+            definingPoints.addAll(face.getDefiningVertices());
         }
         definingPoints.add(new Vector3f(0.0f));
         System.out.println("Time taken for Quickhull: " + (System.currentTimeMillis() - startingTime));

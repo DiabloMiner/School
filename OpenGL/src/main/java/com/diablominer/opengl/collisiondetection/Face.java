@@ -62,7 +62,7 @@ public class Face {
         return (point.dot(normalizedNormal) - offset);
     }
 
-    public Vector3f returnFurthestPoint() {
+    public Vector3f getFurthestPointFromConflictList() {
         Vector3f result = new Vector3f(supportVector);
         for (Vector3f vertex : conflictList) {
             if (signedDistance(vertex) > signedDistance(result)) {
@@ -104,18 +104,18 @@ public class Face {
         }
     }
 
-    public Vector3f returnCenterPoint() {
+    public Vector3f getCenterPoint() {
         Vector3f result = new Vector3f(0.0f);
         result.add(definingVertices.get(0)).add(definingVertices.get(1)).add(definingVertices.get(2));
         result.div(3.0f);
         return result;
     }
 
-    public List<Face> returnNeighbouringFaces() {
+    public List<Face> getNeighbouringFaces() {
         return neighbouringFaces;
     }
 
-    public Edge returnEdgeWithNeighbouringFace(Face neighbouringFace) {
+    public Edge determineEdgeWithNeighbouringFace(Face neighbouringFace) {
         for (Edge edge : edges) {
             for (Edge neighbourFacesEdge : neighbouringFace.edges) {
                 if (edge.isOverlapping(neighbourFacesEdge)) {
@@ -126,16 +126,20 @@ public class Face {
         return null;
     }
 
-    public Vector3f returnNormalizedNormal() {
+    public Vector3f getNormalizedNormal() {
         return normalizedNormal;
     }
 
-    public List<Vector3f> returnConflictList() {
+    public List<Vector3f> getConflictList() {
         return conflictList;
     }
 
-    public List<Vector3f> returnDefiningVertices() {
+    public List<Vector3f> getDefiningVertices() {
         return definingVertices;
+    }
+
+    public List<Edge> getEdges() {
+        return edges;
     }
 
     public void removeNeighbouringFaces(Collection<Face> toBeDeletedFaces) {
@@ -147,7 +151,7 @@ public class Face {
     }
 
     public float returnSignedDistanceFromCenterPoint(Face face) {
-        return face.signedDistance(returnCenterPoint());
+        return face.signedDistance(getCenterPoint());
     }
 
     private boolean isPointDuplicateOfADefiningPoint(Vector3f vertex, float epsilon) {
