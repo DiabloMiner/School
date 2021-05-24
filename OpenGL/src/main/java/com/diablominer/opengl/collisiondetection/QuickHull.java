@@ -13,6 +13,9 @@ public class QuickHull {
     private final List<Vector3f> points;
     private final float epsilon;
 
+    private final Vector3f centroid;
+    private final float area;
+
     public QuickHull(Collection<Vector3f> vertices) {
         long startingTime = System.currentTimeMillis();
 
@@ -156,9 +159,9 @@ public class QuickHull {
 
                    // Determine the horizon edges, normal edges are shared between multiple visible faces
                    for (Face visibleFace : visibleFaces) {
+                       List<Face> visibleFacesWithOutTestedFace = new ArrayList<>(visibleFaces);
+                       visibleFacesWithOutTestedFace.remove(visibleFace);
                        for (Edge edge : visibleFace.getEdges()) {
-                           List<Face> visibleFacesWithOutTestedFace = new ArrayList<>(visibleFaces);
-                           visibleFacesWithOutTestedFace.remove(visibleFace);
                            if (visibleFacesWithOutTestedFace.stream().noneMatch(toBeTestedFace -> toBeTestedFace.hasEdge(edge))) {
                                horizonEdges.add(edge);
                            }
@@ -202,10 +205,10 @@ public class QuickHull {
            }
 
            // Reassign the conflict vertices from deleted faces to newly created faces
+           Set<Vector3f> verticesToBeAdded = new HashSet<>();
+           List<Vector3f> verticesToBeDeleted = new ArrayList<>();
            for (Face newFace : toBeAddedFaces) {
-               Set<Vector3f> verticesToBeAdded = new HashSet<>();
                for (Face otherFace : toBeDeletedFaces) {
-                   List<Vector3f> verticesToBeDeleted = new ArrayList<>();
                    for (Vector3f vertex : otherFace.getConflictList()) {
                        if (newFace.signedDistance(vertex) > epsilon) {
                            verticesToBeAdded.add(vertex);
@@ -213,8 +216,10 @@ public class QuickHull {
                        }
                    }
                    otherFace.removeVerticesFromConflictList(verticesToBeDeleted);
+                   verticesToBeDeleted.clear();
                }
                newFace.addNewConflictVertices(verticesToBeAdded);
+               verticesToBeAdded.clear();
            }
         }
         // Transform the points back into the coordinate system they were given in
@@ -228,6 +233,10 @@ public class QuickHull {
         }
         definingPoints.add(new Vector3f(0.0f));
         System.out.println("Time taken for Quickhull: " + (System.currentTimeMillis() - startingTime));
+
+        // Initialize area and centroid
+        this.area = determineArea();
+        this.centroid = determineCentroid();
     }
 
     public List<Face> getFaces() {
@@ -240,6 +249,31 @@ public class QuickHull {
 
     public List<Vector3f> getPoints() {
         return points;
+    }
+
+    private float determineArea() {
+        float area = 0.0f;
+        for (Face face : faces) {
+            area += face.getArea();
+        }
+        return area;
+    }
+
+    private Vector3f determineCentroid() {
+        Vector3f centroid = new Vector3f(0.0f);
+        for (Face face : faces) {
+            centroid.add(new Vector3f(face.getCentroid()).mul(face.getArea()));
+        }
+        centroid.div(this.area);
+        return centroid;
+    }
+
+    public Vector3f getCentroid() {
+        return centroid;
+    }
+
+    public float getArea() {
+        return area;
     }
 
     /**

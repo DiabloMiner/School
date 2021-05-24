@@ -18,6 +18,9 @@ public class Face {
     private final Vector3f normalizedNormal;
     private final float offset;
 
+    private final Vector3f centroid;
+    private final float area;
+
     public Face(Edge edge, Vector3f vertex3) {
         Vector3f vertex1 = edge.getTop();
         Vector3f vertex2 = edge.getTail();
@@ -37,6 +40,9 @@ public class Face {
             normalizedNormal = normal.normalize().mul(-1.0f);
         }
         offset = normalizedNormal.dot(supportVector);
+
+        centroid = determineCentroid();
+        area = determineArea();
     }
 
     public Face(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3) {
@@ -56,6 +62,9 @@ public class Face {
             normalizedNormal = normal.normalize().mul(-1.0f);
         }
         offset = normalizedNormal.dot(supportVector);
+
+        centroid = determineCentroid();
+        area = determineArea();
     }
 
     public float signedDistance(Vector3f point) {
@@ -104,11 +113,19 @@ public class Face {
         }
     }
 
-    public Vector3f getCenterPoint() {
+    private Vector3f determineCentroid() {
         Vector3f result = new Vector3f(0.0f);
         result.add(definingVertices.get(0)).add(definingVertices.get(1)).add(definingVertices.get(2));
         result.div(3.0f);
         return result;
+    }
+
+    private float determineArea() {
+        float a = new Vector3f(definingVertices.get(1)).sub(definingVertices.get(2)).length();
+        float heightOnA = new Vector3f(definingVertices.get(0)).sub(definingVertices.get(1)).
+                cross(new Vector3f(definingVertices.get(0)).sub(definingVertices.get(2))).length() /
+                new Vector3f(definingVertices.get(2)).sub(definingVertices.get(1)).length();
+        return (a * heightOnA) / 2.0f;
     }
 
     public List<Face> getNeighbouringFaces() {
@@ -124,6 +141,27 @@ public class Face {
             }
         }
         return null;
+    }
+
+    public void removeNeighbouringFaces(Collection<Face> toBeDeletedFaces) {
+        this.neighbouringFaces.removeIf(toBeDeletedFaces::contains);
+    }
+
+    public void removeVerticesFromConflictList(Collection<Vector3f> verticesToBeRemoved) {
+        conflictList.removeAll(verticesToBeRemoved);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Face face = (Face) o;
+        return Float.compare(face.offset, offset) == 0 && definingVertices.equals(face.definingVertices) && supportVector.equals(face.supportVector) && normalizedNormal.equals(face.normalizedNormal);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(definingVertices, supportVector, normalizedNormal, offset);
     }
 
     public Vector3f getNormalizedNormal() {
@@ -142,90 +180,11 @@ public class Face {
         return edges;
     }
 
-    public void removeNeighbouringFaces(Collection<Face> toBeDeletedFaces) {
-        this.neighbouringFaces.removeIf(toBeDeletedFaces::contains);
+    public Vector3f getCentroid() {
+        return centroid;
     }
 
-    public void removeVerticesFromConflictList(Collection<Vector3f> verticesToBeRemoved) {
-        conflictList.removeAll(verticesToBeRemoved);
-    }
-
-    public float returnSignedDistanceFromCenterPoint(Face face) {
-        return face.signedDistance(getCenterPoint());
-    }
-
-    private boolean isPointDuplicateOfADefiningPoint(Vector3f vertex, float epsilon) {
-        for (Vector3f definingVertex : definingVertices) {
-            if (definingVertex.equals(vertex, epsilon)) {
-                return true;
-            };
-        }
-        return false;
-    }
-
-    private boolean isPointDuplicateOfAConflictPoint(Vector3f point, float epsilon) {
-        for (Vector3f conflictPoint : conflictList) {
-            if (conflictPoint.equals(point, epsilon)) {
-                return true;
-            };
-        }
-        return false;
-    }
-
-    private boolean isFaceDuplicateOfANeighbouringFace(Face face) {
-        for (Face neighbouringFace : neighbouringFaces) {
-            if (neighbouringFace.equals(face)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isEdgeDuplicateOfADefinedEdge(Edge edge) {
-        for (Edge definedEdge : edges) {
-            if (definedEdge.equals(edge)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void mergeWithOtherCoplanarFace(Face coplanarFace, float epsilon) {
-        for (Vector3f newDefiningPoint : coplanarFace.definingVertices) {
-            if (!isPointDuplicateOfADefiningPoint(newDefiningPoint, epsilon)) {
-                definingVertices.add(newDefiningPoint);
-            }
-        }
-        for (Vector3f conflictPoint : coplanarFace.conflictList) {
-            if (!isPointDuplicateOfAConflictPoint(conflictPoint, epsilon)) {
-                conflictList.add(conflictPoint);
-            }
-        }
-        for (Face neighbouringFace : coplanarFace.neighbouringFaces) {
-            if (!isFaceDuplicateOfANeighbouringFace(neighbouringFace)) {
-                neighbouringFace.neighbouringFaces.remove(coplanarFace);
-                neighbouringFace.addNewNeighbouringFace(this);
-                addNewNeighbouringFace(neighbouringFace);
-            }
-        }
-        for (Edge edge : coplanarFace.edges) {
-            if (!isEdgeDuplicateOfADefinedEdge(edge)) {
-                edge.setFace(this);
-                edges.add(edge);
-            }
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Face face = (Face) o;
-        return Float.compare(face.offset, offset) == 0 && definingVertices.equals(face.definingVertices) && supportVector.equals(face.supportVector) && normalizedNormal.equals(face.normalizedNormal);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(definingVertices, supportVector, normalizedNormal, offset);
+    public float getArea() {
+        return area;
     }
 }

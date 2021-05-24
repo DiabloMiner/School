@@ -1,6 +1,5 @@
 package com.diablominer.opengl.render;
 
-import com.diablominer.opengl.collisiondetection.QuickHull;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.main.LogicalEngine;
@@ -8,7 +7,6 @@ import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.RenderablePointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
-import com.diablominer.opengl.render.renderables.MinimumModel;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.renderables.Renderable;
 import com.diablominer.opengl.render.textures.CubeMap;
@@ -44,10 +42,10 @@ public class MyRenderingEngine extends RenderingEngine {
     private final DirectionalLight directionalLight;
     private final PointLight pointLight;
     private final SpotLight spotLight;
-    private final TwoDimensionalTexture shadowTwoDimensionalTexture, shadowTwoDimensionalTexture2, brdfConvolutionLookUpMap;
-    private final CubeMap environmentCubeMap, shadowCubeMap, convolutedCubeMap, prefilteredCubeMap;
-
-    private MinimumModel minimumModel;
+    private final TwoDimensionalTexture shadowTwoDimensionalTexture;
+    private final TwoDimensionalTexture shadowTwoDimensionalTexture2;
+    private final CubeMap environmentCubeMap;
+    private final CubeMap shadowCubeMap;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         BigInteger time = BigInteger.valueOf(System.currentTimeMillis());
@@ -105,17 +103,17 @@ public class MyRenderingEngine extends RenderingEngine {
         spotLight = new SpotLight(new Vector3f(0.0f), new Vector3f(5.0f, 5.0f, 5.0f));
 
         BigInteger time3 = BigInteger.valueOf(System.currentTimeMillis());
-        System.out.println("1. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time).toString());
+        System.out.println("1. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time));
         CubeMap cubeMap = CubeMap.equirectangularMapToCubeMap("./src/main/resources/textures/skybox/Newport_Loft_4k.jpg",1024, true);
         Texture.unbindAllTextures();
-        convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap, 32);
+        CubeMap convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap, 32);
         Texture.unbindAllTextures();
-        prefilteredCubeMap = CubeMap.cubeMapPreFiltering(cubeMap, 256);
+        CubeMap prefilteredCubeMap = CubeMap.cubeMapPreFiltering(cubeMap, 256);
         Texture.unbindAllTextures();
-        brdfConvolutionLookUpMap = TwoDimensionalTexture.createBrdfConvolutionTexture(512);
+        TwoDimensionalTexture brdfConvolutionLookUpMap = TwoDimensionalTexture.createBrdfConvolutionTexture(512);
         Texture.unbindAllTextures();
         BigInteger time4 = BigInteger.valueOf(System.currentTimeMillis()).subtract(time3);
-        System.out.println("Cubemap/PBR-IBL preparation time: " + time4.toString());
+        System.out.println("Cubemap/PBR-IBL preparation time: " + time4);
         BigInteger time5 = BigInteger.valueOf(System.currentTimeMillis());
 
         StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
@@ -165,7 +163,7 @@ public class MyRenderingEngine extends RenderingEngine {
                 GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
             }
         };
-        System.out.println("   RenderingEngineUnit Setup time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time5).toString());
+        System.out.println("   RenderingEngineUnit Setup time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time5));
         BigInteger time7 =  BigInteger.valueOf(System.currentTimeMillis());
 
         new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 1.0f));
@@ -177,11 +175,6 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
-
-        Model quickhullTest = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 20.0f, 0.0f));
-        QuickHull quickHull = new QuickHull(quickhullTest.getAllVertices());
-        minimumModel = new MinimumModel(quickHull.getDefiningPoints());
-        matricesUniformBufferBlockShaderPrograms.add(minimumModel.shaderProgram);
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);
@@ -195,8 +188,8 @@ public class MyRenderingEngine extends RenderingEngine {
         notToBeRendered.add(refractionText);
 
 
-        System.out.println("   Model Setup time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time7).toString());
-        System.out.println("2. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time5).toString());
+        System.out.println("   Model Setup time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time7));
+        System.out.println("2. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time5));
         BigInteger time6 = BigInteger.valueOf(System.currentTimeMillis());
 
 
@@ -463,8 +456,8 @@ public class MyRenderingEngine extends RenderingEngine {
         addNewEngineUnit(skyboxRenderingEngineUnit);
         addNewEngineUnit(transparencyRenderingEngineUnit);
         BigInteger time2 = BigInteger.valueOf(System.currentTimeMillis()).subtract(time);
-        System.out.println("3. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time6).toString());
-        System.out.println("Startup time: " + time2.toString());
+        System.out.println("3. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time6));
+        System.out.println("Startup time: " + time2);
     }
 
     @Override
@@ -530,7 +523,6 @@ public class MyRenderingEngine extends RenderingEngine {
         updateUniformBufferBlocks(camera);
         updateAllEngineUnits(camera);
         updateUniforms();
-        minimumModel.draw();
         renderAllEngineUnits();
 
         blitFramebuffers(frameBuffer, frameBuffer2, 0, 0, 1280, 720, 0, 0, 1280, 720);
