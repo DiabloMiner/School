@@ -3,6 +3,7 @@ package com.diablominer.opengl.collisiondetection;
 import org.joml.*;
 import org.joml.Math;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class OBBTreeNode {
@@ -26,6 +27,7 @@ public class OBBTreeNode {
                                                  computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(2, 1),
                                                  computeCovarianceMatrixValue(0, 2), computeCovarianceMatrixValue(1, 2), computeCovarianceMatrixValue(2, 2));*/
         System.out.println(qrAlgorithm(new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5)));
+        // TODO: Implement Obbtree, see if covariance matrix is actually symmetric and remove the main in this class
     }
 
     private float computeCovarianceMatrixValue(int i, int j) {
@@ -43,19 +45,28 @@ public class OBBTreeNode {
     }
 
     private Matrix3f qrAlgorithm(Matrix3f initialMatrix) {
-        int size = 100;
-        Matrix3d[] matrices = new Matrix3d[size];
-        matrices[0] = new Matrix3d(initialMatrix);
-        for (int i = 0; i < (size - 1); i++) {
-            Matrix2d partialMatrix = new Matrix2d(matrices[i].m11, matrices[i].m12, matrices[i].m21, matrices[i].m22);
+        List<Matrix3d> matrices = new ArrayList<>();
+        matrices.add(new Matrix3d(initialMatrix));
+        boolean hasConverged = false;
+        int iteration = 0;
+        while (!hasConverged) {
+            Matrix3d currentMatrix = matrices.get(matrices.size() - 1);
+            Matrix2d partialMatrix = new Matrix2d(currentMatrix.m11, currentMatrix.m12, currentMatrix.m21, currentMatrix.m22);
             double nearestEigenValue = determineNearestEigenValue(partialMatrix, partialMatrix.m11);
-            Matrix3d toBeDecomposedMatrix = new Matrix3d(matrices[i]).sub(new Matrix3d().identity().scale(nearestEigenValue));
+            Matrix3d toBeDecomposedMatrix = new Matrix3d(currentMatrix).sub(new Matrix3d().identity().scale(nearestEigenValue));
             Matrix3d[] qrMatrices = qrDecomposition(toBeDecomposedMatrix);
-            matrices[i + 1] = new Matrix3d(qrMatrices[0]).mul(qrMatrices[1]).add(new Matrix3d().identity().scale(nearestEigenValue));
+            matrices.add(new Matrix3d(qrMatrices[0]).mul(qrMatrices[1]).add(new Matrix3d().identity().scale(nearestEigenValue)));
+
+            Matrix3d newestMatrix = matrices.get(matrices.size() - 1);
+            if (newestMatrix.m01 <= 1.0e-10 && newestMatrix.m02 <= 1.0e-10 && newestMatrix.m10 <= 1.0e-10 && newestMatrix.m12 <= 1.0e-10 && newestMatrix.m20 <= 1.0e-10 && newestMatrix.m21 <= 1.0e-10) {
+                hasConverged = true;
+            }
+            iteration++;
         }
-        return new Matrix3f((float) matrices[size - 1].m00, (float) matrices[size - 1].m01, (float) matrices[size - 1].m02,
-                            (float) matrices[size - 1].m10, (float) matrices[size - 1].m11, (float) matrices[size - 1].m12,
-                            (float) matrices[size - 1].m20, (float) matrices[size - 1].m21, (float) matrices[size - 1].m22);
+        Matrix3d lastMatrix = matrices.get(matrices.size() - 1);
+        return new Matrix3f((float) lastMatrix.m00, (float) lastMatrix.m01, (float) lastMatrix.m02,
+                            (float) lastMatrix.m10, (float) lastMatrix.m11, (float) lastMatrix.m12,
+                            (float) lastMatrix.m20, (float) lastMatrix.m21, (float) lastMatrix.m22);
     }
 
     private double determineNearestEigenValue(Matrix2d matrix, double referenceValue) {
