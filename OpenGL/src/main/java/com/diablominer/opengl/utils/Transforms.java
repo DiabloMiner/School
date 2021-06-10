@@ -2,6 +2,7 @@ package com.diablominer.opengl.utils;
 
 import com.diablominer.opengl.io.Camera;
 import org.joml.Math;
+import org.joml.Matrix3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -52,6 +53,10 @@ public class Transforms {
         Matrix4f result = new Matrix4f().identity();
         matrix1.mul(matrix2, result);
         return result;
+    }
+
+    public static double arithmeticMeanOfMatrix(Matrix3d matrix) {
+        return (matrix.m00 + matrix.m01 + matrix.m02 + matrix.m10 + matrix.m11 + matrix.m12 + matrix.m20 + matrix.m21 + matrix.m22) / 9.0;
     }
 
 }
