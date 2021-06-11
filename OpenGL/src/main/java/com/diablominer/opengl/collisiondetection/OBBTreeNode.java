@@ -6,6 +6,7 @@ import org.joml.Math;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class OBBTreeNode {
@@ -28,11 +29,26 @@ public class OBBTreeNode {
         Matrix3f covarianceMatrix = new Matrix3f(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(1, 0), computeCovarianceMatrixValue(2, 0),
                                                  computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(2, 1),
                                                  computeCovarianceMatrixValue(0, 2), computeCovarianceMatrixValue(1, 2), computeCovarianceMatrixValue(2, 2));*/
-        Matrix3d matrices = givensRotation(new Matrix3d(12, 6, -4, -51, 167, 24, 4, -68, -41));
-        Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
+        Matrix3d initialMatrix = new Matrix3d(12, 6, -4, -51, 167, 24, 4, -68, -41);
+        List<Matrix3d> matrices = givensRotation(initialMatrix);
+        Matrix3d Q = new Matrix3d(matrices.get(0)).transpose();
+        for (int i = 1; i < matrices.size(); i++) {
+            Q.mul(new Matrix3d(matrices.get(i)).transpose());
+        }
+        Collections.reverse(matrices);
+        Matrix3d R = new Matrix3d(matrices.get(0));
+        for (int i = 1; i < matrices.size(); i++) {
+            R.mul(matrices.get(i));
+        }
+        R.mul(initialMatrix);
+        System.out.println(Q);
+        System.out.println(R);
+        /*Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
         Matrix3d matrix = qrAlgorithm(initialMatrix);
         System.out.println(matrix);
-        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));
+        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));*/
+
+        // Debug givens rotations
         // Make eigenvectors work: Try to implement gaussian elimination that might work
         // TODO: Implement Obbtree, see if covariance matrix is actually symmetric and remove the main in this class
     }
@@ -145,7 +161,7 @@ public class OBBTreeNode {
         return new Vector3d(a[k]).sub(result);
     }
 
-    private Matrix3d givensRotation(Matrix3d matrix) {
+    /*private Matrix3d givensRotation(Matrix3d matrix) {
         Matrix3d[] matrices = new Matrix3d[3];
         int[] indices = {0, 1, 0, 2, 1, 2};
         for (int i = 0; i < 6; i += 2) {
@@ -174,6 +190,52 @@ public class OBBTreeNode {
             }
         }
         return matrix;
+    }*/
+
+    private List<Matrix3d> givensRotation(Matrix3d inputMatrix) {
+        List<Matrix3d> rotationMatrices = new ArrayList<>();
+        Matrix3d matrix = new Matrix3d(inputMatrix);
+        int[] columns = {0, 0, 1};
+        int[] rows = {1, 2, 2};
+        while (matrix.m01 != 0 || matrix.m02 != 0 || matrix.m12 != 0) {
+            for (int i = 0; i < 3; i++) {
+                if (matrix.get(columns[i], rows[i]) != 0) {
+                    double r = java.lang.Math.hypot(matrix.get(columns[i], columns[i]), matrix.get(columns[i], rows[i]));
+                    double c = matrix.get(columns[i], columns[i]) / r;
+                    double s = -1 * matrix.get(columns[i], rows[i]) / r;
+                    rotationMatrices.add(createGivensRotationMatrix(rows[i], columns[i], c, s));
+                    rotationMatrices.get(rotationMatrices.size() - 1).mul(matrix, matrix);
+                    for (int column = 0; column < 3; column++) {
+                        for (int row = 0; row < 3; row++) {
+                            if (java.lang.Math.abs(matrix.get(column, row)) <= java.lang.Math.ulp(1.0)) {
+                                matrix.set(column, row, 0.0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return rotationMatrices;
+    }
+
+    private Matrix3d createGivensRotationMatrix(int i, int k, double c, double s) {
+        Matrix3d result = new Matrix3d();
+        for (int l = 0; l < 3; l++) {
+            for (int j = 0; j < 3; j++) {
+                if ((j == i && l == i) || (j == k && l == k)) {
+                    result.set(l, j, c);
+                } else if (j == i && l == k) {
+                    result.set(l, j, s);
+                } else if (j == k && l == i) {
+                    result.set(l, j, (-1.0 * s));
+                } else if (j == l && (l != i && j != i) && j != k) {
+                    result.set(l, j, 1.0);
+                } else {
+                    result.set(l, j, 0.0);
+                }
+            }
+        }
+        return result;
     }
 
 
