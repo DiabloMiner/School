@@ -29,27 +29,11 @@ public class OBBTreeNode {
         Matrix3f covarianceMatrix = new Matrix3f(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(1, 0), computeCovarianceMatrixValue(2, 0),
                                                  computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(2, 1),
                                                  computeCovarianceMatrixValue(0, 2), computeCovarianceMatrixValue(1, 2), computeCovarianceMatrixValue(2, 2));*/
-        Matrix3d initialMatrix = new Matrix3d(12, 6, -4, -51, 167, 24, 4, -68, -41);
-        List<Matrix3d> matrices = givensRotation(initialMatrix);
-        Matrix3d Q = new Matrix3d(matrices.get(0)).transpose();
-        for (int i = 1; i < matrices.size(); i++) {
-            Q.mul(new Matrix3d(matrices.get(i)).transpose());
-        }
-        Collections.reverse(matrices);
-        Matrix3d R = new Matrix3d(matrices.get(0));
-        for (int i = 1; i < matrices.size(); i++) {
-            R.mul(matrices.get(i));
-        }
-        R.mul(initialMatrix);
-        System.out.println(Q);
-        System.out.println(R);
-        /*Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
+        Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
         Matrix3d matrix = qrAlgorithm(initialMatrix);
         System.out.println(matrix);
-        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));*/
+        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));
 
-        // Debug givens rotations
-        // Make eigenvectors work: Try to implement gaussian elimination that might work
         // TODO: Implement Obbtree, see if covariance matrix is actually symmetric and remove the main in this class
     }
 
@@ -75,12 +59,16 @@ public class OBBTreeNode {
         for (int i = 0; i < 3; i++) {
             Matrix3d[] qrMatrices = qrDecomposition(matrices[i]);
             Matrix3d R = qrMatrices[0];
-            Matrix3d Q = qrMatrices[1];
-            Vector3d z = new Vector3d(0.0).mul(new Matrix3d(Q).transpose());
-            double zComponent = z.get(2) / R.m22;
+            Vector3d z = new Vector3d(0.0);
+            double zComponent;
+            if (R.m02 <= 1e-10 && R.m12 <= 1e-10 && R.m22 <= 1e-10) {
+                zComponent = 1.0;
+            } else {
+                zComponent = z.get(2) / R.m22;
+            }
             double yComponent = (z.get(1) - zComponent * R.m21) / R.m11;
-            double xComponent = (z.get(0) - zComponent * R.m10 - yComponent * R.m20) / R.m00;
-            eigenVectors[i] = new Vector3f((float) zComponent, (float) yComponent, (float) xComponent);
+            double xComponent = (z.get(0) - yComponent * R.m10 - zComponent * R.m20) / R.m00;
+            eigenVectors[i] = new Vector3f((float) xComponent, (float) yComponent, (float) zComponent);
         }
         return eigenVectors;
     }
@@ -126,25 +114,17 @@ public class OBBTreeNode {
     }
 
     private Matrix3d[] qrDecomposition(Matrix3d matrix) {
-        Vector3d[] a = {new Vector3d(0.0), new Vector3d(0.0), new Vector3d(0.0)};
-        matrix.getColumn(0, a[0]);
-        matrix.getColumn(1, a[1]);
-        matrix.getColumn(2, a[2]);
-        Vector3d[] u = {new Vector3d(a[0]), new Vector3d(0.0), new Vector3d(0.0)};
-        Vector3d[] e = new Vector3d[3];
-        for (int i = 0; i < 3; i++) {
-            u[i] = calculateU(a, u, i);
-            if (!u[i].equals(0.0, 0.0, 0.0)) {
-                u[i] = new Vector3d(u[i]).normalize();
-                e[i] = new Vector3d(u[i]).normalize();
-            } else {
-                e[i] = u[i];
-            }
+        List<Matrix3d> givensRotationMatrices = givensRotation(matrix);
+        Matrix3d Q = new Matrix3d(givensRotationMatrices.get(0)).transpose();
+        for (int i = 1; i < givensRotationMatrices.size(); i++) {
+            Q.mul(new Matrix3d(givensRotationMatrices.get(i)).transpose());
         }
-        Matrix3d Q = new Matrix3d(e[0], e[1], e[2]);
-        Matrix3d R = new Matrix3d(e[0].dot(a[0]), 0.0, 0.0,
-                                  e[0].dot(a[1]), e[1].dot(a[1]), 0.0,
-                                  e[0].dot(a[2]), e[1].dot(a[2]), e[2].dot(a[2]));
+        Collections.reverse(givensRotationMatrices);
+        Matrix3d R = new Matrix3d(givensRotationMatrices.get(0));
+        for (int i = 1; i < givensRotationMatrices.size(); i++) {
+            R.mul(givensRotationMatrices.get(i));
+        }
+        R.mul(matrix);
         return new Matrix3d[] {R, Q};
     }
 
@@ -161,43 +141,13 @@ public class OBBTreeNode {
         return new Vector3d(a[k]).sub(result);
     }
 
-    /*private Matrix3d givensRotation(Matrix3d matrix) {
-        Matrix3d[] matrices = new Matrix3d[3];
-        int[] indices = {0, 1, 0, 2, 1, 2};
-        for (int i = 0; i < 6; i += 2) {
-            if (matrix.get(indices[i], indices[i + 1]) != 0.0) {
-                int column = indices[i];
-                int row = indices[i + 1];
-                if (column == 0 && row == 2) {
-                    double r = java.lang.Math.hypot(matrix.m00, matrix.m02);
-                    double c = matrix.m00 / r;
-                    double s = -(matrix.m02 / r);
-                    matrices[i / 2] = new Matrix3d(c, 0.0, s, 0.0, 1.0, 0.0, -s, 0.0, c);
-                    matrix.mulLocal(matrices[i / 2]);
-                } else if (column == 0 && row == 1) {
-                    double r = java.lang.Math.hypot(matrix.m00, matrix.m01);
-                    double c = matrix.m00 / r;
-                    double s = -(matrix.m01 / r);
-                    matrices[i / 2] = new Matrix3d(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 0.0);
-                    matrix.mulLocal(matrices[i / 2]);
-                } else if (column == 1 && row == 2) {
-                    double r = java.lang.Math.hypot(matrix.m11, matrix.m12);
-                    double c = matrix.m11 / r;
-                    double s = -(matrix.m12 / r);
-                    matrices[i / 2] = new Matrix3d(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 0.0);
-                    matrix.mulLocal(matrices[i / 2]);
-                }
-            }
-        }
-        return matrix;
-    }*/
-
     private List<Matrix3d> givensRotation(Matrix3d inputMatrix) {
         List<Matrix3d> rotationMatrices = new ArrayList<>();
         Matrix3d matrix = new Matrix3d(inputMatrix);
         int[] columns = {0, 0, 1};
         int[] rows = {1, 2, 2};
-        while (matrix.m01 != 0 || matrix.m02 != 0 || matrix.m12 != 0) {
+        double epsilon = java.lang.Math.ulp(1.0);
+        while (matrix.m01 > epsilon || matrix.m02 > epsilon || matrix.m12 > epsilon) {
             for (int i = 0; i < 3; i++) {
                 if (matrix.get(columns[i], rows[i]) != 0) {
                     double r = java.lang.Math.hypot(matrix.get(columns[i], columns[i]), matrix.get(columns[i], rows[i]));
@@ -205,13 +155,6 @@ public class OBBTreeNode {
                     double s = -1 * matrix.get(columns[i], rows[i]) / r;
                     rotationMatrices.add(createGivensRotationMatrix(rows[i], columns[i], c, s));
                     rotationMatrices.get(rotationMatrices.size() - 1).mul(matrix, matrix);
-                    for (int column = 0; column < 3; column++) {
-                        for (int row = 0; row < 3; row++) {
-                            if (java.lang.Math.abs(matrix.get(column, row)) <= java.lang.Math.ulp(1.0)) {
-                                matrix.set(column, row, 0.0);
-                            }
-                        }
-                    }
                 }
             }
         }
