@@ -26,9 +26,17 @@ public class OBBTreeNode {
         /*this.points = points;
         quickHull = new QuickHull(points);
 
-        Matrix3f covarianceMatrix = new Matrix3f(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(1, 0), computeCovarianceMatrixValue(2, 0),
-                                                 computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(2, 1),
-                                                 computeCovarianceMatrixValue(0, 2), computeCovarianceMatrixValue(1, 2), computeCovarianceMatrixValue(2, 2));*/
+        Matrix3d covarianceMatrix = new Matrix3d(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(0, 2),
+                                                 computeCovarianceMatrixValue(1, 0), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(1, 2),
+                                                 computeCovarianceMatrixValue(2, 0), computeCovarianceMatrixValue(2, 1), computeCovarianceMatrixValue(2, 2));
+        Matrix3d qrMatrix = qrAlgorithm(covarianceMatrix);
+        sideDirectionVectors = determineEigenVectors(covarianceMatrix, qrMatrix);
+        for (Vector3f sideDirectionVector : sideDirectionVectors) {
+            sideDirectionVector.normalize();
+        }
+        Vector3f[] extremes = computeExtremesAlongTheAxes(quickhull.getPoints());
+        computeHalfLengthVectors(extremes);
+        */
         Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
         Matrix3d matrix = qrAlgorithm(initialMatrix);
         System.out.println(matrix);
@@ -37,18 +45,50 @@ public class OBBTreeNode {
         // TODO: Implement Obbtree, see if covariance matrix is actually symmetric and remove the main in this class
     }
 
-    private float computeCovarianceMatrixValue(int i, int j) {
-        float finalValue = 0.0f;
+    private double computeCovarianceMatrixValue(int i, int j) {
+        double finalValue = 0.0;
         for (Face face : quickHull.getFaces()) {
             Vector3f centroid = face.getCentroid();
             Vector3f vertex0 = face.getDefiningVertices().get(0);
             Vector3f vertex1 = face.getDefiningVertices().get(1);
             Vector3f vertex2 = face.getDefiningVertices().get(2);
-            finalValue += (face.getArea() / 12.0f) * ((9.0f * centroid.get(i) * centroid.get(j) +
+            finalValue += (face.getArea() / 12.0) * ((9.0 * centroid.get(i) * centroid.get(j) +
                     vertex0.get(i) * vertex0.get(j) + vertex1.get(i) * vertex1.get(j) + vertex2.get(i) * vertex2.get(j))
                     - quickHull.getCentroid().get(i) * quickHull.getCentroid().get(j));
         }
         return (finalValue / quickHull.getArea());
+    }
+
+    private void computeHalfLengthVectors(Vector3f[] extremes) {
+        halfLengthVectors[0] = new Vector3f(extremes[1]).sub(extremes[0]).mul(0.5f);
+        halfLengthVectors[1] = new Vector3f(extremes[3]).sub(extremes[2]).mul(0.5f);
+        halfLengthVectors[2] = new Vector3f(extremes[5]).sub(extremes[4]).mul(0.5f);
+    }
+
+    private Vector3f[] computeExtremesAlongTheAxes(List<Vector3f> points) {
+        return new Vector3f[] {computeMinAlongAAxis(points, sideDirectionVectors[0]), computeMaxAlongAAxis(points, sideDirectionVectors[0]),
+                               computeMinAlongAAxis(points, sideDirectionVectors[1]), computeMaxAlongAAxis(points, sideDirectionVectors[1]),
+                               computeMinAlongAAxis(points, sideDirectionVectors[2]), computeMaxAlongAAxis(points, sideDirectionVectors[2])};
+    }
+
+    private Vector3f computeMaxAlongAAxis(List<Vector3f> points, Vector3f sideDirectionVector) {
+        Vector3f max = Transforms.createNormalVectorWithTwoComponents(sideDirectionVector, sideDirectionVector.x, sideDirectionVector.y);
+        for (Vector3f point : points) {
+            if (sideDirectionVector.dot(point) > sideDirectionVector.dot(max)) {
+                max = point;
+            }
+        }
+        return max;
+    }
+
+    private Vector3f computeMinAlongAAxis(List<Vector3f> points, Vector3f sideDirectionVector) {
+        Vector3f min = new Vector3f(sideDirectionVector).mul(10000.0f);
+        for (Vector3f point : points) {
+            if (sideDirectionVector.dot(point) > sideDirectionVector.dot(min)) {
+                min = point;
+            }
+        }
+        return min;
     }
 
     private Vector3f[] determineEigenVectors(Matrix3f initialMatrix, Matrix3d matrixFromQRAlgorithm) {
@@ -74,24 +114,28 @@ public class OBBTreeNode {
     }
 
     private Matrix3d qrAlgorithm(Matrix3f initialMatrix) {
-        List<Matrix3d> matrices = new ArrayList<>();
-        matrices.add(new Matrix3d(initialMatrix));
-        boolean hasConverged = false;
-        while (!hasConverged) {
-            Matrix3d currentMatrix = matrices.get(matrices.size() - 1);
-            Matrix2d partialMatrix = new Matrix2d(currentMatrix.m11, currentMatrix.m12, currentMatrix.m21, currentMatrix.m22);
-            double nearestEigenValue = determineNearestEigenValue(partialMatrix, partialMatrix.m11);
-            Matrix3d toBeDecomposedMatrix = new Matrix3d(currentMatrix).sub(new Matrix3d().identity().scale(nearestEigenValue));
-            Matrix3d[] qrMatrices = qrDecomposition(toBeDecomposedMatrix);
-            matrices.add(new Matrix3d(qrMatrices[0]).mul(qrMatrices[1]).add(new Matrix3d().identity().scale(nearestEigenValue)));
+        if (initialMatrix.m01 <= 1e-10 && initialMatrix.m02 <= 1e-10 && initialMatrix.m12 <= 1e-10 && initialMatrix.m22 <= 1e-10) {
+            return new Matrix3d(initialMatrix);
+        } else {
+            List<Matrix3d> matrices = new ArrayList<>();
+            matrices.add(new Matrix3d(initialMatrix));
+            boolean hasConverged = false;
+            while (!hasConverged) {
+                Matrix3d currentMatrix = matrices.get(matrices.size() - 1);
+                Matrix2d partialMatrix = new Matrix2d(currentMatrix.m11, currentMatrix.m12, currentMatrix.m21, currentMatrix.m22);
+                double nearestEigenValue = determineNearestEigenValue(partialMatrix, partialMatrix.m11);
+                Matrix3d toBeDecomposedMatrix = new Matrix3d(currentMatrix).sub(new Matrix3d().identity().scale(nearestEigenValue));
+                Matrix3d[] qrMatrices = qrDecomposition(toBeDecomposedMatrix);
+                matrices.add(new Matrix3d(qrMatrices[0]).mul(qrMatrices[1]).add(new Matrix3d().identity().scale(nearestEigenValue)));
 
-            Matrix3d newestMatrix = matrices.get(matrices.size() - 1);
-            double change = Math.abs(Transforms.arithmeticMeanOfMatrix(newestMatrix) - Transforms.arithmeticMeanOfMatrix(matrices.get(matrices.size() - 2)));
-            if (change < 1e-10) {
-                hasConverged = true;
+                Matrix3d newestMatrix = matrices.get(matrices.size() - 1);
+                double change = Math.abs(Transforms.arithmeticMeanOfMatrix(newestMatrix) - Transforms.arithmeticMeanOfMatrix(matrices.get(matrices.size() - 2)));
+                if (change < 1e-10) {
+                    hasConverged = true;
+                }
             }
+            return matrices.get(matrices.size() - 1);
         }
-        return matrices.get(matrices.size() - 1);
     }
 
     private double determineNearestEigenValue(Matrix2d matrix, double referenceValue) {
@@ -128,25 +172,12 @@ public class OBBTreeNode {
         return new Matrix3d[] {R, Q};
     }
 
-    private Vector3d project(Vector3d a, Vector3d u) {
-        double dotProduct = new Vector3d(u).dot(a) / new Vector3d(u).dot(u);
-        return new Vector3d(u).mul(dotProduct);
-    }
-
-    private Vector3d calculateU(Vector3d[] a, Vector3d[] u, int k) {
-        Vector3d result = new Vector3d(0.0);
-        for (int j = 0; j <= (k - 1); j++) {
-            result.add(project(a[k], u[j]));
-        }
-        return new Vector3d(a[k]).sub(result);
-    }
-
     private List<Matrix3d> givensRotation(Matrix3d inputMatrix) {
         List<Matrix3d> rotationMatrices = new ArrayList<>();
         Matrix3d matrix = new Matrix3d(inputMatrix);
         int[] columns = {0, 0, 1};
         int[] rows = {1, 2, 2};
-        double epsilon = java.lang.Math.ulp(1.0);
+        double epsilon = 1e-10;
         while (matrix.m01 > epsilon || matrix.m02 > epsilon || matrix.m12 > epsilon) {
             for (int i = 0; i < 3; i++) {
                 if (matrix.get(columns[i], rows[i]) != 0) {

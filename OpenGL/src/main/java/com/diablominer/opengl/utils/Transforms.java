@@ -19,6 +19,11 @@ public class Transforms {
         return unitVector;
     }
 
+    public static Vector3f createNormalVectorWithTwoComponents(Vector3f initialVector, float x, float y) {
+        float z = (-1 * initialVector.x * x - initialVector.y * y) / initialVector.z;
+        return new Vector3f(x, y, z);
+    }
+
     public static Vector3f getSumOf2Vectors(Vector3f vec1, Vector3f vec2) {
         Vector3f sum = new Vector3f();
         vec1.add(vec2, sum);
