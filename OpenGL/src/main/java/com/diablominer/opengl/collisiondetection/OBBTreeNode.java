@@ -4,20 +4,19 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 import org.joml.Math;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class OBBTreeNode {
 
     private static final double epsilon = java.lang.Math.ulp(1.0f);
 
-    private Vector3f centerPoint;
-    private Vector3f[] sideDirectionVectors = new Vector3f[3];
-    private Vector3f[] halfLengthVectors = new Vector3f[3];
+    private final Vector3f centerPoint;
+    private final Vector3f[] sideDirectionVectors;
+    private final Vector3f[] halfLengthVectors = new Vector3f[3];
+    private final Vector3f[] orderedDirectionVectors = new Vector3f[3];
 
-    private QuickHull quickHull;
-    private List<Vector3f> points;
+    private final QuickHull quickHull;
+    private final List<Vector3f> points;
 
     public OBBTreeNode(List<Vector3f> points) {
         this.points = points;
@@ -36,12 +35,8 @@ public class OBBTreeNode {
         halfLengthVectors[1] = new Vector3f(extremes[3]).sub(extremes[2]).mul(0.5f);
         halfLengthVectors[2] = new Vector3f(extremes[5]).sub(extremes[4]).mul(0.5f);
         centerPoint = new Vector3f(extremes[0]).add(extremes[1]).mul(sideDirectionVectors[0]).mul(0.5f).add(new Vector3f(extremes[2]).add(extremes[3]).mul(sideDirectionVectors[1]).mul(0.5f)).add(new Vector3f(extremes[4]).add(extremes[5]).mul(sideDirectionVectors[2]).mul(0.5f));
-        /*Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
-        Matrix3d matrix = qrAlgorithm(initialMatrix);
-        System.out.println(matrix);
-        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));*/
 
-        // TODO: Implement Obbtree, see if covariance matrix is actually symmetric and remove the main in this class
+        // TODO: Implement Obbtree
     }
 
     private float computeCovarianceMatrixValue(int i, int j) {
@@ -201,5 +196,37 @@ public class OBBTreeNode {
         return result;
     }
 
+    public Vector3f getLongestAxis() {
+        if (orderedDirectionVectors[0].equals(null)) {
+            Optional<Vector3f> result = Arrays.stream(halfLengthVectors).max((o1, o2) -> Float.compare(o1.length(), o2.length()));
+            if (result.isPresent()) {
+                orderedDirectionVectors[0] = result.get();
+            } else {
+                throw new Error("The optional storing the longest axis of the OBBTreeNode doesn't have a value.");
+            }
+        }
+        return orderedDirectionVectors[0];
+    }
+
+    public Vector3f getMiddleAxis() {
+        if (orderedDirectionVectors[1].equals(null)) {
+            ArrayList<Vector3f> remainingHalfLengthVectors = new ArrayList<>(Arrays.asList(halfLengthVectors));
+            Optional<Vector3f> result = remainingHalfLengthVectors.stream().max((o1, o2) -> Float.compare(o1.length(), o2.length()));
+            if (result.isPresent()) {
+                orderedDirectionVectors[1] = result.get();
+            } else {
+                throw new Error("The optional storing the middle axis of the OBBTreeNode doesn't have a value.");
+            }
+        }
+        return orderedDirectionVectors[1];
+    }
+
+    public Vector3f getCenterPoint() {
+        return centerPoint;
+    }
+
+    public List<Vector3f> getPoints() {
+        return points;
+    }
 
 }
