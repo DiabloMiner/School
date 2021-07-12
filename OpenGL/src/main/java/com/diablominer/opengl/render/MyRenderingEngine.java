@@ -1,5 +1,6 @@
 package com.diablominer.opengl.render;
 
+import com.diablominer.opengl.collisiondetection.OBBTreeNode;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.main.LogicalEngine;
@@ -170,11 +171,13 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/HelloWorld/bigPlane.obj", normalRenderingEngineUnit, new Vector3f(0.0f, 0.0f, 20.0f));
         new Model("./src/main/resources/models/HelloWorld/cube2.obj", stencilTestRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
         new Model("./src/main/resources/models/HelloWorld/biggerCube.obj", stencilObjectRenderingEngineUnit, new Vector3f(8.0f, 0.0f, 16.0f));
-        Renderable reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
-        Renderable refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 2.0f, 20.0f));
+        Model reflectionCube = new Model("./src/main/resources/models/HelloWorld/cube.obj", reflectionRenderingEngineUnit, new Vector3f(-15.0f, 0.0f, 20.0f));
+        Model refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 2.0f, 20.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
+
+        new OBBTreeNode(refractionText.getAllVertices());
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);

@@ -5,7 +5,6 @@ import org.joml.*;
 import org.joml.Math;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,15 +19,11 @@ public class OBBTreeNode {
     private QuickHull quickHull;
     private List<Vector3f> points;
 
-    public static void main(String[] args) {
-        new OBBTreeNode(null);
-    }
-
     public OBBTreeNode(List<Vector3f> points) {
-        /*this.points = points;
+        this.points = points;
         quickHull = new QuickHull(points);
 
-        Matrix3d covarianceMatrix = new Matrix3d(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(0, 2),
+        Matrix3f covarianceMatrix = new Matrix3f(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(0, 2),
                                                  computeCovarianceMatrixValue(1, 0), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(1, 2),
                                                  computeCovarianceMatrixValue(2, 0), computeCovarianceMatrixValue(2, 1), computeCovarianceMatrixValue(2, 2));
         Matrix3d qrMatrix = qrAlgorithm(covarianceMatrix);
@@ -36,28 +31,27 @@ public class OBBTreeNode {
         for (Vector3f sideDirectionVector : sideDirectionVectors) {
             sideDirectionVector.normalize();
         }
-        Vector3f[] extremes = computeExtremesAlongTheAxes(quickhull.getPoints());
+        Vector3f[] extremes = computeExtremesAlongTheAxes(quickHull.getPoints());
         halfLengthVectors[0] = new Vector3f(extremes[1]).sub(extremes[0]).mul(0.5f);
         halfLengthVectors[1] = new Vector3f(extremes[3]).sub(extremes[2]).mul(0.5f);
         halfLengthVectors[2] = new Vector3f(extremes[5]).sub(extremes[4]).mul(0.5f);
         centerPoint = new Vector3f(extremes[0]).add(extremes[1]).mul(sideDirectionVectors[0]).mul(0.5f).add(new Vector3f(extremes[2]).add(extremes[3]).mul(sideDirectionVectors[1]).mul(0.5f)).add(new Vector3f(extremes[4]).add(extremes[5]).mul(sideDirectionVectors[2]).mul(0.5f));
-        */
-        Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
+        /*Matrix3f initialMatrix = new Matrix3f(1, 3, 0, 3, 2, 6, 0, 6, 5);
         Matrix3d matrix = qrAlgorithm(initialMatrix);
         System.out.println(matrix);
-        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));
+        System.out.println(Arrays.toString(determineEigenVectors(initialMatrix, matrix)));*/
 
         // TODO: Implement Obbtree, see if covariance matrix is actually symmetric and remove the main in this class
     }
 
-    private double computeCovarianceMatrixValue(int i, int j) {
-        double finalValue = 0.0;
+    private float computeCovarianceMatrixValue(int i, int j) {
+        float finalValue = 0.0f;
         for (Face face : quickHull.getFaces()) {
             Vector3f centroid = face.getCentroid();
             Vector3f vertex0 = face.getDefiningVertices().get(0);
             Vector3f vertex1 = face.getDefiningVertices().get(1);
             Vector3f vertex2 = face.getDefiningVertices().get(2);
-            finalValue += (face.getArea() / 12.0) * ((9.0 * centroid.get(i) * centroid.get(j) +
+            finalValue += (face.getArea() / 12.0f) * ((9.0f * centroid.get(i) * centroid.get(j) +
                     vertex0.get(i) * vertex0.get(j) + vertex1.get(i) * vertex1.get(j) + vertex2.get(i) * vertex2.get(j))
                     - quickHull.getCentroid().get(i) * quickHull.getCentroid().get(j));
         }
