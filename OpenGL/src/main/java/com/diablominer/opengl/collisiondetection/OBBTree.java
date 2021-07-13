@@ -16,7 +16,7 @@ public class OBBTree {
         }
         nodes = new OBBTreeNode[size];
 
-        for (int i = 0; i < ((size - 2) / 2); i++) {
+        for (int i = 0; i <= ((size - 1 - 2) / 2); i++) {
             if (i == 0) {
                 nodes[0] = new OBBTreeNode(points);
                 ArrayList<ArrayList<Vector3f>> twoPointSets = splitPointsInHalf(nodes[0]);
