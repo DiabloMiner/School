@@ -227,11 +227,10 @@ public class QuickHull {
             vertex.add(centroid);
         }
 
-        // Add all points from the faves to the defining points
+        // Add all points from the faces to the defining points
         for (Face face : faces) {
             definingPoints.addAll(face.getDefiningVertices());
         }
-        definingPoints.add(new Vector3f(0.0f));
         System.out.println("Time taken for Quickhull: " + (System.currentTimeMillis() - startingTime));
 
         // Initialize area and centroid

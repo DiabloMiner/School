@@ -1,6 +1,5 @@
 package com.diablominer.opengl.render;
 
-import com.diablominer.opengl.collisiondetection.OBBTreeNode;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.main.LogicalEngine;
@@ -177,7 +176,7 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
 
-        // new OBBTreeNode(refractionText.getAllVertices());
+        // new OBBTree(refractionText.getAllVertices(), 2);
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);

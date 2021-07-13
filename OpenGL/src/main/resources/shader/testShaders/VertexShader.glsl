@@ -12,8 +12,5 @@ out float color;
 
 void main() {
     color = gl_VertexID;
-    if(aPos == vec3(0.0f, 0.0f, 0.0f)) {
-        color = 0.0f;
-    }
     gl_Position = projection * view * model * vec4(aPos, 1.0f);
 }

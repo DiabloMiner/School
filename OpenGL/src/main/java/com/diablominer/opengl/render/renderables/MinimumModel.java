@@ -23,7 +23,7 @@ public class MinimumModel {
             this.vertices.add(vertex.z);
         }
         try {
-            shaderProgram = new ShaderProgram("./quickhullTestShaders/VertexShader", "./quickhullTestShaders/FragmentShader");
+            shaderProgram = new ShaderProgram("./testShaders/VertexShader", "./testShaders/FragmentShader");
         }
         catch (Exception e) { e.printStackTrace(); }
 

@@ -1,6 +1,5 @@
 package com.diablominer.opengl.collisiondetection;
 
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 import org.joml.Math;
 
@@ -30,11 +29,11 @@ public class OBBTreeNode {
         for (Vector3f sideDirectionVector : sideDirectionVectors) {
             sideDirectionVector.normalize();
         }
-        Vector3f[] extremes = computeExtremesAlongTheAxes(quickHull.getPoints());
-        halfLengthVectors[0] = new Vector3f(extremes[1]).sub(extremes[0]).mul(0.5f);
-        halfLengthVectors[1] = new Vector3f(extremes[3]).sub(extremes[2]).mul(0.5f);
-        halfLengthVectors[2] = new Vector3f(extremes[5]).sub(extremes[4]).mul(0.5f);
-        centerPoint = new Vector3f(extremes[0]).add(extremes[1]).mul(sideDirectionVectors[0]).mul(0.5f).add(new Vector3f(extremes[2]).add(extremes[3]).mul(sideDirectionVectors[1]).mul(0.5f)).add(new Vector3f(extremes[4]).add(extremes[5]).mul(sideDirectionVectors[2]).mul(0.5f));
+        float[] extremes = computeExtremesAlongTheAxes(quickHull.getPoints());
+        halfLengthVectors[0] = new Vector3f(sideDirectionVectors[0]).mul(extremes[1] - extremes[0]).mul(0.5f);
+        halfLengthVectors[1] = new Vector3f(sideDirectionVectors[1]).mul(extremes[3] - extremes[2]).mul(0.5f);
+        halfLengthVectors[2] = new Vector3f(sideDirectionVectors[2]).mul(extremes[5] - extremes[4]).mul(0.5f);
+        centerPoint = new Vector3f(sideDirectionVectors[0]).mul(extremes[0] + extremes[1]).mul(0.5f).add(new Vector3f(sideDirectionVectors[1]).mul(extremes[2] + extremes[3]).mul(0.5f)).add(new Vector3f(sideDirectionVectors[2]).mul(extremes[4] + extremes[5]).mul(0.5f));
 
         // TODO: Implement Obbtree
     }
@@ -53,30 +52,30 @@ public class OBBTreeNode {
         return (finalValue / quickHull.getArea());
     }
 
-    private Vector3f[] computeExtremesAlongTheAxes(List<Vector3f> points) {
-        return new Vector3f[] {computeMinAlongAAxis(points, sideDirectionVectors[0]), computeMaxAlongAAxis(points, sideDirectionVectors[0]),
+    private float[] computeExtremesAlongTheAxes(List<Vector3f> points) {
+        return new float[] {computeMinAlongAAxis(points, sideDirectionVectors[0]), computeMaxAlongAAxis(points, sideDirectionVectors[0]),
                                computeMinAlongAAxis(points, sideDirectionVectors[1]), computeMaxAlongAAxis(points, sideDirectionVectors[1]),
                                computeMinAlongAAxis(points, sideDirectionVectors[2]), computeMaxAlongAAxis(points, sideDirectionVectors[2])};
     }
 
-    private Vector3f computeMaxAlongAAxis(List<Vector3f> points, Vector3f sideDirectionVector) {
-        Vector3f max = Transforms.createNormalVectorWithTwoComponents(sideDirectionVector, sideDirectionVector.x, sideDirectionVector.y);
+    private float computeMaxAlongAAxis(List<Vector3f> points, Vector3f sideDirectionVector) {
+        Vector3f max = new Vector3f(sideDirectionVector).mul(-10000.0f);
         for (Vector3f point : points) {
             if (sideDirectionVector.dot(point) > sideDirectionVector.dot(max)) {
                 max = point;
             }
         }
-        return max;
+        return sideDirectionVector.dot(max);
     }
 
-    private Vector3f computeMinAlongAAxis(List<Vector3f> points, Vector3f sideDirectionVector) {
+    private float computeMinAlongAAxis(List<Vector3f> points, Vector3f sideDirectionVector) {
         Vector3f min = new Vector3f(sideDirectionVector).mul(10000.0f);
         for (Vector3f point : points) {
-            if (sideDirectionVector.dot(point) > sideDirectionVector.dot(min)) {
+            if (sideDirectionVector.dot(point) < sideDirectionVector.dot(min)) {
                 min = point;
             }
         }
-        return min;
+        return sideDirectionVector.dot(min);
     }
 
     private Vector3f[] determineEigenVectors(Matrix3f initialMatrix, Matrix3d matrixFromQRAlgorithm) {
@@ -197,7 +196,7 @@ public class OBBTreeNode {
     }
 
     public Vector3f getLongestAxis() {
-        if (orderedDirectionVectors[0].equals(null)) {
+        if (orderedDirectionVectors[0] == null) {
             Optional<Vector3f> result = Arrays.stream(halfLengthVectors).max((o1, o2) -> Float.compare(o1.length(), o2.length()));
             if (result.isPresent()) {
                 orderedDirectionVectors[0] = result.get();
@@ -209,8 +208,9 @@ public class OBBTreeNode {
     }
 
     public Vector3f getMiddleAxis() {
-        if (orderedDirectionVectors[1].equals(null)) {
+        if (orderedDirectionVectors[1] == null) {
             ArrayList<Vector3f> remainingHalfLengthVectors = new ArrayList<>(Arrays.asList(halfLengthVectors));
+            remainingHalfLengthVectors.remove(getLongestAxis());
             Optional<Vector3f> result = remainingHalfLengthVectors.stream().max((o1, o2) -> Float.compare(o1.length(), o2.length()));
             if (result.isPresent()) {
                 orderedDirectionVectors[1] = result.get();

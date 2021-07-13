@@ -27,17 +27,13 @@ public class OBBTree {
                 nodes[2 * i + 1] = new OBBTreeNode(twoPointSets.get(0));
                 nodes[2 * i + 2] = new OBBTreeNode(twoPointSets.get(1));
             }
-
         }
     }
 
     private ArrayList<ArrayList<Vector3f>> splitPointsInHalf(OBBTreeNode obbTreeNode) {
         Vector3f centerPoint = obbTreeNode.getCenterPoint();
-        Vector3f longestAxis = obbTreeNode.getLongestAxis();
-        Vector3f middleAxis = obbTreeNode.getMiddleAxis();
+        Vector3f normalVector = obbTreeNode.getMiddleAxis();
 
-        Vector3f secondAxis = new Vector3f(longestAxis).cross(middleAxis);
-        Vector3f normalVector = new Vector3f(longestAxis).cross(secondAxis);
         if (centerPoint.dot(normalVector) >= 0) {
             normalVector.normalize();
         } else {
@@ -59,6 +55,10 @@ public class OBBTree {
         finalList.add(positiveSide);
         finalList.add(negativeSide);
         return finalList;
+    }
+
+    public OBBTreeNode[] getNodes() {
+        return nodes;
     }
 
 }
