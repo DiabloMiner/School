@@ -1,10 +1,10 @@
 package com.diablominer.opengl.utils;
 
 import com.diablominer.opengl.io.Camera;
+import org.joml.*;
 import org.joml.Math;
-import org.joml.Matrix3d;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+
+import java.util.List;
 
 public class Transforms {
 
@@ -62,6 +62,57 @@ public class Transforms {
 
     public static double arithmeticMeanOfMatrix(Matrix3d matrix) {
         return (matrix.m00 + matrix.m01 + matrix.m02 + matrix.m10 + matrix.m11 + matrix.m12 + matrix.m20 + matrix.m21 + matrix.m22) / 9.0;
+    }
+
+    public static Vector3f checkForComponentsSmallerThanEpsilon(Vector3f vec, float epsilon) {
+        if (Math.abs(vec.x) <= epsilon) {
+            vec.set(0.0f, vec.y, vec.z);
+        }
+        if (Math.abs(vec.y) <= epsilon) {
+            vec.set(vec.x, 0.0f, vec.z);
+        }
+        if (Math.abs(vec.z) <= epsilon) {
+            vec.set(vec.x, vec.y, 0.0);
+        }
+        return vec;
+    }
+
+    public static void checkIfVecComponentIsNegativeAndNegate(Vector3f vec) {
+        if (vec.x < 0.0f) {
+            vec.set(-1.0f * vec.x, vec.y, vec.z);
+        } else if (vec.y < 0.0f) {
+            vec.set(vec.x, -1.0f * vec.y, vec.z);
+        } else {
+            vec.set(vec.x, vec.y, -1.0f * vec.z);
+        }
+    }
+
+    public static void multiplyListWithMatrix(List<Vector3f> list, Matrix4f mat, float epsilon) {
+        for (Vector3f vec : list) {
+            Vector4f tempResult = new Vector4f(vec, 1.0f);
+            tempResult.mul(mat);
+            vec.set(tempResult.x, tempResult.y, tempResult.z);
+            Transforms.checkForComponentsSmallerThanEpsilon(vec, epsilon);
+        }
+    }
+
+    public static void multiplyArrayWithMatrix(Vector3f[] list, Matrix4f mat, float epsilon) {
+        for (Vector3f vec : list) {
+            Vector4f tempResult = new Vector4f(vec, 1.0f);
+            tempResult.mul(mat);
+            vec.set(tempResult.x, tempResult.y, tempResult.z);
+            Transforms.checkForComponentsSmallerThanEpsilon(vec, epsilon);
+        }
+    }
+
+    public static void multiplyArrayWithMatrixAndSetPositive(Vector3f[] list, Matrix4f mat, float epsilon) {
+        for (Vector3f vec : list) {
+            Vector4f tempResult = new Vector4f(vec, 1.0f);
+            tempResult.mul(mat);
+            vec.set(tempResult.x, tempResult.y, tempResult.z);
+            Transforms.checkForComponentsSmallerThanEpsilon(vec, epsilon);
+            checkIfVecComponentIsNegativeAndNegate(vec);
+        }
     }
 
 }

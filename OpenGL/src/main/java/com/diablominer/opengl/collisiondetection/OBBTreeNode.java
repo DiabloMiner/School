@@ -1,5 +1,6 @@
 package com.diablominer.opengl.collisiondetection;
 
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 import org.joml.Math;
 
@@ -17,10 +18,15 @@ public class OBBTreeNode {
     private final QuickHull quickHull;
     private final List<Vector3f> points;
 
+    private final Matrix4f rotationMatrix;
+    private final Matrix4f translationMatrix;
+
     public OBBTreeNode(List<Vector3f> points) {
+        // Initialize the points list and generate the quickhull
         this.points = points;
         quickHull = new QuickHull(points);
 
+        // Compute the parameters of the OBB from the covariance matrix and the extremes along the axes
         Matrix3f covarianceMatrix = new Matrix3f(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(0, 2),
                                                  computeCovarianceMatrixValue(1, 0), computeCovarianceMatrixValue(1, 1), computeCovarianceMatrixValue(1, 2),
                                                  computeCovarianceMatrixValue(2, 0), computeCovarianceMatrixValue(2, 1), computeCovarianceMatrixValue(2, 2));
@@ -34,6 +40,14 @@ public class OBBTreeNode {
         halfLengthVectors[1] = new Vector3f(sideDirectionVectors[1]).mul(extremes[3] - extremes[2]).mul(0.5f);
         halfLengthVectors[2] = new Vector3f(sideDirectionVectors[2]).mul(extremes[5] - extremes[4]).mul(0.5f);
         centerPoint = new Vector3f(sideDirectionVectors[0]).mul(extremes[0] + extremes[1]).mul(0.5f).add(new Vector3f(sideDirectionVectors[1]).mul(extremes[2] + extremes[3]).mul(0.5f)).add(new Vector3f(sideDirectionVectors[2]).mul(extremes[4] + extremes[5]).mul(0.5f));
+
+        // Transform all points into a coordinate system where the centerPoint is the origin
+        rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
+        Transforms.multiplyArrayWithMatrixAndSetPositive(sideDirectionVectors, rotationMatrix, (float) epsilon);
+        Transforms.multiplyArrayWithMatrixAndSetPositive(halfLengthVectors, rotationMatrix, (float) epsilon);
+
+        translationMatrix = new Matrix4f(rotationMatrix).translation(new Vector3f(centerPoint).mul(-1.0f));
+        Transforms.multiplyListWithMatrix(points, translationMatrix, (float) epsilon);
 
         // TODO: Implement Obbtree
     }
@@ -193,6 +207,10 @@ public class OBBTreeNode {
             }
         }
         return result;
+    }
+
+    public boolean isColliding(OBBTreeNode otherObbTreeNode) {
+        return false;
     }
 
     public Vector3f getLongestAxis() {
