@@ -17,14 +17,15 @@ public class OBBTreeNode {
 
     private final QuickHull quickHull;
     private final List<Vector3f> points;
+    private final List<Vector3f> originalPoints;
 
-    private final Matrix4f rotationMatrix;
-    private final Matrix4f translationMatrix;
+    private final Matrix4f transformationMatrix;
 
     public OBBTreeNode(List<Vector3f> points) {
         // Initialize the points list and generate the quickhull
-        this.points = points;
-        quickHull = new QuickHull(points);
+        this.points = Transforms.copyVectorList(points);
+        this.originalPoints = Transforms.copyVectorList(points);
+        quickHull = new QuickHull(Transforms.copyVectorList(points));
 
         // Compute the parameters of the OBB from the covariance matrix and the extremes along the axes
         Matrix3f covarianceMatrix = new Matrix3f(computeCovarianceMatrixValue(0, 0), computeCovarianceMatrixValue(0, 1), computeCovarianceMatrixValue(0, 2),
@@ -42,12 +43,12 @@ public class OBBTreeNode {
         centerPoint = new Vector3f(sideDirectionVectors[0]).mul(extremes[0] + extremes[1]).mul(0.5f).add(new Vector3f(sideDirectionVectors[1]).mul(extremes[2] + extremes[3]).mul(0.5f)).add(new Vector3f(sideDirectionVectors[2]).mul(extremes[4] + extremes[5]).mul(0.5f));
 
         // Transform all points into a coordinate system where the centerPoint is the origin
-        rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
+        Matrix4f rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
         Transforms.multiplyArrayWithMatrixAndSetPositive(sideDirectionVectors, rotationMatrix, (float) epsilon);
         Transforms.multiplyArrayWithMatrixAndSetPositive(halfLengthVectors, rotationMatrix, (float) epsilon);
 
-        translationMatrix = new Matrix4f(rotationMatrix).translation(new Vector3f(centerPoint).mul(-1.0f));
-        Transforms.multiplyListWithMatrix(points, translationMatrix, (float) epsilon);
+        transformationMatrix = new Matrix4f().identity().translation(Transforms.mulVectorWithMatrix4(centerPoint, rotationMatrix).mul(-1.0f)).mul(rotationMatrix);
+        Transforms.multiplyListWithMatrix(this.points, transformationMatrix, (float) epsilon);
 
         // TODO: Implement Obbtree
     }
@@ -102,7 +103,7 @@ public class OBBTreeNode {
             Matrix3d R = qrMatrices[0];
             Vector3d z = new Vector3d(0.0);
             double zComponent;
-            if (R.m02 <= epsilon && R.m12 <= epsilon && R.m22 <= epsilon) {
+            if (Math.abs(R.m02) <= epsilon && Math.abs(R.m12) <= epsilon && Math.abs(R.m22) <= epsilon) {
                 zComponent = 1.0;
             } else {
                 zComponent = z.get(2) / R.m22;
@@ -115,14 +116,14 @@ public class OBBTreeNode {
     }
 
     private Matrix3d qrAlgorithm(Matrix3f initialMatrix) {
-        if (initialMatrix.m01 <= epsilon && initialMatrix.m02 <= epsilon && initialMatrix.m12 <= epsilon) {
+        if (Math.abs(initialMatrix.m01) <= epsilon && Math.abs(initialMatrix.m02) <= epsilon && Math.abs(initialMatrix.m12) <= epsilon) {
             return new Matrix3d(initialMatrix);
         } else {
             List<Matrix3d> matrices = new ArrayList<>();
             matrices.add(new Matrix3d(initialMatrix));
             while (true) {
                 Matrix3d currentMatrix = matrices.get(matrices.size() - 1);
-                if (currentMatrix.m01 <= epsilon && currentMatrix.m02 <= epsilon && currentMatrix.m12 <= epsilon) {
+                if (Math.abs(currentMatrix.m01) <= epsilon && Math.abs(currentMatrix.m02) <= epsilon && Math.abs(currentMatrix.m12) <= epsilon) {
                     break;
                 }
 
@@ -175,7 +176,7 @@ public class OBBTreeNode {
         Matrix3d matrix = new Matrix3d(inputMatrix);
         int[] columns = {0, 0, 1};
         int[] rows = {1, 2, 2};
-        while (matrix.m01 > epsilon || matrix.m02 > epsilon || matrix.m12 > epsilon) {
+        while (Math.abs(matrix.m01) > epsilon || Math.abs(matrix.m02) > epsilon || Math.abs(matrix.m12) > epsilon) {
             for (int i = 0; i < 3; i++) {
                 if (matrix.get(columns[i], rows[i]) != 0) {
                     double r = java.lang.Math.hypot(matrix.get(columns[i], columns[i]), matrix.get(columns[i], rows[i]));
@@ -247,4 +248,15 @@ public class OBBTreeNode {
         return points;
     }
 
+    public List<Vector3f> getOriginalPoints() {
+        return originalPoints;
+    }
+
+    public QuickHull getQuickHull() {
+        return quickHull;
+    }
+
+    public Matrix4f getTransformationMatrix() {
+        return transformationMatrix;
+    }
 }

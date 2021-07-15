@@ -43,7 +43,7 @@ public class OBBTree {
 
         ArrayList<Vector3f> positiveSide = new ArrayList<>();
         ArrayList<Vector3f> negativeSide = new ArrayList<>();
-        for (Vector3f point : obbTreeNode.getPoints()) {
+        for (Vector3f point : obbTreeNode.getOriginalPoints()) {
             if ((point.dot(normalVector) - distance) >= 0.0f) {
                 positiveSide.add(point);
             } else {

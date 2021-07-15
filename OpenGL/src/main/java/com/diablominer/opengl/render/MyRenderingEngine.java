@@ -177,7 +177,7 @@ public class MyRenderingEngine extends RenderingEngine {
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
         new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
 
-        new OBBTree(refractionText.getAllVertices(), 2);
+        // new OBBTree(refractionText.getAllVertices(), 2);
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);

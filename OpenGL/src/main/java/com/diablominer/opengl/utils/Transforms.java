@@ -4,7 +4,9 @@ import com.diablominer.opengl.io.Camera;
 import org.joml.*;
 import org.joml.Math;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 public class Transforms {
 
@@ -113,6 +115,24 @@ public class Transforms {
             Transforms.checkForComponentsSmallerThanEpsilon(vec, epsilon);
             checkIfVecComponentIsNegativeAndNegate(vec);
         }
+    }
+
+    public static Vector3f mulVectorWithMatrix4(Vector3f vec, Matrix4f mat) {
+        Vector4f vec4 = new Vector4f(vec.x, vec.y, vec.z, 1.0f);
+        vec4.mul(mat);
+        return new Vector3f(vec4.x, vec4.y, vec4.z);
+    }
+
+    public static Vector3f copyVector(Vector3f vec) {
+        return new Vector3f(vec.x, vec.y, vec.z);
+    }
+
+    public static List<Vector3f> copyVectorList(List<Vector3f> list) {
+        List<Vector3f> result = new ArrayList<>();
+        for (Vector3f vec : list) {
+            result.add(copyVector(vec));
+        }
+        return result;
     }
 
 }
