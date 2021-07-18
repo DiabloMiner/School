@@ -19,7 +19,8 @@ public class OBBTreeNode {
     private final List<Vector3f> points;
     private final List<Vector3f> originalPoints;
 
-    private final Matrix4f transformationMatrix;
+    private final Matrix4f rotationMatrix;
+    private final Vector3f translation;
 
     public OBBTreeNode(List<Vector3f> points) {
         // Initialize the points list and generate the quickhull
@@ -42,13 +43,9 @@ public class OBBTreeNode {
         halfLengthVectors[2] = new Vector3f(sideDirectionVectors[2]).mul(extremes[5] - extremes[4]).mul(0.5f);
         centerPoint = new Vector3f(sideDirectionVectors[0]).mul(extremes[0] + extremes[1]).mul(0.5f).add(new Vector3f(sideDirectionVectors[1]).mul(extremes[2] + extremes[3]).mul(0.5f)).add(new Vector3f(sideDirectionVectors[2]).mul(extremes[4] + extremes[5]).mul(0.5f));
 
-        // Transform all points into a coordinate system where the centerPoint is the origin
-        Matrix4f rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
-        Transforms.multiplyArrayWithMatrixAndSetPositive(sideDirectionVectors, rotationMatrix, (float) epsilon);
-        Transforms.multiplyArrayWithMatrixAndSetPositive(halfLengthVectors, rotationMatrix, (float) epsilon);
-
-        transformationMatrix = new Matrix4f().identity().translation(Transforms.mulVectorWithMatrix4(centerPoint, rotationMatrix).mul(-1.0f)).mul(rotationMatrix);
-        Transforms.multiplyListWithMatrix(this.points, transformationMatrix, (float) epsilon);
+        // Create the matrix and vector needed for collision tests
+        rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
+        translation = Transforms.mulVectorWithMatrix4(centerPoint, rotationMatrix).mul(-1.0f);
 
         // TODO: Implement Obbtree
     }
@@ -210,8 +207,74 @@ public class OBBTreeNode {
         return result;
     }
 
-    public boolean isColliding(OBBTreeNode otherObbTreeNode) {
-        return false;
+    public boolean isColliding(OBBTreeNode otherObbTreeNode, Matrix4f thisWorldMatrix, Matrix4f otherWorldMatrix) {
+        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).translate(Transforms.getTranslation(thisWorldMatrix)).translate(Transforms.getTranslation(otherWorldMatrix)).rotate(Transforms.getRotation(rotationMatrix)).rotate(Transforms.getRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
+        Vector3f translation = otherObbTreeNode.getTransformedTranslation(transformationMatrix);
+        Matrix4f rotation = otherObbTreeNode.getTransformedRotation(transformationMatrix);
+
+        Vector3f[] thisHalfLengths = getTransformedHalfLengths(transformationMatrix);
+        Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(transformationMatrix);
+
+        Vector3f[] axes = getPotentialSeparatingAxes(rotation);
+
+        for (Vector3f axis : axes) {
+            float da = 0;
+            float db = 0;
+
+            for (int j = 0; j < 3; j++) {
+                da += thisHalfLengths[j].length() * Math.abs(axes[j].dot(axis));
+                db += otherHalfLengths[j].length() * Math.abs(axes[j + 3].dot(axis));
+            }
+
+            if (Math.abs(translation.dot(axis)) > da + db) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Vector3f[] getPotentialSeparatingAxes(Matrix4f rotation) {
+        Vector3f[] potentialSeparatingAxes = new Vector3f[15];
+
+        potentialSeparatingAxes[0] = new Vector3f(1.0f, 0.0f, 0.0f);
+        potentialSeparatingAxes[1] = new Vector3f(0.0f, 1.0f, 0.0f);
+        potentialSeparatingAxes[2] = new Vector3f(0.0f, 0.0f, 1.0f);
+
+        potentialSeparatingAxes[3] = Transforms.getColumn(rotation, 0);
+        potentialSeparatingAxes[4] = Transforms.getColumn(rotation, 1);
+        potentialSeparatingAxes[5] = Transforms.getColumn(rotation, 2);
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                potentialSeparatingAxes[3 * i + j + 6] = new Vector3f(potentialSeparatingAxes[i]).cross(potentialSeparatingAxes[j + 3]);
+            }
+        }
+
+        return potentialSeparatingAxes;
+    }
+
+    public Vector3f getTransformedTranslation(Matrix4f transformationMatrix) {
+        Vector3f transformedCenterPoint = new Vector3f(centerPoint.x, centerPoint.y, centerPoint.z);
+        return Transforms.mulVectorWithMatrix4(transformedCenterPoint, transformationMatrix);
+    }
+
+    public Matrix4f getTransformedRotation(Matrix4f transformationMatrix) {
+        Matrix4f onlyRotation = new Matrix4f().identity().rotate(Transforms.getRotation(transformationMatrix));
+        Vector3f[] transformedHalfLengthVectors = Transforms.copyVectorArray(halfLengthVectors);
+        Transforms.multiplyArrayWithMatrix(transformedHalfLengthVectors, onlyRotation);
+
+        Matrix3f rotation = new Matrix3f(transformedHalfLengthVectors[0], transformedHalfLengthVectors[1], transformedHalfLengthVectors[2]);
+        return new Matrix4f().identity().set(rotation);
+    }
+
+    public Vector3f[] getTransformedHalfLengths(Matrix4f transformationMatrix) {
+        Vector3f[] transformedHalfLengths = {new Vector3f(0.0f), new Vector3f(0.0f), new Vector3f(0.0f)};
+        Matrix4f mat = getTransformedRotation(transformationMatrix);
+
+        for (int i = 0; i < 3; i++) {
+            mat.getColumn(i, transformedHalfLengths[i]);
+        }
+        return transformedHalfLengths;
     }
 
     public Vector3f getLongestAxis() {
@@ -252,11 +315,4 @@ public class OBBTreeNode {
         return originalPoints;
     }
 
-    public QuickHull getQuickHull() {
-        return quickHull;
-    }
-
-    public Matrix4f getTransformationMatrix() {
-        return transformationMatrix;
-    }
 }

@@ -6,7 +6,6 @@ import org.joml.Math;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class Transforms {
 
@@ -66,7 +65,7 @@ public class Transforms {
         return (matrix.m00 + matrix.m01 + matrix.m02 + matrix.m10 + matrix.m11 + matrix.m12 + matrix.m20 + matrix.m21 + matrix.m22) / 9.0;
     }
 
-    public static Vector3f checkForComponentsSmallerThanEpsilon(Vector3f vec, float epsilon) {
+    public static void checkForComponentsSmallerThanEpsilon(Vector3f vec, float epsilon) {
         if (Math.abs(vec.x) <= epsilon) {
             vec.set(0.0f, vec.y, vec.z);
         }
@@ -76,7 +75,6 @@ public class Transforms {
         if (Math.abs(vec.z) <= epsilon) {
             vec.set(vec.x, vec.y, 0.0);
         }
-        return vec;
     }
 
     public static void checkIfVecComponentIsNegativeAndNegate(Vector3f vec) {
@@ -98,12 +96,11 @@ public class Transforms {
         }
     }
 
-    public static void multiplyArrayWithMatrix(Vector3f[] list, Matrix4f mat, float epsilon) {
+    public static void multiplyArrayWithMatrix(Vector3f[] list, Matrix4f mat) {
         for (Vector3f vec : list) {
             Vector4f tempResult = new Vector4f(vec, 1.0f);
             tempResult.mul(mat);
             vec.set(tempResult.x, tempResult.y, tempResult.z);
-            Transforms.checkForComponentsSmallerThanEpsilon(vec, epsilon);
         }
     }
 
@@ -133,6 +130,32 @@ public class Transforms {
             result.add(copyVector(vec));
         }
         return result;
+    }
+
+    public static Vector3f[] copyVectorArray(Vector3f[] array) {
+        Vector3f[] result = new Vector3f[array.length];
+        for (int i = 0; i < array.length; i++) {
+            result[i] = copyVector(array[i]);
+        }
+        return result;
+    }
+
+    public static AxisAngle4f getRotation(Matrix4f mat) {
+        AxisAngle4f result = new AxisAngle4f();
+        mat.getRotation(result);
+        return result;
+    }
+
+    public static Vector3f getTranslation(Matrix4f mat) {
+        Vector3f result = new Vector3f();
+        mat.getTranslation(result);
+        return result;
+    }
+
+    public static Vector3f getColumn(Matrix4f mat, int column) {
+        Vector3f col = new Vector3f(0.0f);
+        mat.getColumn(column, col);
+        return col;
     }
 
 }
