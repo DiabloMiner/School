@@ -1,6 +1,7 @@
 package com.diablominer.opengl.render;
 
 import com.diablominer.opengl.collisiondetection.OBBTree;
+import com.diablominer.opengl.collisiondetection.OBBTreeNode;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
 import com.diablominer.opengl.main.LogicalEngine;
@@ -8,6 +9,7 @@ import com.diablominer.opengl.render.lightsources.DirectionalLight;
 import com.diablominer.opengl.render.lightsources.PointLight;
 import com.diablominer.opengl.render.lightsources.RenderablePointLight;
 import com.diablominer.opengl.render.lightsources.SpotLight;
+import com.diablominer.opengl.render.renderables.MinimumModel;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.renderables.Renderable;
 import com.diablominer.opengl.render.textures.CubeMap;

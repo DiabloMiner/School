@@ -155,17 +155,21 @@ public class OBBTreeNode {
 
     private Matrix3d[] qrDecomposition(Matrix3d matrix) {
         List<Matrix3d> givensRotationMatrices = givensRotation(matrix);
-        Matrix3d Q = new Matrix3d(givensRotationMatrices.get(0)).transpose();
-        for (int i = 1; i < givensRotationMatrices.size(); i++) {
-            Q.mul(new Matrix3d(givensRotationMatrices.get(i)).transpose());
+        if (givensRotationMatrices.size() != 0) {
+            Matrix3d Q = new Matrix3d(givensRotationMatrices.get(0)).transpose();
+            for (int i = 1; i < givensRotationMatrices.size(); i++) {
+                Q.mul(new Matrix3d(givensRotationMatrices.get(i)).transpose());
+            }
+            Collections.reverse(givensRotationMatrices);
+            Matrix3d R = new Matrix3d(givensRotationMatrices.get(0));
+            for (int i = 1; i < givensRotationMatrices.size(); i++) {
+                R.mul(givensRotationMatrices.get(i));
+            }
+            R.mul(matrix);
+            return new Matrix3d[]{R, Q};
+        } else {
+            return new Matrix3d[] {matrix, null};
         }
-        Collections.reverse(givensRotationMatrices);
-        Matrix3d R = new Matrix3d(givensRotationMatrices.get(0));
-        for (int i = 1; i < givensRotationMatrices.size(); i++) {
-            R.mul(givensRotationMatrices.get(i));
-        }
-        R.mul(matrix);
-        return new Matrix3d[] {R, Q};
     }
 
     private List<Matrix3d> givensRotation(Matrix3d inputMatrix) {
