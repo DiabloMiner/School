@@ -319,4 +319,8 @@ public class OBBTreeNode {
         return originalPoints;
     }
 
+    public float getVolume() {
+        return (2 * halfLengthVectors[0].length() * 2 * halfLengthVectors[1].length() * 2 * halfLengthVectors[2].length());
+    }
+
 }
