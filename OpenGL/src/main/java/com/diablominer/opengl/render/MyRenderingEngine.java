@@ -183,10 +183,10 @@ public class MyRenderingEngine extends RenderingEngine {
 
         OBBTree obbTree1 = new OBBTree(refractionText.getAllVertices(), 2);
         OBBTree obbTree2 = new OBBTree(refractionText.getAllVertices(), 2);
-        Matrix4f mat1 = new Matrix4f().identity().translate(new Vector3f(1.1f, 0.0f, 0.0f));
+        Matrix4f mat1 = new Matrix4f().identity().translate(new Vector3f(1.4f, 0.0f, 0.0f));
         Matrix4f mat2 = new Matrix4f().identity();
-        minMod1 = new MinimumModel(obbTree1.getNodes()[0].getQuickHull().getDefiningPoints(), mat1);
-        minMod2 = new MinimumModel(obbTree2.getNodes()[0].getQuickHull().getDefiningPoints(), mat2);
+        minMod1 = new MinimumModel(obbTree1.getNodes()[2].getSpecialPoints(), mat1);
+        minMod2 = new MinimumModel(obbTree2.getNodes()[2].getSpecialPoints(), mat2);
         System.out.println(obbTree1.isColliding(obbTree2, mat1, mat2));
         // Test should be true but is false
 

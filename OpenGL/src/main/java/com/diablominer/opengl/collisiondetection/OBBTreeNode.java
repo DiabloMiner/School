@@ -212,10 +212,11 @@ public class OBBTreeNode {
     }
 
     public boolean isColliding(OBBTreeNode otherObbTreeNode, Matrix4f thisWorldMatrix, Matrix4f otherWorldMatrix) {
-        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).translate(Transforms.getInvertedTranslation(thisWorldMatrix)).translate(Transforms.getTranslation(otherWorldMatrix)).rotate(Transforms.getRotation(rotationMatrix)).rotate(Transforms.getInvertedRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
+        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).translate(Transforms.getTranslation(thisWorldMatrix)).translate(Transforms.getTranslation(otherWorldMatrix)).rotate(Transforms.getRotation(rotationMatrix)).rotate(Transforms.getRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
         Vector3f translation = otherObbTreeNode.getTransformedTranslation(transformationMatrix);
 
-        Vector3f[] thisHalfLengths = getTransformedHalfLengths(transformationMatrix);
+        Matrix4f thisTransformationMatrix = new Matrix4f().identity().rotate(Transforms.getRotation(rotationMatrix));
+        Vector3f[] thisHalfLengths = getTransformedHalfLengths(thisTransformationMatrix);
         Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(transformationMatrix);
 
         Vector3f[] axes = getPotentialSeparatingAxes(otherHalfLengths);
@@ -243,13 +244,13 @@ public class OBBTreeNode {
         potentialSeparatingAxes[1] = new Vector3f(0.0f, 1.0f, 0.0f);
         potentialSeparatingAxes[2] = new Vector3f(0.0f, 0.0f, 1.0f);
 
-        potentialSeparatingAxes[3] = halfLengths[0];
-        potentialSeparatingAxes[4] = halfLengths[1];
-        potentialSeparatingAxes[5] = halfLengths[2];
+        potentialSeparatingAxes[3] = new Vector3f(halfLengths[0]).normalize();
+        potentialSeparatingAxes[4] = new Vector3f(halfLengths[1]).normalize();
+        potentialSeparatingAxes[5] = new Vector3f(halfLengths[2]).normalize();
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                potentialSeparatingAxes[3 * i + j + 6] = new Vector3f(potentialSeparatingAxes[i]).cross(potentialSeparatingAxes[j + 3]);
+                potentialSeparatingAxes[3 * i + j + 6] = new Vector3f(potentialSeparatingAxes[i]).cross(potentialSeparatingAxes[j + 3]).normalize();
             }
         }
 
@@ -320,6 +321,73 @@ public class OBBTreeNode {
 
     public QuickHull getQuickHull() {
         return quickHull;
+    }
+
+    public List<Vector3f> getSpecialPoints() {
+        /*Vector3f 7 = new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]);
+        Vector3f 8 = new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).sub(halfLengthVectors[2]);
+        Vector3f 6 = new Vector3f(centerPoint).add(halfLengthVectors[0]).sub(halfLengthVectors[1]).add(halfLengthVectors[2]);
+        Vector3f 5 = new Vector3f(centerPoint).add(halfLengthVectors[0]).sub(halfLengthVectors[1]).sub(halfLengthVectors[2]);
+        Vector3f 1 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).sub(halfLengthVectors[1]).add(halfLengthVectors[2]);
+        Vector3f 4 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).sub(halfLengthVectors[1]).sub(halfLengthVectors[2]);
+        Vector3f 2 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]);
+        Vector3f 3 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).add(halfLengthVectors[1]).sub(halfLengthVectors[2]);*/
+
+        List<Vector3f> uniquePoints = new ArrayList<>();
+        // 7
+        uniquePoints.add(new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]));
+        // 8
+        uniquePoints.add(new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).sub(halfLengthVectors[2]));
+        // 6
+        uniquePoints.add(new Vector3f(centerPoint).add(halfLengthVectors[0]).sub(halfLengthVectors[1]).add(halfLengthVectors[2]));
+        // 5
+        uniquePoints.add(new Vector3f(centerPoint).add(halfLengthVectors[0]).sub(halfLengthVectors[1]).sub(halfLengthVectors[2]));
+        // 1
+        uniquePoints.add(new Vector3f(centerPoint).sub(halfLengthVectors[0]).sub(halfLengthVectors[1]).add(halfLengthVectors[2]));
+        // 4
+        uniquePoints.add(new Vector3f(centerPoint).sub(halfLengthVectors[0]).sub(halfLengthVectors[1]).sub(halfLengthVectors[2]));
+        // 2
+        uniquePoints.add(new Vector3f(centerPoint).sub(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]));
+        // 3
+        uniquePoints.add(new Vector3f(centerPoint).sub(halfLengthVectors[0]).add(halfLengthVectors[1]).sub(halfLengthVectors[2]));
+        List<Vector3f> points = new ArrayList<>();
+        points.add(uniquePoints.get(0));
+        points.add(uniquePoints.get(1));
+        points.add(uniquePoints.get(3));
+        points.add(uniquePoints.get(1));
+        points.add(uniquePoints.get(2));
+        points.add(uniquePoints.get(3));
+        points.add(uniquePoints.get(0));
+        points.add(uniquePoints.get(5));
+        points.add(uniquePoints.get(6));
+        points.add(uniquePoints.get(0));
+        points.add(uniquePoints.get(1));
+        points.add(uniquePoints.get(6));
+        points.add(uniquePoints.get(4));
+        points.add(uniquePoints.get(5));
+        points.add(uniquePoints.get(6));
+        points.add(uniquePoints.get(4));
+        points.add(uniquePoints.get(6));
+        points.add(uniquePoints.get(7));
+        points.add(uniquePoints.get(2));
+        points.add(uniquePoints.get(4));
+        points.add(uniquePoints.get(7));
+        points.add(uniquePoints.get(2));
+        points.add(uniquePoints.get(3));
+        points.add(uniquePoints.get(4));
+        points.add(uniquePoints.get(1));
+        points.add(uniquePoints.get(2));
+        points.add(uniquePoints.get(7));
+        points.add(uniquePoints.get(1));
+        points.add(uniquePoints.get(6));
+        points.add(uniquePoints.get(7));
+        points.add(uniquePoints.get(0));
+        points.add(uniquePoints.get(3));
+        points.add(uniquePoints.get(4));
+        points.add(uniquePoints.get(0));
+        points.add(uniquePoints.get(4));
+        points.add(uniquePoints.get(5));
+        return points;
     }
 
 }

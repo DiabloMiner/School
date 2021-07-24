@@ -146,21 +146,9 @@ public class Transforms {
         return result;
     }
 
-    public static AxisAngle4f getInvertedRotation(Matrix4f mat) {
-        AxisAngle4f result = new AxisAngle4f();
-        new Matrix4f(mat).invert().getRotation(result);
-        return result;
-    }
-
     public static Vector3f getTranslation(Matrix4f mat) {
         Vector3f result = new Vector3f();
         mat.getTranslation(result);
-        return result;
-    }
-
-    public static Vector3f getInvertedTranslation(Matrix4f mat) {
-        Vector3f result = new Vector3f();
-        new Matrix4f(mat).invert().getTranslation(result);
         return result;
     }
 
