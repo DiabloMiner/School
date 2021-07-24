@@ -10,8 +10,13 @@ import java.util.List;
 public class OBBTree {
 
     private final OBBTreeNode[] nodes;
+    private final int levels;
+    private final List<OBBTreeNode> collisionNodes;
 
     public OBBTree(List<Vector3f> points, int levels) {
+        this.levels = levels;
+        collisionNodes = new ArrayList<>();
+
         int size = (1 << levels) - 1;
         if (size < 0) {
             throw new IllegalArgumentException("The argument chosen for levels caused the size of the array to overflow. Please choose a smaller argument.");
@@ -71,27 +76,38 @@ public class OBBTree {
 
     private void addChildrenToList(List<OBBTreeNode> obbTreeNodes, OBBTreeNode obbTreeNode) {
         int index = Arrays.asList(nodes).indexOf(obbTreeNode);
-        obbTreeNodes.add(nodes[2 * index + 1]);
-        obbTreeNodes.add(nodes[2 * index + 2]);
         if ((2 * index + 2) <= (nodes.length - 1)) {
+            obbTreeNodes.add(nodes[2 * index + 1]);
+            obbTreeNodes.add(nodes[2 * index + 2]);
             addChildrenToList(obbTreeNodes, nodes[2 * index + 1]);
             addChildrenToList(obbTreeNodes, nodes[2 * index + 2]);
         }
     }
 
-    public boolean isColliding(OBBTree obbTree, Matrix4f thisMatrix, Matrix4f otherMatrix) {
-        return isColliding(nodes[0], obbTree.getNodes()[0], thisMatrix, otherMatrix);
+    public boolean isColliding(OBBTree otherTree, Matrix4f thisMatrix, Matrix4f otherMatrix) {
+        collisionNodes.clear();
+        return isColliding(otherTree, this.getNodes()[0], otherTree.getNodes()[0], thisMatrix, otherMatrix);
     }
 
-    private boolean isColliding(OBBTreeNode thisNode, OBBTreeNode otherNode, Matrix4f thisMatrix, Matrix4f otherMatrix) {
-        if (thisNode.isColliding(otherNode, thisMatrix, otherMatrix)) {
+    private boolean isColliding(OBBTree otherTree, OBBTreeNode thisNode, OBBTreeNode otherNode, Matrix4f thisMatrix, Matrix4f otherMatrix) {
+        if (Arrays.asList(nodes).indexOf(thisNode) >= (1 << levels) - 3 && Arrays.asList(otherTree.nodes).indexOf(otherNode) >= (1 << otherTree.levels) - 3) {
+            if (thisNode.isColliding(otherNode, thisMatrix, otherMatrix)) {
+                collisionNodes.add(thisNode);
+                collisionNodes.add(otherNode);
+                return true;
+            }
+        } else if (thisNode.isColliding(otherNode, thisMatrix, otherMatrix)) {
             if (thisNode.getVolume() > otherNode.getVolume()) {
                 for (OBBTreeNode child : getChildren(thisNode)) {
-                    return isColliding(child, otherNode, thisMatrix, otherMatrix);
+                    if (isColliding(otherTree, child, otherNode, thisMatrix, otherMatrix)) {
+                        return true;
+                    }
                 }
             } else {
-                for (OBBTreeNode child : getChildren(otherNode)) {
-                    return isColliding(child, thisNode, otherMatrix, thisMatrix);
+                for (OBBTreeNode child : otherTree.getChildren(otherNode)) {
+                    if (otherTree.isColliding(this, child, thisNode, otherMatrix, thisMatrix)) {
+                        return true;
+                    }
                 }
             }
         }

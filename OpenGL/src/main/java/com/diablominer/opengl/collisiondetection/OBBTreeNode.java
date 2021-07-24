@@ -212,14 +212,13 @@ public class OBBTreeNode {
     }
 
     public boolean isColliding(OBBTreeNode otherObbTreeNode, Matrix4f thisWorldMatrix, Matrix4f otherWorldMatrix) {
-        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).translate(Transforms.getTranslation(thisWorldMatrix)).translate(Transforms.getTranslation(otherWorldMatrix)).rotate(Transforms.getRotation(rotationMatrix)).rotate(Transforms.getRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
+        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).translate(Transforms.getInvertedTranslation(thisWorldMatrix)).translate(Transforms.getTranslation(otherWorldMatrix)).rotate(Transforms.getRotation(rotationMatrix)).rotate(Transforms.getInvertedRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
         Vector3f translation = otherObbTreeNode.getTransformedTranslation(transformationMatrix);
-        Matrix4f rotation = otherObbTreeNode.getTransformedRotation(transformationMatrix);
 
         Vector3f[] thisHalfLengths = getTransformedHalfLengths(transformationMatrix);
         Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(transformationMatrix);
 
-        Vector3f[] axes = getPotentialSeparatingAxes(rotation);
+        Vector3f[] axes = getPotentialSeparatingAxes(otherHalfLengths);
 
         for (Vector3f axis : axes) {
             float da = 0;
@@ -230,23 +229,23 @@ public class OBBTreeNode {
                 db += otherHalfLengths[j].length() * Math.abs(axes[j + 3].dot(axis));
             }
 
-            if (Math.abs(translation.dot(axis)) > da + db) {
+            if (Math.abs(translation.dot(axis)) > (da + db)) {
                 return false;
             }
         }
         return true;
     }
 
-    private Vector3f[] getPotentialSeparatingAxes(Matrix4f rotation) {
+    private Vector3f[] getPotentialSeparatingAxes(Vector3f[] halfLengths) {
         Vector3f[] potentialSeparatingAxes = new Vector3f[15];
 
         potentialSeparatingAxes[0] = new Vector3f(1.0f, 0.0f, 0.0f);
         potentialSeparatingAxes[1] = new Vector3f(0.0f, 1.0f, 0.0f);
         potentialSeparatingAxes[2] = new Vector3f(0.0f, 0.0f, 1.0f);
 
-        potentialSeparatingAxes[3] = Transforms.getColumn(rotation, 0);
-        potentialSeparatingAxes[4] = Transforms.getColumn(rotation, 1);
-        potentialSeparatingAxes[5] = Transforms.getColumn(rotation, 2);
+        potentialSeparatingAxes[3] = halfLengths[0];
+        potentialSeparatingAxes[4] = halfLengths[1];
+        potentialSeparatingAxes[5] = halfLengths[2];
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -263,22 +262,18 @@ public class OBBTreeNode {
     }
 
     public Matrix4f getTransformedRotation(Matrix4f transformationMatrix) {
-        Matrix4f onlyRotation = new Matrix4f().identity().rotate(Transforms.getRotation(transformationMatrix));
-        Vector3f[] transformedHalfLengthVectors = Transforms.copyVectorArray(halfLengthVectors);
-        Transforms.multiplyArrayWithMatrix(transformedHalfLengthVectors, onlyRotation);
+        Vector3f[] transformedHalfLengthVectors = getTransformedHalfLengths(transformationMatrix);
 
         Matrix3f rotation = new Matrix3f(transformedHalfLengthVectors[0], transformedHalfLengthVectors[1], transformedHalfLengthVectors[2]);
         return new Matrix4f().identity().set(rotation);
     }
 
     public Vector3f[] getTransformedHalfLengths(Matrix4f transformationMatrix) {
-        Vector3f[] transformedHalfLengths = {new Vector3f(0.0f), new Vector3f(0.0f), new Vector3f(0.0f)};
-        Matrix4f mat = getTransformedRotation(transformationMatrix);
+        Matrix4f onlyRotation = new Matrix4f().identity().rotate(Transforms.getRotation(transformationMatrix));
+        Vector3f[] transformedHalfLengthVectors = Transforms.copyVectorArray(halfLengthVectors);
 
-        for (int i = 0; i < 3; i++) {
-            mat.getColumn(i, transformedHalfLengths[i]);
-        }
-        return transformedHalfLengths;
+        Transforms.multiplyArrayWithMatrix(transformedHalfLengthVectors, onlyRotation);
+        return transformedHalfLengthVectors;
     }
 
     public Vector3f getLongestAxis() {
@@ -321,6 +316,10 @@ public class OBBTreeNode {
 
     public float getVolume() {
         return (2 * halfLengthVectors[0].length() * 2 * halfLengthVectors[1].length() * 2 * halfLengthVectors[2].length());
+    }
+
+    public QuickHull getQuickHull() {
+        return quickHull;
     }
 
 }
