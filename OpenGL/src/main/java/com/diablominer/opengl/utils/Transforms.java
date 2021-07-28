@@ -96,16 +96,16 @@ public class Transforms {
         }
     }
 
-    public static void multiplyArrayWithMatrix(Vector3f[] list, Matrix4f mat) {
-        for (Vector3f vec : list) {
+    public static void multiplyArrayWithMatrix(Vector3f[] array, Matrix4f mat) {
+        for (Vector3f vec : array) {
             Vector4f tempResult = new Vector4f(vec, 1.0f);
             tempResult.mul(mat);
             vec.set(tempResult.x, tempResult.y, tempResult.z);
         }
     }
 
-    public static void multiplyArrayWithMatrixAndSetPositive(Vector3f[] list, Matrix4f mat, float epsilon) {
-        for (Vector3f vec : list) {
+    public static void multiplyArrayWithMatrixAndSetPositive(Vector3f[] array, Matrix4f mat, float epsilon) {
+        for (Vector3f vec : array) {
             Vector4f tempResult = new Vector4f(vec, 1.0f);
             tempResult.mul(mat);
             vec.set(tempResult.x, tempResult.y, tempResult.z);
@@ -140,15 +140,27 @@ public class Transforms {
         return result;
     }
 
-    public static AxisAngle4f getRotation(Matrix4f mat) {
-        AxisAngle4f result = new AxisAngle4f();
-        mat.getRotation(result);
+    public static Quaternionf getRotation(Matrix4f mat) {
+        Quaternionf result = new Quaternionf();
+        mat.getUnnormalizedRotation(result);
         return result;
     }
 
     public static Vector3f getTranslation(Matrix4f mat) {
         Vector3f result = new Vector3f();
         mat.getTranslation(result);
+        return result;
+    }
+
+    public static Quaternionf getInvRotation(Matrix4f mat) {
+        Quaternionf result = new Quaternionf();
+        new Matrix4f(mat).invert().getUnnormalizedRotation(result);
+        return result;
+    }
+
+    public static Vector3f getInvTranslation(Matrix4f mat) {
+        Vector3f result = new Vector3f();
+        new Matrix4f(mat).invert().getTranslation(result);
         return result;
     }
 

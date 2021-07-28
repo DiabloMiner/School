@@ -45,7 +45,7 @@ public class OBBTreeNode {
 
         // Create the matrix and vector needed for collision tests
         rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
-        translation = Transforms.mulVectorWithMatrix4(centerPoint, rotationMatrix).mul(-1.0f);
+        translation = new Vector3f(centerPoint).mul(-1.0f);
 
         // TODO: Implement Obbtree
     }
@@ -212,12 +212,11 @@ public class OBBTreeNode {
     }
 
     public boolean isColliding(OBBTreeNode otherObbTreeNode, Matrix4f thisWorldMatrix, Matrix4f otherWorldMatrix) {
-        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).translate(Transforms.getTranslation(thisWorldMatrix)).translate(Transforms.getTranslation(otherWorldMatrix)).rotate(Transforms.getRotation(rotationMatrix)).rotate(Transforms.getRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
-        Vector3f translation = otherObbTreeNode.getTransformedTranslation(transformationMatrix);
+        Matrix4f rotationMatrix = new Matrix4f().identity().rotate(Transforms.getRotation(this.rotationMatrix)).rotate(Transforms.getInvRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
+        Vector3f translation = otherObbTreeNode.getTransformedTranslation(new Vector3f(this.translation).add(Transforms.getInvTranslation(thisWorldMatrix)).add(Transforms.getTranslation(otherWorldMatrix)));
 
-        Matrix4f thisTransformationMatrix = new Matrix4f().identity().rotate(Transforms.getRotation(rotationMatrix));
-        Vector3f[] thisHalfLengths = getTransformedHalfLengths(thisTransformationMatrix);
-        Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(transformationMatrix);
+        Vector3f[] thisHalfLengths = getRotatedHalfLengths();
+        Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(rotationMatrix);
 
         Vector3f[] axes = getPotentialSeparatingAxes(otherHalfLengths);
 
@@ -257,9 +256,14 @@ public class OBBTreeNode {
         return potentialSeparatingAxes;
     }
 
-    public Vector3f getTransformedTranslation(Matrix4f transformationMatrix) {
-        Vector3f transformedCenterPoint = new Vector3f(centerPoint.x, centerPoint.y, centerPoint.z);
-        return Transforms.mulVectorWithMatrix4(transformedCenterPoint, transformationMatrix);
+    public Vector3f[] getRotatedHalfLengths() {
+        Vector3f[] rotatedHalfLengths = Transforms.copyVectorArray(halfLengthVectors);
+        Transforms.multiplyArrayWithMatrix(rotatedHalfLengths, rotationMatrix);
+        return rotatedHalfLengths;
+    }
+
+    public Vector3f getTransformedTranslation(Vector3f transform) {
+        return new Vector3f(centerPoint).add(transform);
     }
 
     public Matrix4f getTransformedRotation(Matrix4f transformationMatrix) {
@@ -269,11 +273,10 @@ public class OBBTreeNode {
         return new Matrix4f().identity().set(rotation);
     }
 
-    public Vector3f[] getTransformedHalfLengths(Matrix4f transformationMatrix) {
-        Matrix4f onlyRotation = new Matrix4f().identity().rotate(Transforms.getRotation(transformationMatrix));
+    public Vector3f[] getTransformedHalfLengths(Matrix4f rotationMatrix) {
         Vector3f[] transformedHalfLengthVectors = Transforms.copyVectorArray(halfLengthVectors);
 
-        Transforms.multiplyArrayWithMatrix(transformedHalfLengthVectors, onlyRotation);
+        Transforms.multiplyArrayWithMatrix(transformedHalfLengthVectors, rotationMatrix);
         return transformedHalfLengthVectors;
     }
 
@@ -324,15 +327,6 @@ public class OBBTreeNode {
     }
 
     public List<Vector3f> getSpecialPoints() {
-        /*Vector3f 7 = new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]);
-        Vector3f 8 = new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).sub(halfLengthVectors[2]);
-        Vector3f 6 = new Vector3f(centerPoint).add(halfLengthVectors[0]).sub(halfLengthVectors[1]).add(halfLengthVectors[2]);
-        Vector3f 5 = new Vector3f(centerPoint).add(halfLengthVectors[0]).sub(halfLengthVectors[1]).sub(halfLengthVectors[2]);
-        Vector3f 1 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).sub(halfLengthVectors[1]).add(halfLengthVectors[2]);
-        Vector3f 4 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).sub(halfLengthVectors[1]).sub(halfLengthVectors[2]);
-        Vector3f 2 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]);
-        Vector3f 3 = new Vector3f(centerPoint).sub(halfLengthVectors[0]).add(halfLengthVectors[1]).sub(halfLengthVectors[2]);*/
-
         List<Vector3f> uniquePoints = new ArrayList<>();
         // 7
         uniquePoints.add(new Vector3f(centerPoint).add(halfLengthVectors[0]).add(halfLengthVectors[1]).add(halfLengthVectors[2]));
