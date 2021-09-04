@@ -87,12 +87,11 @@ public class Transforms {
         }
     }
 
-    public static void multiplyListWithMatrix(List<Vector3f> list, Matrix4f mat, float epsilon) {
+    public static void multiplyListWithMatrix(List<Vector3f> list, Matrix4f mat) {
         for (Vector3f vec : list) {
             Vector4f tempResult = new Vector4f(vec, 1.0f);
             tempResult.mul(mat);
             vec.set(tempResult.x, tempResult.y, tempResult.z);
-            Transforms.checkForComponentsSmallerThanEpsilon(vec, epsilon);
         }
     }
 

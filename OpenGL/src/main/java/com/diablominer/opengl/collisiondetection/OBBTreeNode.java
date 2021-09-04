@@ -45,7 +45,7 @@ public class OBBTreeNode {
 
         // Create the matrix and vector needed for collision tests
         rotationMatrix = new Matrix4f().identity().lookAlong(sideDirectionVectors[2], sideDirectionVectors[1]);
-        translation = new Vector3f(centerPoint).mul(-1.0f);
+        translation = Transforms.mulVectorWithMatrix4(centerPoint, rotationMatrix).mul(-1.0f);
 
         // TODO: Implement Obbtree
     }
@@ -212,10 +212,10 @@ public class OBBTreeNode {
     }
 
     public boolean isColliding(OBBTreeNode otherObbTreeNode, Matrix4f thisWorldMatrix, Matrix4f otherWorldMatrix) {
-        Matrix4f rotationMatrix = new Matrix4f().identity().rotate(Transforms.getRotation(this.rotationMatrix)).rotate(Transforms.getInvRotation(thisWorldMatrix)).rotate(Transforms.getRotation(otherWorldMatrix));
-        Vector3f translation = otherObbTreeNode.getTransformedTranslation(new Vector3f(this.translation).add(Transforms.getInvTranslation(thisWorldMatrix)).add(Transforms.getTranslation(otherWorldMatrix)));
+        Matrix4f rotationMatrix = new Matrix4f(this.rotationMatrix).mul(new Matrix4f().identity().set3x3(thisWorldMatrix).invertAffine()).mul(new Matrix4f().identity().set3x3(otherWorldMatrix));
+        Matrix4f mat = new Matrix4f().identity().translate(translation).rotate(Transforms.getRotation(this.rotationMatrix)).mul(new Matrix4f(thisWorldMatrix).invertAffine()).mul(new Matrix4f(otherWorldMatrix));
+        Vector3f translation = otherObbTreeNode.getTransformedTranslation(mat);
 
-        Vector3f[] thisHalfLengths = getRotatedHalfLengths();
         Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(rotationMatrix);
 
         Vector3f[] axes = getPotentialSeparatingAxes(otherHalfLengths);
@@ -225,7 +225,7 @@ public class OBBTreeNode {
             float db = 0;
 
             for (int j = 0; j < 3; j++) {
-                da += thisHalfLengths[j].length() * Math.abs(axes[j].dot(axis));
+                da += this.halfLengthVectors[j].length() * Math.abs(axes[j].dot(axis));
                 db += otherHalfLengths[j].length() * Math.abs(axes[j + 3].dot(axis));
             }
 
@@ -262,8 +262,8 @@ public class OBBTreeNode {
         return rotatedHalfLengths;
     }
 
-    public Vector3f getTransformedTranslation(Vector3f transform) {
-        return new Vector3f(centerPoint).add(transform);
+    public Vector3f getTransformedTranslation(Matrix4f mat) {
+        return Transforms.mulVectorWithMatrix4(centerPoint, mat);
     }
 
     public Matrix4f getTransformedRotation(Matrix4f transformationMatrix) {
@@ -326,6 +326,9 @@ public class OBBTreeNode {
         return quickHull;
     }
 
+    /**
+     * This is a debug function. It returns vertices, so the obb can be visualized.
+     */
     public List<Vector3f> getSpecialPoints() {
         List<Vector3f> uniquePoints = new ArrayList<>();
         // 7

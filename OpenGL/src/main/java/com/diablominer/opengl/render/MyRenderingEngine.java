@@ -51,6 +51,8 @@ public class MyRenderingEngine extends RenderingEngine {
 
     private MinimumModel minMod1;
     private MinimumModel minMod2;
+    private MinimumModel minMod3;
+    private MinimumModel minMod4;
 
     public MyRenderingEngine(LogicalEngine logicalEngine, Window window, Camera camera) throws Exception {
         BigInteger time = BigInteger.valueOf(System.currentTimeMillis());
@@ -183,11 +185,15 @@ public class MyRenderingEngine extends RenderingEngine {
 
         OBBTree obbTree1 = new OBBTree(refractionText.getAllVertices(), 2);
         OBBTree obbTree2 = new OBBTree(refractionText.getAllVertices(), 2);
-        Matrix4f mat1 = new Matrix4f().identity().translate(new Vector3f(0.0f, 0.0f, 0.0f)).rotate(0.0f, 0.0f, 0.0f, 1.0f);
+        Matrix4f mat1 = new Matrix4f().identity().translate(new Vector3f(0.0f, 0.0f, 0.0f)).rotate(new AxisAngle4f(0.0f, 0.0f, 0.0f, 0.0f));
         Matrix4f mat2 = new Matrix4f().identity();
-        minMod1 = new MinimumModel(refractionText.getAllVertices(), mat1);
-        minMod2 = new MinimumModel(refractionText.getAllVertices(), mat2);
+        minMod1 = new MinimumModel(obbTree1.getNodes()[1].getSpecialPoints(), mat1);
+        minMod3 = new MinimumModel(obbTree1.getNodes()[2].getSpecialPoints(), mat1);
+        minMod2 = new MinimumModel(obbTree2.getNodes()[1].getSpecialPoints(), mat2);
+        minMod4 = new MinimumModel(obbTree2.getNodes()[2].getSpecialPoints(), mat2);
         System.out.println(obbTree1.isColliding(obbTree2, mat1, mat2));
+        // I'm almost sure the current system is working correctly, but the visualization won't agree;
+        // Tested the real model and the quickhulls and I think its more likely that the visualization is false
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);
@@ -539,6 +545,8 @@ public class MyRenderingEngine extends RenderingEngine {
         renderAllEngineUnits();
         minMod1.draw();
         minMod2.draw();
+        minMod3.draw();
+        minMod4.draw();
 
         blitFramebuffers(frameBuffer, frameBuffer2, 0, 0, 1280, 720, 0, 0, 1280, 720);
 
