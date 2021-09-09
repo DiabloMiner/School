@@ -11,6 +11,7 @@ import java.io.File;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class Model extends Renderable {
 
@@ -171,4 +172,18 @@ public class Model extends Renderable {
         }
         return result;
     }
+
+    public List<Vector3f> getAllUniqueVertices() {
+        List<Vector3f> result = new ArrayList<>();
+        for (Mesh mesh : meshes) {
+            for (int i = 0; i < mesh.vertices.length; i += 3) {
+                int finalI = i;
+                if (result.stream().noneMatch(vector3f -> vector3f.equals(mesh.vertices[finalI], mesh.vertices[finalI + 1], mesh.vertices[finalI + 2]))) {
+                    result.add(new Vector3f(mesh.vertices[i], mesh.vertices[i + 1], mesh.vertices[i + 2]));
+                }
+            }
+        }
+        return result;
+    }
+
 }

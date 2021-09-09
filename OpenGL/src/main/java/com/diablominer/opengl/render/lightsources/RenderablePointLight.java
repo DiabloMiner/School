@@ -5,10 +5,12 @@ import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.collisiondetection.AxisAlignedBoundingBox;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.List;
 import java.util.Set;
 
 public class RenderablePointLight extends PhysicsObject {
@@ -30,25 +32,26 @@ public class RenderablePointLight extends PhysicsObject {
 
     // Constant values
     private float size = 2.0f;
-    private float inertia;
+    private Matrix3f inertia;
 
     public RenderablePointLight(PointLight pointLight, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
         super();
-        velocity = new Vector3f(0.0f);
-        mass = 1.0f;
-        inertia = (1.0f/6.0f) * (float) Math.pow(size, 2.0) * mass;
-
         logicalEngine.addGameObject(this);
-        position = pointLight.getPosition();
-        model = new Model(path, renderingEngineUnit, position);
         this.bv = new AxisAlignedBoundingBox(position, size);
         this.pointLight = pointLight;
+        model = new Model(path, renderingEngineUnit, position);
+
+        List<Vector3f> uniqueVertices = model.getAllUniqueVertices();
+        mass = 10.0f;
+        position = determineCenterOfMass(uniqueVertices);
+        velocity = new Vector3f(0.0f);
+        inertia = createInertiaTensor(uniqueVertices, position);
     }
 
     @Override
     public void updateObjectState(double timeStep) {
         angularMomentum = new Vector3f(torque).mul((float) timeStep);
-        angularVelocity.add(new Vector3f(angularMomentum).div(inertia));
+        angularVelocity.add(new Vector3f(angularMomentum).mul(new Matrix3f(inertia).invert()));
         orientation.integrate((float) timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
         momentum = new Vector3f(force).mul((float) timeStep);
@@ -85,7 +88,7 @@ public class RenderablePointLight extends PhysicsObject {
     @Override
     public void predictGameObjectState(double timeStep) {
         Vector3f angularMomentum = new Vector3f(torque).mul((float) timeStep);
-        Vector3f angularVelocity = new Vector3f(this.angularVelocity).add(new Vector3f(angularMomentum).div(inertia));
+        Vector3f angularVelocity = new Vector3f(this.angularVelocity).add(new Vector3f(angularMomentum).mul(new Matrix3f(inertia).invert()));
         Quaternionf orientation = new Quaternionf(this.orientation).integrate((float) timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
         Vector3f momentum = new Vector3f(force).mul((float) timeStep);
@@ -104,4 +107,36 @@ public class RenderablePointLight extends PhysicsObject {
     public PointLight getPointLight() {
         return pointLight;
     }
+
+    private Vector3f determineCenterOfMass(List<Vector3f> uniqueVertices) {
+        Vector3f result = new Vector3f();
+        for (Vector3f uniqueVertex : uniqueVertices) {
+            result.add(new Vector3f(uniqueVertex).mul(mass / uniqueVertices.size()));
+        }
+        return result.div(mass);
+    }
+
+    private Matrix3f createInertiaTensor(List<Vector3f> uniqueVertices, Vector3f centerPoint) {
+        Matrix3f result = new Matrix3f();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                float slotResult = mass;
+                for (Vector3f uniqueVertex : uniqueVertices) {
+                    Vector3f r = new Vector3f(uniqueVertex).sub(centerPoint);
+                    slotResult += (r.length() * r.length() * kroneckerDelta(i, j) - r.get(i) * r.get(j));
+                }
+                result.set(j, i, slotResult);
+            }
+        }
+        return result;
+    }
+
+    private float kroneckerDelta(int i, int j) {
+        if (i != j) {
+            return 0.0f;
+        } else {
+            return 1.0f;
+        }
+    }
+
 }

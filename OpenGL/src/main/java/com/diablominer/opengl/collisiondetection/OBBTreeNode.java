@@ -213,8 +213,8 @@ public class OBBTreeNode {
 
     public boolean isColliding(OBBTreeNode otherObbTreeNode, Matrix4f thisWorldMatrix, Matrix4f otherWorldMatrix) {
         Matrix4f rotationMatrix = new Matrix4f(this.rotationMatrix).mul(new Matrix4f().identity().set3x3(thisWorldMatrix).invertAffine()).mul(new Matrix4f().identity().set3x3(otherWorldMatrix));
-        Matrix4f mat = new Matrix4f().identity().translate(translation).rotate(Transforms.getRotation(this.rotationMatrix)).mul(new Matrix4f(thisWorldMatrix).invertAffine()).mul(new Matrix4f(otherWorldMatrix));
-        Vector3f translation = otherObbTreeNode.getTransformedTranslation(mat);
+        Matrix4f transformationMatrix = new Matrix4f().identity().translate(translation).rotate(Transforms.getRotation(this.rotationMatrix)).mul(new Matrix4f(thisWorldMatrix).invertAffine()).mul(new Matrix4f(otherWorldMatrix));
+        Vector3f translation = Transforms.mulVectorWithMatrix4(centerPoint, transformationMatrix);
 
         Vector3f[] otherHalfLengths = otherObbTreeNode.getTransformedHalfLengths(rotationMatrix);
 
@@ -260,10 +260,6 @@ public class OBBTreeNode {
         Vector3f[] rotatedHalfLengths = Transforms.copyVectorArray(halfLengthVectors);
         Transforms.multiplyArrayWithMatrix(rotatedHalfLengths, rotationMatrix);
         return rotatedHalfLengths;
-    }
-
-    public Vector3f getTransformedTranslation(Matrix4f mat) {
-        return Transforms.mulVectorWithMatrix4(centerPoint, mat);
     }
 
     public Matrix4f getTransformedRotation(Matrix4f transformationMatrix) {
