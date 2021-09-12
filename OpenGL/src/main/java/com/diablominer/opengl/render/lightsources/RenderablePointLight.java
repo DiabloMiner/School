@@ -1,17 +1,21 @@
 package com.diablominer.opengl.render.lightsources;
 
+import com.diablominer.opengl.examples.modelloading.Vertex;
 import com.diablominer.opengl.main.LogicalEngine;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.collisiondetection.AxisAlignedBoundingBox;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class RenderablePointLight extends PhysicsObject {
 
@@ -21,10 +25,10 @@ public class RenderablePointLight extends PhysicsObject {
     // Primary values
     private Vector3f position;
     private Vector3f momentum = new Vector3f(0.0f);
-    private Vector3f force = new Vector3f(-0.5f, 0.0f, 0.5f);
+    private Vector3f force = new Vector3f(-0.0f, 0.0f, 0.0f);
     private Quaternionf orientation = new Quaternionf();
     private Vector3f angularMomentum = new Vector3f(0.0f);
-    private Vector3f torque = new Vector3f(0.0f, 0.0f, 0.0f);
+    private Vector3f torque = new Vector3f(0.0f, 1.0f, 0.0f);
 
     // Secondary values
     private Vector3f angularVelocity = new Vector3f(0.0f);
@@ -37,19 +41,23 @@ public class RenderablePointLight extends PhysicsObject {
     public RenderablePointLight(PointLight pointLight, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
         super();
         logicalEngine.addGameObject(this);
-        this.bv = new AxisAlignedBoundingBox(position, size);
         this.pointLight = pointLight;
-        model = new Model(path, renderingEngineUnit, position);
+        model = new Model(path, renderingEngineUnit, pointLight.getPosition());
 
         List<Vector3f> uniqueVertices = model.getAllUniqueVertices();
         mass = 10.0f;
         position = determineCenterOfMass(uniqueVertices);
+        uniqueVertices.forEach(vector3f -> vector3f.add(new Vector3f(position).mul(-1.0f)));
+        inertia = createInertiaTensor(uniqueVertices, true);
+        Transforms.multiplyListWithMatrix(uniqueVertices, new Matrix4f().identity().translate(pointLight.getPosition()));
         velocity = new Vector3f(0.0f);
-        inertia = createInertiaTensor(uniqueVertices, position);
+        this.bv = new AxisAlignedBoundingBox(position, size);
     }
 
     @Override
     public void updateObjectState(double timeStep) {
+        Matrix3f inertia = new Matrix3f().identity().rotate(orientation).mul(this.inertia).mul(new Matrix3f().identity().rotate(orientation).transpose());
+
         angularMomentum = new Vector3f(torque).mul((float) timeStep);
         angularVelocity.add(new Vector3f(angularMomentum).mul(new Matrix3f(inertia).invert()));
         orientation.integrate((float) timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
@@ -87,6 +95,8 @@ public class RenderablePointLight extends PhysicsObject {
 
     @Override
     public void predictGameObjectState(double timeStep) {
+        Matrix3f inertia = new Matrix3f().identity().rotate(orientation).mul(this.inertia).mul(new Matrix3f().identity().rotate(orientation).transpose());
+
         Vector3f angularMomentum = new Vector3f(torque).mul((float) timeStep);
         Vector3f angularVelocity = new Vector3f(this.angularVelocity).add(new Vector3f(angularMomentum).mul(new Matrix3f(inertia).invert()));
         Quaternionf orientation = new Quaternionf(this.orientation).integrate((float) timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
@@ -116,14 +126,21 @@ public class RenderablePointLight extends PhysicsObject {
         return result.div(mass);
     }
 
-    private Matrix3f createInertiaTensor(List<Vector3f> uniqueVertices, Vector3f centerPoint) {
+    /**
+     * All vertices are assumed to be defined relative to the center of mass.
+     * The center of mass is assumed to be at (0, 0, 0).
+     */
+    private Matrix3f createInertiaTensor(List<Vector3f> uniqueVertices, boolean isSolid) {
+        List<Vector3f> vertices = uniqueVertices;
+        if (isSolid) {
+            vertices = generateSolidGeometry(vertices, 100);
+        }
         Matrix3f result = new Matrix3f();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                float slotResult = mass;
-                for (Vector3f uniqueVertex : uniqueVertices) {
-                    Vector3f r = new Vector3f(uniqueVertex).sub(centerPoint);
-                    slotResult += (r.length() * r.length() * kroneckerDelta(i, j) - r.get(i) * r.get(j));
+                float slotResult = 0.0f;
+                for (Vector3f uniqueVertex : vertices) {
+                    slotResult += (mass / vertices.size()) * ((uniqueVertex.lengthSquared() * kroneckerDelta(i, j)) - (uniqueVertex.get(i) * uniqueVertex.get(j)));
                 }
                 result.set(j, i, slotResult);
             }
@@ -137,6 +154,18 @@ public class RenderablePointLight extends PhysicsObject {
         } else {
             return 1.0f;
         }
+    }
+
+    private List<Vector3f> generateSolidGeometry(List<Vector3f> vertices, int steps) {
+        List<Vector3f> newList = new ArrayList<>();
+        float factor = 1.0f / steps;
+        for (int i = 0; i < steps; i++) {
+            for (Vector3f vertex : vertices) {
+                newList.add(new Vector3f(vertex).mul(factor));
+            }
+            factor += (1.0f / steps);
+        }
+        return newList;
     }
 
 }
