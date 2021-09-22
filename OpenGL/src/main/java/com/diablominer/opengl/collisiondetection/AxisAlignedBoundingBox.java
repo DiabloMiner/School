@@ -3,12 +3,15 @@ package com.diablominer.opengl.collisiondetection;
 import org.joml.Math;
 import org.joml.Vector3f;
 
+import java.util.List;
+
 public class AxisAlignedBoundingBox implements BoundingVolume {
 
     private Vector3f max;
     private Vector3f min;
 
-    public AxisAlignedBoundingBox(Vector3f centerPoint, float size) {
+    public AxisAlignedBoundingBox(Vector3f centerPoint, List<Vector3f> vertices) {
+        float size = determineSideSize(vertices);
         this.max = new Vector3f(centerPoint).add(new Vector3f(Math.sqrt(3 * size)));
         this.min = new Vector3f(centerPoint).sub(new Vector3f(Math.sqrt(3 * size)));
         BoundingVolume.allBoundingVolumes.add(this);
@@ -63,5 +66,16 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
 
     public void changeMin(Vector3f change) {
         this.min.add(change);
+    }
+
+    private float determineSideSize(List<Vector3f> vertices) {
+        Vector3f mostDistantPoint = new Vector3f(0.0f);
+        for (Vector3f vertex : vertices) {
+            if (Math.abs(vertex.distance(0.0f, 0.0f, 0.0f)) > Math.abs(mostDistantPoint.distance(0.0f, 0.0f, 0.0f))) {
+                mostDistantPoint.set(vertex);
+            }
+        }
+
+        return mostDistantPoint.x - (mostDistantPoint.x * -1.0f);
     }
 }

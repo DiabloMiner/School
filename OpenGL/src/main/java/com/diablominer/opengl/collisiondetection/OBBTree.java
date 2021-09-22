@@ -2,6 +2,7 @@ package com.diablominer.opengl.collisiondetection;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,16 +24,24 @@ public class OBBTree {
         }
         nodes = new OBBTreeNode[size];
 
+        List<Face> triangles = new ArrayList<>();
+        for (int i = 2; i < points.size(); i += 3) {
+            triangles.add(new Face(points.get(i - 2), points.get(i - 1), points.get(i)));
+        }
+
         for (int i = 0; i <= ((size - 1 - 2) / 2); i++) {
             if (i == 0) {
-                nodes[0] = new OBBTreeNode(points);
+                nodes[0] = new OBBTreeNode(points, triangles);
+
                 ArrayList<ArrayList<Vector3f>> twoPointSets = splitPointsInHalf(nodes[0]);
-                nodes[1] = new OBBTreeNode(twoPointSets.get(0));
-                nodes[2] = new OBBTreeNode(twoPointSets.get(1));
+                ArrayList<ArrayList<Face>> twoTriangleSets = splitTrianglesInHalf(nodes[0]);
+                nodes[1] = new OBBTreeNode(twoPointSets.get(0), twoTriangleSets.get(0));
+                nodes[2] = new OBBTreeNode(twoPointSets.get(1), twoTriangleSets.get(1));
             } else {
                 ArrayList<ArrayList<Vector3f>> twoPointSets = splitPointsInHalf(nodes[(int) Math.floor((i - 1) / 2.0)]);
-                nodes[2 * i + 1] = new OBBTreeNode(twoPointSets.get(0));
-                nodes[2 * i + 2] = new OBBTreeNode(twoPointSets.get(1));
+                ArrayList<ArrayList<Face>> twoTriangleSets = splitTrianglesInHalf(nodes[0]);
+                nodes[2 * i + 1] = new OBBTreeNode(twoPointSets.get(0), twoTriangleSets.get(0));
+                nodes[2 * i + 2] = new OBBTreeNode(twoPointSets.get(1), twoTriangleSets.get(0));
             }
         }
     }
@@ -64,6 +73,33 @@ public class OBBTree {
         return finalList;
     }
 
+    private ArrayList<ArrayList<Face>> splitTrianglesInHalf(OBBTreeNode obbTreeNode) {
+        Vector3f centerPoint = obbTreeNode.getCenterPoint();
+        Vector3f normalVector = obbTreeNode.getMiddleAxis();
+
+        if (centerPoint.dot(normalVector) >= 0) {
+            normalVector.normalize();
+        } else {
+            normalVector.normalize().mul(-1.0f);
+        }
+        float distance = centerPoint.dot(normalVector);
+
+        ArrayList<Face> positiveSide = new ArrayList<>();
+        ArrayList<Face> negativeSide = new ArrayList<>();
+        for (Face triangle : obbTreeNode.getTriangles()) {
+            if (triangle.signedDistancePlane(normalVector, distance) >= 0.0f) {
+                positiveSide.add(triangle);
+            } else {
+                negativeSide.add(triangle);
+            }
+        }
+
+        ArrayList<ArrayList<Face>> finalList = new ArrayList<>();
+        finalList.add(positiveSide);
+        finalList.add(negativeSide);
+        return finalList;
+    }
+
     private OBBTreeNode[] getChildren(OBBTreeNode obbTreeNode) {
         if (Arrays.asList(nodes).contains(obbTreeNode)) {
             List<OBBTreeNode> obbTreeNodes = new ArrayList<>();
@@ -86,36 +122,34 @@ public class OBBTree {
 
     public boolean isColliding(OBBTree otherTree, Matrix4f thisMatrix, Matrix4f otherMatrix) {
         collisionNodes.clear();
-        return isColliding(otherTree, this.getNodes()[0], otherTree.getNodes()[0], thisMatrix, otherMatrix);
+        isColliding(otherTree, this.getNodes()[0], otherTree.getNodes()[0], thisMatrix, otherMatrix);
+        return collisionNodes.size() != 0;
     }
 
-    private boolean isColliding(OBBTree otherTree, OBBTreeNode thisNode, OBBTreeNode otherNode, Matrix4f thisMatrix, Matrix4f otherMatrix) {
+    private void isColliding(OBBTree otherTree, OBBTreeNode thisNode, OBBTreeNode otherNode, Matrix4f thisMatrix, Matrix4f otherMatrix) {
         if (Arrays.asList(nodes).indexOf(thisNode) >= (1 << levels) - 3 && Arrays.asList(otherTree.nodes).indexOf(otherNode) >= (1 << otherTree.levels) - 3) {
             if (thisNode.isColliding(otherNode, thisMatrix, otherMatrix)) {
                 collisionNodes.add(thisNode);
                 collisionNodes.add(otherNode);
-                return true;
             }
         } else if (thisNode.isColliding(otherNode, thisMatrix, otherMatrix)) {
             if (thisNode.getVolume() > otherNode.getVolume()) {
                 for (OBBTreeNode child : getChildren(thisNode)) {
-                    if (isColliding(otherTree, child, otherNode, thisMatrix, otherMatrix)) {
-                        return true;
-                    }
+                    isColliding(otherTree, child, otherNode, thisMatrix, otherMatrix);
                 }
             } else {
                 for (OBBTreeNode child : otherTree.getChildren(otherNode)) {
-                    if (otherTree.isColliding(this, child, thisNode, otherMatrix, thisMatrix)) {
-                        return true;
-                    }
+                    otherTree.isColliding(this, child, thisNode, otherMatrix, thisMatrix);
                 }
             }
         }
-        return false;
     }
 
     public OBBTreeNode[] getNodes() {
         return nodes;
     }
 
+    public List<OBBTreeNode> getCollisionNodes() {
+        return collisionNodes;
+    }
 }

@@ -22,8 +22,11 @@ public class OBBTreeNode {
     private final Matrix4f rotationMatrix;
     private final Vector3f translation;
 
-    public OBBTreeNode(List<Vector3f> points) {
-        // Initialize the points list and generate the quickhull
+    private final List<Face> triangles;
+
+    public OBBTreeNode(List<Vector3f> points, List<Face> triangles) {
+        // Initialize the points list and the triangles and generate the quickhull
+        this.triangles = triangles;
         this.points = Transforms.copyVectorList(points);
         this.originalPoints = Transforms.copyVectorList(points);
         quickHull = new QuickHull(Transforms.copyVectorList(points));
@@ -320,6 +323,10 @@ public class OBBTreeNode {
 
     public QuickHull getQuickHull() {
         return quickHull;
+    }
+
+    public List<Face> getTriangles() {
+        return triangles;
     }
 
     /**

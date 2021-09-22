@@ -1,13 +1,13 @@
 package com.diablominer.opengl.collisiondetection;
 
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Face {
+
+    public static final float epsilon = Math.ulp(1.0f);
 
     private final List<Vector3f> definingVertices = new ArrayList<>();
     private final List<Vector3f> conflictList = new ArrayList<>();
@@ -69,6 +69,10 @@ public class Face {
 
     public float signedDistance(Vector3f point) {
         return (point.dot(normalizedNormal) - offset);
+    }
+
+    public float signedDistancePlane(Vector3f normalVector, float distance) {
+        return new Vector3f(centroid).dot(normalVector) - distance;
     }
 
     public Vector3f getFurthestPointFromConflictList() {
@@ -149,6 +153,98 @@ public class Face {
 
     public void removeVerticesFromConflictList(Collection<Vector3f> verticesToBeRemoved) {
         conflictList.removeAll(verticesToBeRemoved);
+    }
+
+    public Set<Vector3f> isColliding(Face face) {
+        Set<Vector3f> contactPoints = new HashSet<>();
+
+        Vector3f p1 = this.definingVertices.get(0);
+        Vector3f q1 = this.definingVertices.get(1);
+        Vector3f r1 = this.definingVertices.get(2);
+        Vector3f p2 = face.definingVertices.get(0);
+        Vector3f q2 = face.definingVertices.get(1);
+        Vector3f r2 = face.definingVertices.get(2);
+
+        double det1 = calculateDeterminant(p2, q2, r2, p1);
+        double det2 = calculateDeterminant(p2, q2, r2, q1);
+        double det3 = calculateDeterminant(p2, q2, r2, r1);
+        double det4 = calculateDeterminant(p1, q1, r1, p2);
+        double det5 = calculateDeterminant(p1, q1, r1, q2);
+        double det6 = calculateDeterminant(p1, q1, r1, r2);
+
+        // Maybe use a hashset so no duplicate points are generated
+
+        if ((det1 == det2 && det1 == det3 && det2 == det3) && (det4 == det5 && det4 == det6 && det5 == det6) && (calculateDeterminant(p1, q1, p2, q2) <= 0.0 && calculateDeterminant(p1, r1, r2, p2) <= 0.0)) {
+            for (Edge otherEdge : face.getEdges()) {
+                Vector3f point = isColliding(otherEdge, epsilon);
+                if (!point.equals(0.0f, 0.0f, 0.0f)) {
+                    correctPoint(point, epsilon);
+                    contactPoints.add(point);
+                }
+            }
+            for (Edge otherEdge : this.getEdges()) {
+                Vector3f point = face.isColliding(otherEdge, epsilon);
+                if (!point.equals(0.0f, 0.0f, 0.0f)) {
+                    correctPoint(point, epsilon);
+                    contactPoints.add(point);
+                }
+            }
+            for (Edge thisEdge : this.getEdges()) {
+                for (Edge otherEdge : face.getEdges()) {
+                    Vector3f point = thisEdge.isColliding(otherEdge, epsilon);
+                    if (!point.equals(0.0f, 0.0f, 0.0f)) {
+                        correctPoint(point, epsilon);
+                        contactPoints.add(point);
+                    }
+                }
+            }
+            for (Edge otherEdge : face.getEdges()) {
+                for (Edge thisEdge : this.getEdges()) {
+                    Vector3f point = otherEdge.isColliding(thisEdge, epsilon);
+                    if (!point.equals(0.0f, 0.0f, 0.0f)) {
+                        correctPoint(point, epsilon);
+                        contactPoints.add(point);
+                    }
+                }
+            }
+        }
+        return contactPoints;
+    }
+
+    private void correctPoint(Vector3f point, float epsilon) {
+        for (int i = 0; i < 3; i++) {
+            if (Math.abs(point.get(i) - Math.round(point.get(i))) <= epsilon) {
+                point.setComponent(i, Math.round(point.get(i)));
+            }
+        }
+    }
+
+    public Vector3f isColliding(Edge edge, float epsilon) {
+        Vector3f e1 = new Vector3f(definingVertices.get(1)).sub(definingVertices.get(0));
+        Vector3f e2 = new Vector3f(definingVertices.get(2)).sub(definingVertices.get(0));
+        Vector3f s = new Vector3f(edge.getTail()).sub(definingVertices.get(0));
+        Vector3f d = new Vector3f(edge.getTail()).sub(edge.getTop());
+        Vector3f r = new Vector3f(s).cross(e1);
+        Vector3f q = new Vector3f(d).cross(e2);
+        float a = e1.dot(q);
+
+        if (a > -epsilon && a < epsilon) {
+            return new Vector3f(0.0f);
+        }
+        float u = (1.0f / a) * s.dot(q);
+        if (u < 0.0f) {
+            return new Vector3f(0.0f);
+        }
+        float v = (1.0f / a) * d.dot(r);
+        if (v < 0.0f && (u + v) > 1.0f) {
+            return new Vector3f(0.0f);
+        }
+        float t = (1.0f / a) * e2.dot(r);
+        return new Vector3f(definingVertices.get(0)).mul(1.0f - u - v).add(new Vector3f(definingVertices.get(1)).mul(u)).add(new Vector3f(definingVertices.get(2)).mul(v));
+    }
+
+    private double calculateDeterminant(Vector3f a, Vector3f b, Vector3f c, Vector3f d) {
+        return new Vector3d(d).sub(a).dot(new Vector3d(b).sub(a).cross(new Vector3d(c).sub(a)));
     }
 
     @Override

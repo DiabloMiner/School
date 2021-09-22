@@ -1,5 +1,7 @@
 package com.diablominer.opengl.render;
 
+import com.diablominer.opengl.collisiondetection.Edge;
+import com.diablominer.opengl.collisiondetection.Face;
 import com.diablominer.opengl.collisiondetection.OBBTree;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
@@ -19,6 +21,7 @@ import org.joml.*;
 import org.joml.Math;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.system.CallbackI;
 import org.lwjgl.system.MemoryUtil;
 
 import java.math.BigInteger;
@@ -192,8 +195,7 @@ public class MyRenderingEngine extends RenderingEngine {
         minMod2 = new MinimumModel(obbTree2.getNodes()[1].getSpecialPoints(), mat2);
         minMod4 = new MinimumModel(obbTree2.getNodes()[2].getSpecialPoints(), mat2);
         System.out.println(obbTree1.isColliding(obbTree2, mat1, mat2));
-        // I'm almost sure the current system is working correctly, but the visualization won't agree;
-        // Tested the real model and the quickhulls and I think its more likely that the visualization is false
+
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);
         addNewEngineUnit(normalRenderingEngineUnit);

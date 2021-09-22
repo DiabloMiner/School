@@ -1,23 +1,25 @@
 package com.diablominer.opengl.render.lightsources;
 
-import com.diablominer.opengl.examples.modelloading.Vertex;
+import com.diablominer.opengl.collisiondetection.Face;
+import com.diablominer.opengl.collisiondetection.OBBTree;
 import com.diablominer.opengl.main.LogicalEngine;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.collisiondetection.AxisAlignedBoundingBox;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public class RenderablePointLight extends PhysicsObject {
+
+    public static final float epsilon = Math.ulp(1.0f);
 
     private Model model;
     private PointLight pointLight;
@@ -32,10 +34,8 @@ public class RenderablePointLight extends PhysicsObject {
 
     // Secondary values
     private Vector3f angularVelocity = new Vector3f(0.0f);
-    private Matrix4f modelMatrix = new Matrix4f().identity();
 
     // Constant values
-    private float size = 2.0f;
     private Matrix3f inertia;
 
     public RenderablePointLight(PointLight pointLight, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
@@ -47,11 +47,13 @@ public class RenderablePointLight extends PhysicsObject {
         List<Vector3f> uniqueVertices = model.getAllUniqueVertices();
         mass = 10.0f;
         position = determineCenterOfMass(uniqueVertices);
-        uniqueVertices.forEach(vector3f -> vector3f.add(new Vector3f(position).mul(-1.0f)));
         inertia = createInertiaTensor(uniqueVertices, true);
-        Transforms.multiplyListWithMatrix(uniqueVertices, new Matrix4f().identity().translate(pointLight.getPosition()));
+        position.add(pointLight.getPosition());
         velocity = new Vector3f(0.0f);
-        this.bv = new AxisAlignedBoundingBox(position, size);
+
+        this.bv = new AxisAlignedBoundingBox(position, uniqueVertices);
+        this.obbTree = new OBBTree(model.getAllVertices(), 1);
+        this.modelMatrix = new Matrix4f().identity();
     }
 
     @Override
@@ -77,18 +79,27 @@ public class RenderablePointLight extends PhysicsObject {
             // Broad Phase
             if (this.bv.isIntersecting(physicsObject.bv)) {
                 // Narrow Phase
-                /*if (physicsObject.mass == this.mass) {
-                    Vector3f u1 = new Vector3f(this.velocity);
-                    this.velocity = new Vector3f(physicsObject.velocity);
-                    physicsObject.velocity = u1;
-                } else {
-                    Vector3f u1 = new Vector3f(this.velocity);
-                    Vector3f u2 = new Vector3f(physicsObject.velocity);
-                    float m1 = this.mass;
-                    float m2 = physicsObject.mass;
-                    this.velocity = new Vector3f((u1.mul(((m1 - m2) / (m1 + m2)))).add(u2.mul((2 * m2) / (m1 + m2))));
-                    physicsObject.velocity = new Vector3f(u1.mul(((2 * m1) / (m1 + m2))).add(u2.mul(((m2 - m1) / (m1 + m2)))));
-                }*/
+                if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
+                    Set<Vector3f> collidingContacts = new HashSet<>();
+                    Set<Vector3f> restingContacts = new HashSet<>();
+
+                    // TODO: Implement collisionPoint class
+
+                    for (int i = 1; i< obbTree.getCollisionNodes().size(); i += 2) {
+                        for (Face face : obbTree.getCollisionNodes().get(i - 1).getTriangles()) {
+                            for (Face otherFace : obbTree.getCollisionNodes().get(i).getTriangles()) {
+                                Set<Vector3f> temp = face.isColliding(otherFace);
+                                if (face.getNormalizedNormal().dot(this.velocity) < -epsilon) {
+                                    collidingContacts.addAll(temp);
+                                } else if (face.getNormalizedNormal().dot(this.velocity) >= -epsilon && face.getNormalizedNormal().dot(this.velocity) <= epsilon) {
+                                    restingContacts.addAll(temp);
+                                }
+                            }
+                        }
+                    }
+
+                    
+                }
             }
         }
     }
@@ -135,6 +146,7 @@ public class RenderablePointLight extends PhysicsObject {
         if (isSolid) {
             vertices = generateSolidGeometry(vertices, 100);
         }
+
         Matrix3f result = new Matrix3f();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
