@@ -9,6 +9,8 @@ public abstract class LogicalEngine {
 
     protected static List<GameObject> gameObjects;
     protected static Set<PhysicsObject> allPhysicsObjects;
+    // TODO: Remove static modifier and make it dynamic
+    protected static Set<PhysicsObject> alreadyCollidedPhysicsObjects = new HashSet<>();
 
     public LogicalEngine() {
         gameObjects = new ArrayList<>();
@@ -27,11 +29,13 @@ public abstract class LogicalEngine {
         for (PhysicsObject physicsObject : allPhysicsObjects) {
             Set<PhysicsObject> temporarySet = new HashSet<>(allPhysicsObjects);
             temporarySet.remove(physicsObject);
-            physicsObject.collisionDetectionAndResponse(temporarySet);
+            temporarySet.removeAll(alreadyCollidedPhysicsObjects);
+            physicsObject.collide(temporarySet);
         }
     }
 
     public void updateAllGameObjects(double timeStep) {
+        alreadyCollidedPhysicsObjects.clear();
         for (GameObject gameObject : gameObjects) {
             gameObject.updateObjectState(timeStep);
         }
@@ -46,5 +50,9 @@ public abstract class LogicalEngine {
     public abstract void update(double timeStep);
 
     public abstract void predict(double timeStep);
+
+    public static void addAlreadyCollidedPhysicsObject(PhysicsObject physicsObject) {
+        alreadyCollidedPhysicsObjects.add(physicsObject);
+    }
 
 }

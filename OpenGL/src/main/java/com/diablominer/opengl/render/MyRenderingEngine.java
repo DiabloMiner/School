@@ -184,7 +184,8 @@ public class MyRenderingEngine extends RenderingEngine {
         Model refractionText = new Model("./src/main/resources/models/HelloWorld/refractionText.obj", refractionRenderingEngineUnit, new Vector3f(-15.0f, 2.0f, 20.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, -1.0f, 12.0f));
         new Model("./src/main/resources/models/transparentPlane/transparentWindowPlane.obj", transparencyRenderingEngineUnit, new Vector3f(0.0f, 1.0f, 15.0f));
-        new RenderablePointLight(pointLight, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
+        RenderablePointLight pl1 = new RenderablePointLight(pointLight, -4.81f, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
+        RenderablePointLight pl2 = new RenderablePointLight(new PointLight(new Vector3f(-8.0f, -8.0f, -2.0f), new Vector3f(200.0f, 200.0f, 200.0f), 35.0f), 0.0f, "./src/main/resources/models/HelloWorld/cube.obj", logicalEngine, lightSourceRenderingEngineUnit);
 
         OBBTree obbTree1 = new OBBTree(refractionText.getAllVertices(), 2);
         OBBTree obbTree2 = new OBBTree(refractionText.getAllVertices(), 2);
@@ -194,7 +195,7 @@ public class MyRenderingEngine extends RenderingEngine {
         minMod3 = new MinimumModel(obbTree1.getNodes()[2].getSpecialPoints(), mat1);
         minMod2 = new MinimumModel(obbTree2.getNodes()[1].getSpecialPoints(), mat2);
         minMod4 = new MinimumModel(obbTree2.getNodes()[2].getSpecialPoints(), mat2);
-        System.out.println(obbTree1.isColliding(obbTree2, mat1, mat2));
+        // System.out.println(obbTree1.isColliding(obbTree2, mat1, mat2));
 
 
         addNewEngineUnit(stencilTestRenderingEngineUnit);

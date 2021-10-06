@@ -29,14 +29,17 @@ public class OBBTree {
             triangles.add(new Face(points.get(i - 2), points.get(i - 1), points.get(i)));
         }
 
-        for (int i = 0; i <= ((size - 1 - 2) / 2); i++) {
+        int length = size == 1 ? 0 : ((size - 1 - 2) / 2);
+        for (int i = 0; i <= length; i++) {
             if (i == 0) {
                 nodes[0] = new OBBTreeNode(points, triangles);
 
-                ArrayList<ArrayList<Vector3f>> twoPointSets = splitPointsInHalf(nodes[0]);
-                ArrayList<ArrayList<Face>> twoTriangleSets = splitTrianglesInHalf(nodes[0]);
-                nodes[1] = new OBBTreeNode(twoPointSets.get(0), twoTriangleSets.get(0));
-                nodes[2] = new OBBTreeNode(twoPointSets.get(1), twoTriangleSets.get(1));
+                if (levels != 1) {
+                    ArrayList<ArrayList<Vector3f>> twoPointSets = splitPointsInHalf(nodes[0]);
+                    ArrayList<ArrayList<Face>> twoTriangleSets = splitTrianglesInHalf(nodes[0]);
+                    nodes[1] = new OBBTreeNode(twoPointSets.get(0), twoTriangleSets.get(0));
+                    nodes[2] = new OBBTreeNode(twoPointSets.get(1), twoTriangleSets.get(1));
+                }
             } else {
                 ArrayList<ArrayList<Vector3f>> twoPointSets = splitPointsInHalf(nodes[(int) Math.floor((i - 1) / 2.0)]);
                 ArrayList<ArrayList<Face>> twoTriangleSets = splitTrianglesInHalf(nodes[0]);
@@ -142,6 +145,12 @@ public class OBBTree {
                     otherTree.isColliding(this, child, thisNode, otherMatrix, thisMatrix);
                 }
             }
+        }
+    }
+
+    public void updateTriangles(Matrix4f worldMat) {
+        for (OBBTreeNode node : nodes) {
+            node.updateTriangles(worldMat);
         }
     }
 

@@ -4,6 +4,8 @@ import com.diablominer.opengl.render.RenderingEngineUnit;
 import com.diablominer.opengl.render.ShaderProgram;
 import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import com.diablominer.opengl.utils.ListUtil;
+import com.diablominer.opengl.utils.Transforms;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
 
@@ -164,12 +166,22 @@ public class Model extends Renderable {
     }
 
     public List<Vector3f> getAllVertices() {
+        List<Vector3f> points = new ArrayList<>();
         List<Vector3f> result = new ArrayList<>();
         for (Mesh mesh : meshes) {
             for (int i = 0; i < mesh.vertices.length; i += 3) {
-                result.add(new Vector3f(mesh.vertices[i], mesh.vertices[i + 1], mesh.vertices[i + 2]));
+                points.add(new Vector3f(mesh.vertices[i], mesh.vertices[i + 1], mesh.vertices[i + 2]));
+            }
+            for (int i = 0; i < mesh.indices.length; i++) {
+                result.add(new Vector3f(points.get(mesh.indices[i])));
             }
         }
+        return result;
+    }
+
+    public List<Vector3f> getAllVerticesInWorldCoordinates(Matrix4f worldMatrix) {
+        List<Vector3f> result = getAllVertices();
+        Transforms.multiplyListWithMatrix(result, worldMatrix);
         return result;
     }
 

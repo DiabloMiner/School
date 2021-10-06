@@ -95,6 +95,15 @@ public class Transforms {
         }
     }
 
+    public static List<Vector3f> multiplyListWithMatrix2(List<Vector3f> list, Matrix4f mat) {
+        for (Vector3f vec : list) {
+            Vector4f tempResult = new Vector4f(vec, 1.0f);
+            tempResult.mul(mat);
+            vec.set(tempResult.x, tempResult.y, tempResult.z);
+        }
+        return list;
+    }
+
     public static void multiplyArrayWithMatrix(Vector3f[] array, Matrix4f mat) {
         for (Vector3f vec : array) {
             Vector4f tempResult = new Vector4f(vec, 1.0f);

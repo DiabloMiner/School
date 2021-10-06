@@ -5,6 +5,8 @@ import org.joml.*;
 import org.joml.Math;
 
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class OBBTreeNode {
 
@@ -102,17 +104,51 @@ public class OBBTreeNode {
             Matrix3d[] qrMatrices = qrDecomposition(matrices[i]);
             Matrix3d R = qrMatrices[0];
             Vector3d z = new Vector3d(0.0);
-            double zComponent;
-            if (Math.abs(R.m02) <= epsilon && Math.abs(R.m12) <= epsilon && Math.abs(R.m22) <= epsilon) {
+
+            boolean isLastRowNull = Math.abs(R.m02) <= epsilon && Math.abs(R.m12) <= epsilon && Math.abs(R.m22) <= epsilon;
+            boolean isSecondRowNull = Math.abs(R.m01) <= epsilon && Math.abs(R.m11) <= epsilon && Math.abs(R.m21) <= epsilon;
+            boolean isFirstRowNull = Math.abs(R.m00) <= epsilon && Math.abs(R.m10) <= epsilon && Math.abs(R.m20) <= epsilon;
+
+            double zComponent = z.get(2) / R.m22;
+            if (isLastRowNull) {
                 zComponent = 1.0;
-            } else {
-                zComponent = z.get(2) / R.m22;
             }
             double yComponent = (z.get(1) - zComponent * R.m21) / R.m11;
+            if (isSecondRowNull) {
+                yComponent = 1.0;
+                if (zComponent == 1.0 && isLastRowNull) {
+                    yComponent = 0.0;
+                }
+            }
             double xComponent = (z.get(0) - yComponent * R.m10 - zComponent * R.m20) / R.m00;
+            if (isFirstRowNull) {
+                xComponent = 1.0;
+                if (yComponent == 1.0 && isSecondRowNull) {
+                    xComponent = 0.0;
+                }
+            }
+
             eigenVectors[i] = new Vector3f((float) xComponent, (float) yComponent, (float) zComponent);
+
+            List<Vector3f> vecs = new ArrayList<>(Arrays.asList(eigenVectors));
+            vecs.remove(eigenVectors[i]);
+            if (vecs.contains(eigenVectors[i])) {
+                if (Math.abs(R.m00) <= epsilon && Math.abs(R.m10) <= epsilon && Math.abs(R.m20) <= epsilon) {
+                    eigenVectors[i].setComponent(0, (float) oppositeNumber(eigenVectors[i].x));
+                }
+                if (Math.abs(R.m01) <= epsilon && Math.abs(R.m11) <= epsilon && Math.abs(R.m21) <= epsilon) {
+                    eigenVectors[i].setComponent(1, (float) oppositeNumber(eigenVectors[i].y));
+                }
+                if (Math.abs(R.m02) <= epsilon && Math.abs(R.m12) <= epsilon && Math.abs(R.m22) <= epsilon) {
+                    eigenVectors[i].setComponent(2, (float) oppositeNumber(eigenVectors[i].z));
+                }
+            }
         }
         return eigenVectors;
+    }
+
+    private double oppositeNumber(double number) {
+        return Math.abs(Math.ceil(number - 1.0));
     }
 
     private Matrix3d qrAlgorithm(Matrix3f initialMatrix) {
@@ -171,7 +207,7 @@ public class OBBTreeNode {
             R.mul(matrix);
             return new Matrix3d[]{R, Q};
         } else {
-            return new Matrix3d[] {matrix, null};
+            return new Matrix3d[] {matrix, new Matrix3d().identity()};
         }
     }
 
@@ -327,6 +363,12 @@ public class OBBTreeNode {
 
     public List<Face> getTriangles() {
         return triangles;
+    }
+
+    public void updateTriangles(Matrix4f worldMat) {
+        for (Face triangle : triangles) {
+            triangle.update(worldMat);
+        }
     }
 
     /**

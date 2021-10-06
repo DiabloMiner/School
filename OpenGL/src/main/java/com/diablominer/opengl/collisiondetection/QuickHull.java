@@ -91,7 +91,7 @@ public class QuickHull {
         }
         remainingVertices.remove(startingPoints.get(3));
 
-        // Determine the centroid of the tetrahedron and transform all points so it becomes the zero point of the coordinate system
+        // Determine the centroid of the tetrahedron and transform all points so it becomes the origin of the coordinate system
         Vector3f centroid = new Vector3f(0.0f).add(startingPoints.get(0)).add(startingPoints.get(1)).add(startingPoints.get(2)).add(startingPoints.get(3));
         centroid.mul(1.0f / 4.0f);
         for (Vector3f vertex : points) {

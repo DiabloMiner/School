@@ -1,5 +1,6 @@
 package com.diablominer.opengl.render.lightsources;
 
+import com.diablominer.opengl.collisiondetection.Collision;
 import com.diablominer.opengl.collisiondetection.Face;
 import com.diablominer.opengl.collisiondetection.OBBTree;
 import com.diablominer.opengl.main.LogicalEngine;
@@ -19,26 +20,13 @@ import java.util.Set;
 
 public class RenderablePointLight extends PhysicsObject {
 
-    public static final float epsilon = Math.ulp(1.0f);
-
     private Model model;
     private PointLight pointLight;
 
-    // Primary values
-    private Vector3f position;
     private Vector3f momentum = new Vector3f(0.0f);
-    private Vector3f force = new Vector3f(-0.0f, 0.0f, 0.0f);
-    private Quaternionf orientation = new Quaternionf();
     private Vector3f angularMomentum = new Vector3f(0.0f);
-    private Vector3f torque = new Vector3f(0.0f, 1.0f, 0.0f);
 
-    // Secondary values
-    private Vector3f angularVelocity = new Vector3f(0.0f);
-
-    // Constant values
-    private Matrix3f inertia;
-
-    public RenderablePointLight(PointLight pointLight, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
+    public RenderablePointLight(PointLight pointLight, float forceY, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
         super();
         logicalEngine.addGameObject(this);
         this.pointLight = pointLight;
@@ -46,10 +34,16 @@ public class RenderablePointLight extends PhysicsObject {
 
         List<Vector3f> uniqueVertices = model.getAllUniqueVertices();
         mass = 10.0f;
+        coefficientOfRestitution = 1.0f;
         position = determineCenterOfMass(uniqueVertices);
         inertia = createInertiaTensor(uniqueVertices, true);
         position.add(pointLight.getPosition());
-        velocity = new Vector3f(0.0f);
+
+        velocity = new Vector3f(0.0f, forceY / mass, 0.0f);
+        force = new Vector3f(0.0f, 0.0f, 0.0f);
+        orientation = new Quaternionf();
+        angularVelocity = new Vector3f(0.0f);
+        torque = new Vector3f(0.0f, 0.0f, 0.0f);
 
         this.bv = new AxisAlignedBoundingBox(position, uniqueVertices);
         this.obbTree = new OBBTree(model.getAllVertices(), 1);
@@ -74,31 +68,36 @@ public class RenderablePointLight extends PhysicsObject {
     }
 
     @Override
-    public void collisionDetectionAndResponse(Set<PhysicsObject> physicsObjects) {
+    public void collide(Set<PhysicsObject> physicsObjects) {
+        // Collision Detection
+        bv.update(new Vector3f(position).sub(bv.getCenter()));
         for (PhysicsObject physicsObject : physicsObjects) {
             // Broad Phase
+            physicsObject.bv.update(new Vector3f(physicsObject.position).sub(new Vector3f(physicsObject.bv.getCenter())));
             if (this.bv.isIntersecting(physicsObject.bv)) {
                 // Narrow Phase
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
-                    Set<Vector3f> collidingContacts = new HashSet<>();
-                    Set<Vector3f> restingContacts = new HashSet<>();
-
-                    // TODO: Implement collisionPoint class
+                    List<Collision> collisions = new ArrayList<>();
+                    obbTree.updateTriangles(this.modelMatrix);
+                    physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);
 
                     for (int i = 1; i< obbTree.getCollisionNodes().size(); i += 2) {
                         for (Face face : obbTree.getCollisionNodes().get(i - 1).getTriangles()) {
                             for (Face otherFace : obbTree.getCollisionNodes().get(i).getTriangles()) {
-                                Set<Vector3f> temp = face.isColliding(otherFace);
-                                if (face.getNormalizedNormal().dot(this.velocity) < -epsilon) {
-                                    collidingContacts.addAll(temp);
-                                } else if (face.getNormalizedNormal().dot(this.velocity) >= -epsilon && face.getNormalizedNormal().dot(this.velocity) <= epsilon) {
-                                    restingContacts.addAll(temp);
-                                }
+                                collisions.addAll(face.isColliding(otherFace, this, physicsObject));
                             }
                         }
                     }
 
-                    
+                    // TODO: No collisions are reported --> No collision detection, might come from some false normals or false colliding triangles
+                    // TODO: Face make separate collision function so it is more readable
+
+                    for (Collision collision : collisions) {
+                        collision.collisionResponse(this, physicsObject);
+                    } System.out.println();
+
+                    LogicalEngine.addAlreadyCollidedPhysicsObject(this);
+                    LogicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);
                 }
             }
         }
@@ -137,6 +136,10 @@ public class RenderablePointLight extends PhysicsObject {
         return result.div(mass);
     }
 
+    public Matrix3f getInertia() {
+        return new Matrix3f().identity().rotate(orientation).mul(this.inertia).mul(new Matrix3f().identity().rotate(orientation).transpose());
+    }
+
     /**
      * All vertices are assumed to be defined relative to the center of mass.
      * The center of mass is assumed to be at (0, 0, 0).
@@ -144,7 +147,7 @@ public class RenderablePointLight extends PhysicsObject {
     private Matrix3f createInertiaTensor(List<Vector3f> uniqueVertices, boolean isSolid) {
         List<Vector3f> vertices = uniqueVertices;
         if (isSolid) {
-            vertices = generateSolidGeometry(vertices, 100);
+            vertices = generateSolidGeometry(vertices, 1000);
         }
 
         Matrix3f result = new Matrix3f();

@@ -9,9 +9,10 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
 
     private Vector3f max;
     private Vector3f min;
+    private float size;
 
     public AxisAlignedBoundingBox(Vector3f centerPoint, List<Vector3f> vertices) {
-        float size = determineSideSize(vertices);
+        size = determineSideSize(vertices);
         this.max = new Vector3f(centerPoint).add(new Vector3f(Math.sqrt(3 * size)));
         this.min = new Vector3f(centerPoint).sub(new Vector3f(Math.sqrt(3 * size)));
         BoundingVolume.allBoundingVolumes.add(this);
@@ -20,7 +21,7 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
     @Override
     public boolean isIntersecting(BoundingVolume bv) {
         if (bv.getClass() == AxisAlignedBoundingBox.class) {
-            return isIntersecting(bv);
+            return isIntersecting((AxisAlignedBoundingBox) bv);
         } else {
             return false;
         }
@@ -34,6 +35,11 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
         return (min1.x <= max2.x && max1.x >= min2.x) &&
                (min1.y <= max2.y && max1.y >= min2.y) &&
                (min1.z <= max2.z && max1.z >= min2.z);
+    }
+
+    public void update(Vector3f translation) {
+        min.add(translation);
+        max.add(translation);
     }
 
     private Vector3f determineMinVector() {
@@ -66,6 +72,10 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
 
     public void changeMin(Vector3f change) {
         this.min.add(change);
+    }
+
+    public Vector3f getCenter() {
+        return new Vector3f(max).sub(new Vector3f(Math.sqrt(3.0f * size)));
     }
 
     private float determineSideSize(List<Vector3f> vertices) {
