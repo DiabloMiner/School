@@ -47,7 +47,7 @@ public class Edge {
                 } else {
                     point = new Vector3f(this.top).sub(l);
                 }
-                if (isPointBetweenPoints(point, top, tail, epsilon)) {
+                if (isPointInEdge(point, epsilon) && edge.isPointInEdge(point, epsilon)) {
                     return point;
                 }
             }
@@ -66,10 +66,10 @@ public class Edge {
         return new Vector3f(top).sub(tail);
     }
 
-    public boolean isPointBetweenPoints(Vector3f pointToBeTested, Vector3f edgePoint1, Vector3f edgePoint2, float epsilon) {
-        float d1 = new Vector3f(edgePoint1).sub(pointToBeTested).length();
-        float d2 = new Vector3f(edgePoint2).sub(pointToBeTested).length();
-        float edgePointDistance = new Vector3f(edgePoint1).sub(edgePoint2).length();
+    public boolean isPointInEdge(Vector3f pointToBeTested, float epsilon) {
+        float d1 = new Vector3f(top).sub(pointToBeTested).length();
+        float d2 = new Vector3f(tail).sub(pointToBeTested).length();
+        float edgePointDistance = new Vector3f(top).sub(tail).length();
 
         return Math.abs((d1 + d2) - edgePointDistance) <= epsilon;
     }

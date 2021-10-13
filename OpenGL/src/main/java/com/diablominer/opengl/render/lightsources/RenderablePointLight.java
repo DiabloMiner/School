@@ -89,12 +89,12 @@ public class RenderablePointLight extends PhysicsObject {
                         }
                     }
 
-                    // TODO: No collisions are reported --> No collision detection, might come from some false normals or false colliding triangles
-                    // TODO: Face make separate collision function so it is more readable
+                    // TODO: No collisions are reported
 
                     for (Collision collision : collisions) {
                         collision.collisionResponse(this, physicsObject);
-                    } System.out.println();
+                    }
+                    System.out.println();
 
                     LogicalEngine.addAlreadyCollidedPhysicsObject(this);
                     LogicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);
