@@ -128,6 +128,12 @@ public class Transforms {
         return new Vector3f(vec4.x, vec4.y, vec4.z);
     }
 
+    public static Vector3d mulVectorWithMatrix4(Vector3d vec, Matrix4f mat) {
+        Vector4d vec4 = new Vector4d(vec.x, vec.y, vec.z, 1.0f);
+        vec4.mul(mat);
+        return new Vector3d(vec4.x, vec4.y, vec4.z);
+    }
+
     public static Vector3f copyVector(Vector3f vec) {
         return new Vector3f(vec.x, vec.y, vec.z);
     }

@@ -1,11 +1,8 @@
 package com.diablominer.opengl.render.lightsources;
 
-import com.diablominer.opengl.collisiondetection.Collision;
-import com.diablominer.opengl.collisiondetection.Face;
-import com.diablominer.opengl.collisiondetection.OBBTree;
+import com.diablominer.opengl.collisiondetection.*;
 import com.diablominer.opengl.main.LogicalEngine;
 import com.diablominer.opengl.main.PhysicsObject;
-import com.diablominer.opengl.collisiondetection.AxisAlignedBoundingBox;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
 import org.joml.Matrix3f;
@@ -90,6 +87,7 @@ public class RenderablePointLight extends PhysicsObject {
                     }
 
                     // TODO: No collisions are reported
+                    // TODO: All colliding faces (in point vs face) are apart from one another in the y dimension
 
                     for (Collision collision : collisions) {
                         collision.collisionResponse(this, physicsObject);

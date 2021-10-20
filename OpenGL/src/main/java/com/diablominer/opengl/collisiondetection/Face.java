@@ -2,10 +2,9 @@ package com.diablominer.opengl.collisiondetection;
 
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.utils.Transforms;
-import org.joml.Matrix4f;
-import org.joml.Vector3d;
-import org.joml.Vector3f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.util.*;
 
 public class Face {
@@ -13,6 +12,7 @@ public class Face {
     public static final float epsilon = Math.ulp(1.0f);
 
     private final List<Vector3f> definingVertices = new ArrayList<>();
+    private final List<Vector3f> originalVertices = new ArrayList<>();
     private final List<Vector3f> conflictList = new ArrayList<>();
     private final List<Face> neighbouringFaces = new ArrayList<>();
     private final List<Edge> edges = new ArrayList<>();
@@ -33,9 +33,12 @@ public class Face {
     public Face(Edge edge, Vector3f vertex3) {
         Vector3f vertex1 = edge.getTop();
         Vector3f vertex2 = edge.getTail();
-        this.definingVertices.add(vertex1);
-        this.definingVertices.add(vertex2);
-        this.definingVertices.add(vertex3);
+        this.definingVertices.add(new Vector3f(vertex1));
+        this.definingVertices.add(new Vector3f(vertex2));
+        this.definingVertices.add(new Vector3f(vertex3));
+        this.originalVertices.add(vertex1);
+        this.originalVertices.add(vertex2);
+        this.originalVertices.add(vertex3);
 
         edges.add(new Edge(vertex1, vertex2, this));
         edges.add(new Edge(vertex1, vertex3, this));
@@ -55,9 +58,12 @@ public class Face {
     }
 
     public Face(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3) {
-        this.definingVertices.add(vertex1);
-        this.definingVertices.add(vertex2);
-        this.definingVertices.add(vertex3);
+        this.definingVertices.add(new Vector3f(vertex1));
+        this.definingVertices.add(new Vector3f(vertex2));
+        this.definingVertices.add(new Vector3f(vertex3));
+        this.originalVertices.add(vertex1);
+        this.originalVertices.add(vertex2);
+        this.originalVertices.add(vertex3);
 
         edges.add(new Edge(vertex1, vertex2, this));
         edges.add(new Edge(vertex1, vertex3, this));
@@ -235,9 +241,7 @@ public class Face {
                     contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1));
                 }
             }
-        } else if (intersectionType == FaceIntersectionType.Coplanar) {
-            // TODO: See why faces having y-normals dont produce many collision points
-            // TODO: Also investigate why no collisions are produced
+        } else if (intersectionType == FaceIntersectionType.Coplanar && areTrianglesCollidingCoplanar(face)) {
             for (Edge otherEdge : face.getEdges()) {
                 Vector3f point = isColliding(otherEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
@@ -435,9 +439,9 @@ public class Face {
     }
 
     public void update(Matrix4f worldMatrix) {
-        this.definingVertices.get(0).set(Transforms.mulVectorWithMatrix4(this.definingVertices.get(0), worldMatrix));
-        this.definingVertices.get(1).set(Transforms.mulVectorWithMatrix4(this.definingVertices.get(1), worldMatrix));
-        this.definingVertices.get(2).set(Transforms.mulVectorWithMatrix4(this.definingVertices.get(2), worldMatrix));
+        this.definingVertices.get(0).set(Transforms.mulVectorWithMatrix4(this.originalVertices.get(0), worldMatrix));
+        this.definingVertices.get(1).set(Transforms.mulVectorWithMatrix4(this.originalVertices.get(1), worldMatrix));
+        this.definingVertices.get(2).set(Transforms.mulVectorWithMatrix4(this.originalVertices.get(2), worldMatrix));
 
         this.supportVector.set(this.definingVertices.get(1));
         Vector3f normal = new Vector3f(new Vector3f(definingVertices.get(1)).sub(definingVertices.get(0))).cross(new Vector3f(definingVertices.get(2)).sub(definingVertices.get(0)));

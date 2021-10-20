@@ -4,23 +4,29 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Objects;
 
 public class Edge {
 
     private Face face;
-    private final Vector3f tail;
-    private final Vector3f top;
+    private final Vector3f tail, originalTail;
+    private final Vector3f top, originalTop;
 
     public Edge(Vector3f tail, Vector3f top, Face face) {
         this.tail = new Vector3f(tail);
         this.top = new Vector3f(top);
+        originalTail = new Vector3f(tail);
+        originalTop = new Vector3f(top);
         this.face = face;
     }
 
     public Edge(Vector3f tail, Vector3f top) {
         this.tail = new Vector3f(tail);
         this.top = new Vector3f(top);
+        originalTail = new Vector3f(tail);
+        originalTop = new Vector3f(top);
         this.face = null;
     }
 
@@ -58,8 +64,8 @@ public class Edge {
     }
 
     public void update(Matrix4f worldMatrix) {
-        this.tail.set(Transforms.mulVectorWithMatrix4(tail, worldMatrix));
-        this.top.set(Transforms.mulVectorWithMatrix4(top, worldMatrix));
+        this.tail.set(Transforms.mulVectorWithMatrix4(originalTail, worldMatrix));
+        this.top.set(Transforms.mulVectorWithMatrix4(originalTop, worldMatrix));
     }
 
     public Vector3f getEdgeDirection() {
@@ -75,7 +81,7 @@ public class Edge {
     }
 
     public Vector3f getMiddlePoint() {
-        return new Vector3f(top).sub(tail).div(2.0f);
+        return new Vector3f(top).add(tail).div(2.0f);
     }
 
     public Face getFace() {
