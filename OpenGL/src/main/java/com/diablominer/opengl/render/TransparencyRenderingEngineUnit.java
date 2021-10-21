@@ -16,16 +16,13 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    protected CubeMap convolutedCubeMap, prefilteredCubeMap;
     protected TwoDimensionalTexture brdfLookUpTexture;
 
-    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
-        super(shaderProgram, alternativeShaderProgram);
+    public TransparencyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, TwoDimensionalTexture brdfLookUpTexture) {
+        super(shaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
-        this.convolutedCubeMap = convolutedCubeMap;
-        this.prefilteredCubeMap = prefilteredCubeMap;
         this.brdfLookUpTexture = brdfLookUpTexture;
     }
 
@@ -43,10 +40,6 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
         shaderProgram.setUniformVec3F("spotLight.direction", camera.front);
         shaderProgram.setUniformVec3F("spotLight.color", spotLight.getColor());
 
-        convolutedCubeMap.bind();
-        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
-        prefilteredCubeMap.bind();
-        shaderProgram.setUniform1I("prefilterMap", prefilteredCubeMap.index);
         brdfLookUpTexture.bind();
         shaderProgram.setUniform1I("brdfLUT", brdfLookUpTexture.index);
 
@@ -68,10 +61,4 @@ public class TransparencyRenderingEngineUnit extends RenderingEngineUnit {
         GL33.glEnable(GL33.GL_CULL_FACE);
     }
 
-    @Override
-    public void renderAlternative() {
-        GL33.glDisable(GL33.GL_CULL_FACE);
-        renderAllRenderablesAlternative();
-        GL33.glEnable(GL33.GL_CULL_FACE);
-    }
 }

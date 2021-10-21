@@ -1,6 +1,5 @@
 #version 330 core
 
-out float gl_FragDepth;
 
 struct Material {
     sampler2D texture_diffuse1;
@@ -15,7 +14,5 @@ in vec2 texCoords;
 void main() {
     if (texture(material.texture_diffuse1, texCoords).w < 1.0f) {
         discard;
-    } else {
-        gl_FragDepth = gl_FragCoord.z;
     }
 }

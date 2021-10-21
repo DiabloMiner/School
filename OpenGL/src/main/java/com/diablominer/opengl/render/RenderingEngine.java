@@ -23,13 +23,6 @@ public abstract class RenderingEngine {
         }
     }
 
-    public void renderAllEngineUnitsAlternative() {
-
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.renderAlternative();
-        }
-    }
-
     public void destroyAllEngineUnits() {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
             renderingEngineUnit.destroyAllRenderables();
@@ -40,16 +33,6 @@ public abstract class RenderingEngine {
     public void updateAllEngineUnits(Camera camera) {
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
             renderingEngineUnit.updateRenderState(camera, renderingEngineUnit.shaderProgram);
-        }
-    }
-
-    public void updateAllEngineUnitsAlternative(Camera camera) {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            if (renderingEngineUnit.alternativeShaderProgram != null) {
-                renderingEngineUnit.updateRenderState(camera, renderingEngineUnit.alternativeShaderProgram);
-            } else {
-                renderingEngineUnit.updateRenderState(camera, renderingEngineUnit.shaderProgram);
-            }
         }
     }
 

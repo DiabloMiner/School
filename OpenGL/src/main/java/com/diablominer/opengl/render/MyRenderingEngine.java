@@ -1,7 +1,5 @@
 package com.diablominer.opengl.render;
 
-import com.diablominer.opengl.collisiondetection.Edge;
-import com.diablominer.opengl.collisiondetection.Face;
 import com.diablominer.opengl.collisiondetection.OBBTree;
 import com.diablominer.opengl.io.Camera;
 import com.diablominer.opengl.io.Window;
@@ -13,7 +11,6 @@ import com.diablominer.opengl.render.lightsources.SpotLight;
 import com.diablominer.opengl.render.renderables.MinimumModel;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.renderables.Renderable;
-import com.diablominer.opengl.render.textures.CubeMap;
 import com.diablominer.opengl.render.textures.Texture;
 import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import com.diablominer.opengl.utils.Transforms;
@@ -33,23 +30,20 @@ public class MyRenderingEngine extends RenderingEngine {
 
     private final Camera camera;
     private final Window window;
-    private final int frameBuffer, frameBuffer2, frameBuffer3, shadowFrameBuffer, shadowFrameBuffer2, shadowFrameBuffer3;
+    private final int frameBuffer, frameBuffer2, shadowFrameBuffer, shadowFrameBuffer2;
     private final int[] pingpongFBOs = new int[2];
     private final int texColorBuffer, texColorBuffer2, brightColorBuffer;
     private final int[] pingpongColorBuffers = new int[2];
     private final int VAO;
     private final int uniformBufferBlock = GL33.glGenBuffers();
     private final Set<ShaderProgram> matricesUniformBufferBlockShaderPrograms, environmentMappingUniformBufferBlockShaderPrograms, shadowMappingShaderPrograms;
-    private final ShaderProgram sP, reflectionShaderProgram, refractionShaderProgram, shadowShaderProgram, shadowShaderProgram2, gaussianBlurShaderProgram;
+    private final ShaderProgram sP, shadowShaderProgram, gaussianBlurShaderProgram;
     private final Set<Renderable> notToBeRendered, shadowNotToBeRendered;
-    private final Camera environmentMappingCamera;
     private final DirectionalLight directionalLight;
     private final PointLight pointLight;
     private final SpotLight spotLight;
     private final TwoDimensionalTexture shadowTwoDimensionalTexture;
     private final TwoDimensionalTexture shadowTwoDimensionalTexture2;
-    private final CubeMap environmentCubeMap;
-    private final CubeMap shadowCubeMap;
 
     private MinimumModel minMod1;
     private MinimumModel minMod2;
@@ -60,7 +54,6 @@ public class MyRenderingEngine extends RenderingEngine {
         BigInteger time = BigInteger.valueOf(System.currentTimeMillis());
         this.window = window;
         this.camera = camera;
-        environmentMappingCamera = new Camera(90.0f, new Vector3f(-15.0f, 0.0f, 20.0f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f), 1.0f);
 
         matricesUniformBufferBlockShaderPrograms = new HashSet<>();
         environmentMappingUniformBufferBlockShaderPrograms = new HashSet<>();
@@ -71,16 +64,8 @@ public class MyRenderingEngine extends RenderingEngine {
         ShaderProgram oneColorShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "OneColorShader");
         ShaderProgram skyboxShaderProgram = new ShaderProgram("./normalShaders/SkyboxVertexShader", "SkyboxFragmentShader");
 
-        ShaderProgram alternativeShaderProgram = new ShaderProgram("./alternativeShaders/VertexShader", "./alternativeShaders/GeometryShader", "FragmentShader");
-        ShaderProgram alternativeLightSourceShaderProgram = new ShaderProgram("./alternativeShaders/VertexShader", "./alternativeShaders/GeometryShader", "LightSourceFragmentShader");
-        ShaderProgram alternativeOneColorShaderProgram = new ShaderProgram("./alternativeShaders/VertexShader", "./alternativeShaders/GeometryShader", "OneColorShader");
-        ShaderProgram alternativeSkyboxShaderProgram = new ShaderProgram("./alternativeShaders/SkyboxVertexShader", "./alternativeShaders/SkyboxGeometryShader", "SkyboxFragmentShader");
-
-        reflectionShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "ReflectionFragmentShader");
-        refractionShaderProgram = new ShaderProgram("./normalShaders/VertexShader", "RefractionFragmentShader");
         sP = new ShaderProgram("SimpleVertexShader", "SimpleFragmentShader");
         shadowShaderProgram = new ShaderProgram("SimpleDepthVertexShader", "SimpleDepthFragmentShader");
-        shadowShaderProgram2 = new ShaderProgram("ShadowVertexShader", "ShadowGeometryShader", "ShadowFragmentShader");
         gaussianBlurShaderProgram = new ShaderProgram("SimpleVertexShader", "gaussianBlurFragmentShader");
 
             matricesUniformBufferBlockShaderPrograms.add(shaderProgram);
@@ -88,24 +73,9 @@ public class MyRenderingEngine extends RenderingEngine {
             matricesUniformBufferBlockShaderPrograms.add(oneColorShaderProgram);
             matricesUniformBufferBlockShaderPrograms.add(skyboxShaderProgram);
 
-            matricesUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
-            matricesUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
-            matricesUniformBufferBlockShaderPrograms.add(alternativeOneColorShaderProgram);
-            matricesUniformBufferBlockShaderPrograms.add(alternativeSkyboxShaderProgram);
-
-            matricesUniformBufferBlockShaderPrograms.add(reflectionShaderProgram);
-            matricesUniformBufferBlockShaderPrograms.add(refractionShaderProgram);
             matricesUniformBufferBlockShaderPrograms.add(shadowShaderProgram);
 
-            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeShaderProgram);
-            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeLightSourceShaderProgram);
-            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeOneColorShaderProgram);
-            environmentMappingUniformBufferBlockShaderPrograms.add(alternativeSkyboxShaderProgram);
-
             shadowMappingShaderPrograms.add(shaderProgram);
-            shadowMappingShaderPrograms.add(alternativeShaderProgram);
-            shadowMappingShaderPrograms.add(reflectionShaderProgram);
-            shadowMappingShaderPrograms.add(refractionShaderProgram);
 
         directionalLight = new DirectionalLight(new Vector3f(1.0f, 0.0f, -0.15f), new Vector3f(0.6f, 0.6f, 0.6f));
         pointLight = new PointLight(new Vector3f(-8.0f, 2.0f, -2.0f), new Vector3f(200.0f, 200.0f, 200.0f), 35.0f);
@@ -113,24 +83,18 @@ public class MyRenderingEngine extends RenderingEngine {
 
         BigInteger time3 = BigInteger.valueOf(System.currentTimeMillis());
         System.out.println("1. Initialisation time: " + BigInteger.valueOf(System.currentTimeMillis()).subtract(time));
-        CubeMap cubeMap = CubeMap.equirectangularMapToCubeMap("./src/main/resources/textures/skybox/Newport_Loft_4k.jpg",1024, true);
-        Texture.unbindAllTextures();
-        CubeMap convolutedCubeMap = CubeMap.cubeMapConvolution(cubeMap, 32);
-        Texture.unbindAllTextures();
-        CubeMap prefilteredCubeMap = CubeMap.cubeMapPreFiltering(cubeMap, 256);
-        Texture.unbindAllTextures();
         TwoDimensionalTexture brdfConvolutionLookUpMap = TwoDimensionalTexture.createBrdfConvolutionTexture(512);
         Texture.unbindAllTextures();
         BigInteger time4 = BigInteger.valueOf(System.currentTimeMillis()).subtract(time3);
         System.out.println("Cubemap/PBR-IBL preparation time: " + time4);
         BigInteger time5 = BigInteger.valueOf(System.currentTimeMillis());
 
-        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
-        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight , pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
-        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, alternativeShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
-        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(reflectionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
-        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(refractionShaderProgram, directionalLight, pointLight, spotLight, convolutedCubeMap, prefilteredCubeMap, brdfConvolutionLookUpMap);
-        RenderingEngineUnit lightSourceRenderingEngineUnit = new RenderingEngineUnit(lightSourceShaderProgram, alternativeLightSourceShaderProgram) {
+        StencilTestRenderingEngineUnit stencilTestRenderingEngineUnit = new StencilTestRenderingEngineUnit(shaderProgram, directionalLight , pointLight, spotLight, brdfConvolutionLookUpMap);
+        MyRenderingEngineUnit normalRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, directionalLight , pointLight, spotLight, brdfConvolutionLookUpMap);
+        TransparencyRenderingEngineUnit transparencyRenderingEngineUnit = new TransparencyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight, brdfConvolutionLookUpMap);
+        MyRenderingEngineUnit reflectionRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight, brdfConvolutionLookUpMap);
+        MyRenderingEngineUnit refractionRenderingEngineUnit = new MyRenderingEngineUnit(shaderProgram, directionalLight, pointLight, spotLight, brdfConvolutionLookUpMap);
+        RenderingEngineUnit lightSourceRenderingEngineUnit = new RenderingEngineUnit(lightSourceShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 shaderProgram.setUniformVec3F("color", 2.0f, 2.0f, 2.0f);
@@ -140,13 +104,8 @@ public class MyRenderingEngine extends RenderingEngine {
             public void render() {
                 renderAllRenderables();
             }
-
-            @Override
-            public void renderAlternative() {
-                renderAllRenderablesAlternative();
-            }
         };
-        RenderingEngineUnit stencilObjectRenderingEngineUnit = new RenderingEngineUnit(oneColorShaderProgram, alternativeOneColorShaderProgram) {
+        RenderingEngineUnit stencilObjectRenderingEngineUnit = new RenderingEngineUnit(oneColorShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
                 shaderProgram.setUniformMat4F("projection", Transforms.createProjectionMatrix(camera.fov, true, camera.aspect, 0.1f, 100.0f));
@@ -159,15 +118,6 @@ public class MyRenderingEngine extends RenderingEngine {
                 GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
                 GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_KEEP);
                 renderAllRenderables();
-                GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_REPLACE);
-                GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
-            }
-
-            @Override
-            public void renderAlternative() {
-                GL33.glStencilFunc(GL33.GL_NOTEQUAL, 1, 0xFF);
-                GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_KEEP);
-                renderAllRenderablesAlternative();
                 GL33.glStencilOp(GL33.GL_KEEP, GL33.GL_KEEP, GL33.GL_REPLACE);
                 GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0x00);
             }
@@ -277,21 +227,6 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
 
-        frameBuffer3 = GL33.glGenFramebuffers();
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
-
-        environmentCubeMap = new CubeMap(1024, 1024, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, GL33.GL_LINEAR);
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, environmentCubeMap.id, 0);
-
-        CubeMap depthAndStencilTexture = new CubeMap(1024, 1024, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, GL33.GL_LINEAR);
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, depthAndStencilTexture.id, 0);
-
-        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("Framebuffer 3 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
-        }
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-
-
         shadowFrameBuffer = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer);
 
@@ -309,20 +244,6 @@ public class MyRenderingEngine extends RenderingEngine {
 
         shadowFrameBuffer2 = GL33.glGenFramebuffers();
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer2);
-
-        shadowCubeMap = new CubeMap(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8, GL33.GL_LINEAR);
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowCubeMap.id, 0);
-        GL33.glDrawBuffer(GL33.GL_NONE);
-        GL33.glReadBuffer(GL33.GL_NONE);
-
-        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("Omnidirectional-Shadow framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
-        }
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-
-
-        shadowFrameBuffer3 = GL33.glGenFramebuffers();
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer3);
 
         shadowTwoDimensionalTexture2 = TwoDimensionalTexture.createShadowTexture(2048, 2048, GL33.GL_DEPTH24_STENCIL8, GL33.GL_DEPTH_STENCIL, GL33.GL_UNSIGNED_INT_24_8);
         GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_STENCIL_ATTACHMENT, shadowTwoDimensionalTexture2.id, 0);
@@ -447,24 +368,16 @@ public class MyRenderingEngine extends RenderingEngine {
             }
         };
 
-        RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram, alternativeSkyboxShaderProgram) {
+        RenderingEngineUnit skyboxRenderingEngineUnit = new RenderingEngineUnit(skyboxShaderProgram) {
             @Override
             public void updateRenderState(Camera camera, ShaderProgram shaderProgram) {
-                cubeMap.bind();
-                shaderProgram.setUniform1I("skybox", cubeMap.index);
+                shaderProgram.setUniformVec3F("skybox", new Vector3f(0.0f, 0.0f, 0.5451f));
             }
 
             @Override
             public void render() {
                 GL33.glDepthFunc(GL33.GL_LEQUAL);
                 this.renderAllRenderables();
-                GL33.glDepthFunc(GL33.GL_LESS);
-            }
-
-            @Override
-            public void renderAlternative() {
-                GL33.glDepthFunc(GL33.GL_LEQUAL);
-                this.renderAllRenderablesAlternative();
                 GL33.glDepthFunc(GL33.GL_LESS);
             }
         };
@@ -499,18 +412,8 @@ public class MyRenderingEngine extends RenderingEngine {
 
         Texture.unbindAllTextures();
 
-        // Omnidirectional shadow-mapping for the point-light
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer2);
-        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        updateOmniDirectionalShadowMatrices(shadowShaderProgram2, pointLight.getPosition(), pointLight.getFarPlane());
-        updateAllEngineUnitsWithAnotherShaderProgram(camera, shadowShaderProgram2);
-        renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(shadowNotToBeRendered, shadowShaderProgram2);
-
-        Texture.unbindAllTextures();
-
         // Directional shadow-mapping for the spot-light
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer3);
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, shadowFrameBuffer2);
         GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
         GL33.glCullFace(GL33.GL_FRONT);
@@ -520,20 +423,6 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glCullFace(GL33.GL_BACK);
 
         Texture.unbindAllTextures();
-
-        // Environment-mapping
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer3);
-        GL33.glViewport(0, 0, 1024, 1024);
-        GL33.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        updateShadowMaps();
-        updateUniformBufferBlocks(environmentMappingCamera);
-        updateSpecialUniformBufferBlocks(environmentMappingCamera);
-        updateAllEngineUnitsAlternative(environmentMappingCamera);
-        renderAllEngineUnitsWithoutRenderablesAlternative(notToBeRendered);
-
-        Texture.unbindAllTextures();
-
 
         // Normal rendering
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, frameBuffer);
@@ -718,20 +607,14 @@ public class MyRenderingEngine extends RenderingEngine {
 
     private void updateUniforms() {
         updateShadowMaps();
-
-        environmentCubeMap.bind();
-        reflectionShaderProgram.setUniform1I("cubeMap", environmentCubeMap.index);
-        refractionShaderProgram.setUniform1I("cubeMap", environmentCubeMap.index);
     }
 
     private void updateShadowMaps() {
         // Here textures and uniforms needed for shadow mapping are set
         shadowTwoDimensionalTexture.bind();
         shadowTwoDimensionalTexture2.bind();
-        shadowCubeMap.bind();
         for (ShaderProgram shaderProgram : shadowMappingShaderPrograms) {
             shaderProgram.setUniform1I("dirLight.shadowMap", shadowTwoDimensionalTexture.index);
-            shaderProgram.setUniform1I("pointLight.shadowMap", shadowCubeMap.index);
             shaderProgram.setUniform1F("pointLight.farPlane", pointLight.getFarPlane());
             shaderProgram.setUniform1I("spotLight.shadowMap", shadowTwoDimensionalTexture2.index);
             shaderProgram.setUniformMat4F("dirLightLightSpaceMatrix", directionalLight.getLightSpaceMatrix());
@@ -838,21 +721,6 @@ public class MyRenderingEngine extends RenderingEngine {
         Texture.unbindAllTextures();
     }
 
-    private void renderAllEngineUnitsWithoutRenderablesAlternative(Set<Renderable> renderables) {
-        GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
-        for (RenderingEngineUnit renderingEngineUnit : this.renderingEngineUnits) {
-            Set<Renderable> needToBeRemoved = renderingEngineUnit.containsRenderables(renderables);
-            if (needToBeRemoved == null) {
-                renderingEngineUnit.renderAlternative();
-            } else {
-                renderingEngineUnit.getRenderables().removeAll(needToBeRemoved);
-                renderingEngineUnit.renderAlternative();
-                renderingEngineUnit.getRenderables().addAll(needToBeRemoved);
-            }
-        }
-    }
-
     private void renderAllEngineUnitsWithoutRenderablesWithAlternativeShaderProgram(Set<Renderable> renderables, ShaderProgram shaderProgram) {
         GL33.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
@@ -874,7 +742,7 @@ public class MyRenderingEngine extends RenderingEngine {
 
         this.destroyAllEngineUnits();
 
-        GL33.glDeleteFramebuffers(new int[] {frameBuffer, frameBuffer2, frameBuffer3});
+        GL33.glDeleteFramebuffers(new int[] {frameBuffer, frameBuffer2, shadowFrameBuffer, shadowFrameBuffer2});
 
         GLFW.glfwDestroyWindow(window.getId());
     }

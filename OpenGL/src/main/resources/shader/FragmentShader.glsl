@@ -24,7 +24,6 @@ struct PointLight {
 
     vec3 color;
 
-    samplerCube shadowMap;
     float farPlane;
 };
 
@@ -52,8 +51,6 @@ uniform Material material;
 uniform DirectionaLight dirLight;
 uniform PointLight pointLight;
 uniform SpotLight spotLight;
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
@@ -155,7 +152,7 @@ float directionalShadowCalculation(vec4 fragPosLightSpace, vec3 direction, vec3 
     return shadow;
 }
 
-float omnidirectionalShadowCalculation(vec3 fragPos, vec3 lightPos, vec3 normal, samplerCube shadowMap, float farPlane) {
+float omnidirectionalShadowCalculation(vec3 fragPos, vec3 lightPos, vec3 normal, float farPlane) {
     vec3 sampleOffsetDirections[20] = vec3[] (
         vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
         vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
@@ -174,7 +171,7 @@ float omnidirectionalShadowCalculation(vec3 fragPos, vec3 lightPos, vec3 normal,
     float diskRadius = (1.0f + (viewDistance / farPlane)) / 25.0f;
 
     for(int i = 0; i < samples; ++i) {
-        float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+        float closestDepth = 0.0f;
         closestDepth *= farPlane;
         if(currentDepth - bias > closestDepth)
             shadow += 1.0f;
@@ -231,7 +228,7 @@ vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
     float denominatior = 4.0f * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
     vec3 specular = nominator / max(denominatior, 0.001f);
 
-    float shadow = omnidirectionalShadowCalculation(fragPos, pointLight.position, normal, pointLight.shadowMap, pointLight.farPlane);
+    float shadow = omnidirectionalShadowCalculation(fragPos, pointLight.position, normal, pointLight.farPlane);
     shadow *= floor(texture(material.texture_color1, texCoords).w);
 
     float NdotL = max(dot(normal, lightDir), 0.0f);
@@ -301,12 +298,12 @@ void main() {
 
     vec3 kS = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
     vec3 kD = 1.0f - kS;
-    vec3 irradiance = texture(irradianceMap, norm).rgb;
+    vec3 irradiance = vec3(0.5f);
     vec3 diffuse = irradiance * texture(material.texture_color1, parallaxMappedTexCoords).rgb;
 
     vec3 reflectionVector = reflect(-viewDir, norm);
     const float MAX_REFLECTION_LOD = 4.0f;
-    vec3 prefilteredColor = textureLod(prefilterMap, reflectionVector, roughness * MAX_REFLECTION_LOD).rgb;
+    vec3 prefilteredColor = vec3(1.0f);
     vec3 F = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
     vec2 envBRDF = texture(brdfLUT, vec2(max(dot(norm, viewDir), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);

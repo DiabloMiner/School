@@ -14,16 +14,13 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
     private DirectionalLight dirLight;
     private PointLight pointLight;
     private SpotLight spotLight;
-    protected CubeMap convolutedCubeMap, prefilteredCubeMap;
     protected TwoDimensionalTexture brdfLookUpTexture;
 
-    public StencilTestRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
-        super(shaderProgram, alternativeShaderProgram);
+    public StencilTestRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, TwoDimensionalTexture brdfLookUpTexture) {
+        super(shaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
-        this.convolutedCubeMap = convolutedCubeMap;
-        this.prefilteredCubeMap = prefilteredCubeMap;
         this.brdfLookUpTexture = brdfLookUpTexture;
     }
 
@@ -44,10 +41,6 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
 
         shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
 
-        convolutedCubeMap.bind();
-        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
-        prefilteredCubeMap.bind();
-        shaderProgram.setUniform1I("prefilterMap", prefilteredCubeMap.index);
         brdfLookUpTexture.bind();
         shaderProgram.setUniform1I("brdfLUT", brdfLookUpTexture.index);
     }
@@ -63,10 +56,4 @@ public class StencilTestRenderingEngineUnit extends RenderingEngineUnit {
         GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0xFF);
     }
 
-    @Override
-    public void renderAlternative() {
-        GL33.glStencilFunc(GL33.GL_ALWAYS, 1, 0xFF);
-        renderAllRenderablesAlternative();
-        GL33.glStencilFunc(GL33.GL_ALWAYS, 0, 0xFF);
-    }
 }
