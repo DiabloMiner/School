@@ -21,7 +21,6 @@ import org.joml.*;
 import org.joml.Math;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL33;
-import org.lwjgl.system.CallbackI;
 import org.lwjgl.system.MemoryUtil;
 
 import java.math.BigInteger;

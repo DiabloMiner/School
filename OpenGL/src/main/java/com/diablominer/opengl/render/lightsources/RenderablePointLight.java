@@ -78,21 +78,35 @@ public class RenderablePointLight extends PhysicsObject {
                     obbTree.updateTriangles(this.modelMatrix);
                     physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);
 
+                    HashSet<Face> f1 = new HashSet<>();
+                    HashSet<Face> f2 = new HashSet<>();
                     for (int i = 1; i< obbTree.getCollisionNodes().size(); i += 2) {
                         for (Face face : obbTree.getCollisionNodes().get(i - 1).getTriangles()) {
                             for (Face otherFace : obbTree.getCollisionNodes().get(i).getTriangles()) {
-                                collisions.addAll(face.isColliding(otherFace, this, physicsObject));
+                                collisions.addAll(face.isColliding(otherFace, this, physicsObject, f1, f2));
                             }
                         }
                     }
 
                     // TODO: No collisions are reported
+                    // TODO: Collisions only come from one edge; Check if isPointInsideTriangle really works
+                    // TODO: Some face collisions are not reported --> missing points
                     // TODO: All colliding faces (in point vs face) are apart from one another in the y dimension
 
+                    int colliding = 0;
+                    Vector3f vec = new Vector3f(0.0f);
+                    List<Collision> col = new ArrayList<>();
                     for (Collision collision : collisions) {
                         collision.collisionResponse(this, physicsObject);
+                        if (collision.ct.equals(CollisionType.Colliding)) {
+                            colliding++;
+                            col.add(collision);
+                            vec.add(collision.getPoint());
+                        }
                     }
                     System.out.println();
+
+                    vec.div(colliding);
 
                     LogicalEngine.addAlreadyCollidedPhysicsObject(this);
                     LogicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);
