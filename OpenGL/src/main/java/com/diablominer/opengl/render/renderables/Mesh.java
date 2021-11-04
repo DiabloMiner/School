@@ -1,8 +1,6 @@
 package com.diablominer.opengl.render.renderables;
 
 import com.diablominer.opengl.render.ShaderProgram;
-import com.diablominer.opengl.render.textures.CubeMap;
-import com.diablominer.opengl.render.textures.Texture;
 import com.diablominer.opengl.render.textures.TwoDimensionalTexture;
 import com.diablominer.opengl.utils.BufferUtil;
 import org.lwjgl.opengl.GL33;
@@ -101,36 +99,34 @@ public class Mesh {
         int aoCounter = 1;
         int reflectionCounter = 1;
         for (TwoDimensionalTexture currentTwoDimensionalTexture : twoDimensionalTextures) {
-            if (currentTwoDimensionalTexture.type != null) {
-                int number = 0;
-                String name = currentTwoDimensionalTexture.type;
-                switch (name) {
-                    case "texture_color":
-                        number = colorCounter++;
-                        break;
-                    case "texture_normal":
-                        number = normalCounter++;
-                        break;
-                    case "texture_displacement":
-                        number = displacementCounter++;
-                        break;
-                    case "texture_roughness":
-                        number = roughnessCounter++;
-                        break;
-                    case "texture_metallic":
-                        number = metallicCounter++;
-                        break;
-                    case "texture_ao":
-                        number = aoCounter++;
-                        break;
-                    case "texture_reflection":
-                        number = reflectionCounter++;
-                        break;
-                }
-                if (number != 0) {
-                    currentTwoDimensionalTexture.bind();
-                    shaderProgram.setUniform1I("material." + name + number, currentTwoDimensionalTexture.index);
-                }
+            int number = 0;
+            String name = currentTwoDimensionalTexture.type;
+            switch (name) {
+                case "texture_color":
+                    number = colorCounter++;
+                    break;
+                case "texture_normal":
+                    number = normalCounter++;
+                    break;
+                case "texture_displacement":
+                    number = displacementCounter++;
+                    break;
+                case "texture_roughness":
+                    number = roughnessCounter++;
+                    break;
+                case "texture_metallic":
+                    number = metallicCounter++;
+                    break;
+                case "texture_ao":
+                    number = aoCounter++;
+                    break;
+                case "texture_reflection":
+                    number = reflectionCounter++;
+                    break;
+            }
+            if (number != 0) {
+                currentTwoDimensionalTexture.bind();
+                shaderProgram.setUniform1I("material." + name + number, currentTwoDimensionalTexture.index);
             }
         }
 
@@ -161,36 +157,34 @@ public class Mesh {
 
         // Unbind all twoDimensionalTextures used for this mesh
         for (TwoDimensionalTexture currentTwoDimensionalTexture : twoDimensionalTextures) {
-            if (currentTwoDimensionalTexture.type != null) {
-                int number = 0;
-                String name = currentTwoDimensionalTexture.type;
-                switch (name) {
-                    case "texture_color":
-                        number = colorCounter;
-                        break;
-                    case "texture_normal":
-                        number = normalCounter;
-                        break;
-                    case "texture_displacement":
-                        number = displacementCounter;
-                        break;
-                    case "texture_roughness":
-                        number = roughnessCounter;
-                        break;
-                    case "texture_metallic":
-                        number = metallicCounter;
-                        break;
-                    case "texture_ao":
-                        number = aoCounter;
-                        break;
-                    case "texture_reflection":
-                        number = reflectionCounter;
-                        break;
-                }
-                if (number != 0) {
-                    currentTwoDimensionalTexture.unbind();
-                    shaderProgram.setUniform1I("material." + name + number, currentTwoDimensionalTexture.index);
-                }
+            int number = 0;
+            String name = currentTwoDimensionalTexture.type;
+            switch (name) {
+                case "texture_color":
+                    number = colorCounter;
+                    break;
+                case "texture_normal":
+                    number = normalCounter;
+                    break;
+                case "texture_displacement":
+                    number = displacementCounter;
+                    break;
+                case "texture_roughness":
+                    number = roughnessCounter;
+                    break;
+                case "texture_metallic":
+                    number = metallicCounter;
+                    break;
+                case "texture_ao":
+                    number = aoCounter;
+                    break;
+                case "texture_reflection":
+                    number = reflectionCounter;
+                    break;
+            }
+            if (number != 0) {
+                currentTwoDimensionalTexture.unbind();
+                shaderProgram.setUniform1I("material." + name + number, currentTwoDimensionalTexture.index);
             }
         }
     }

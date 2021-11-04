@@ -4,10 +4,10 @@ layout (location = 1) out vec4 brightColor;
 
 in vec3 texCoords;
 
-uniform vec3 skybox;
+uniform samplerCube skybox;
 
 void main() {
-    fragmentColor = vec4(skybox, 1.0f);
+    fragmentColor = textureLod(skybox, texCoords, 0.0);
 
     float brightness = dot(fragmentColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     if (brightness > 1.0f) {

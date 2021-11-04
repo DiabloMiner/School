@@ -53,18 +53,6 @@ public class Window {
             }
         };
         GLFW.glfwSetScrollCallback(id, scrollCallback);
-
-        GLFWWindowFocusCallback windowFocusCallback = new GLFWWindowFocusCallback() {
-            @Override
-            public void invoke(long l, boolean focused) {
-                if (focused && GLFW.glfwGetInputMode(l, GLFW.GLFW_CURSOR) == GLFW.GLFW_CURSOR_NORMAL) {
-                    GLFW.glfwSetInputMode(id, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
-                } else if (!focused && GLFW.glfwGetInputMode(l, GLFW.GLFW_CURSOR) == GLFW.GLFW_CURSOR_DISABLED) {
-                    GLFW.glfwSetInputMode(id, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
-                }
-            }
-        };
-        GLFW.glfwSetWindowFocusCallback(id, windowFocusCallback);
     }
 
     public Window(int width, int height, String title, Camera camera) {

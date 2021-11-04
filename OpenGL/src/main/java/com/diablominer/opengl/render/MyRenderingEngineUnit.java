@@ -13,13 +13,26 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
     protected DirectionalLight dirLight;
     protected PointLight pointLight;
     protected SpotLight spotLight;
+    protected CubeMap convolutedCubeMap, prefilteredCubeMap;
     protected TwoDimensionalTexture brdfLookUpTexture;
 
-    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, TwoDimensionalTexture brdfLookUpTexture) {
+    public MyRenderingEngineUnit(ShaderProgram shaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
         super(shaderProgram);
         this.dirLight = dirLight;
         this.pointLight = pointLight;
         this.spotLight = spotLight;
+        this.convolutedCubeMap = convolutedCubeMap;
+        this.prefilteredCubeMap = prefilteredCubeMap;
+        this.brdfLookUpTexture = brdfLookUpTexture;
+    }
+
+    public MyRenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram, DirectionalLight dirLight, PointLight pointLight, SpotLight spotLight, CubeMap convolutedCubeMap, CubeMap prefilteredCubeMap, TwoDimensionalTexture brdfLookUpTexture) {
+        super(shaderProgram, alternativeShaderProgram);
+        this.dirLight = dirLight;
+        this.pointLight = pointLight;
+        this.spotLight = spotLight;
+        this.convolutedCubeMap = convolutedCubeMap;
+        this.prefilteredCubeMap = prefilteredCubeMap;
         this.brdfLookUpTexture = brdfLookUpTexture;
     }
 
@@ -39,6 +52,10 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
 
         shaderProgram.setUniformMat4F("model", new Matrix4f().identity());
 
+        convolutedCubeMap.bind();
+        shaderProgram.setUniform1I("irradianceMap", convolutedCubeMap.index);
+        prefilteredCubeMap.bind();
+        shaderProgram.setUniform1I("prefilterMap", prefilteredCubeMap.index);
         brdfLookUpTexture.bind();
         shaderProgram.setUniform1I("brdfLUT", brdfLookUpTexture.index);
     }
@@ -48,4 +65,8 @@ public class MyRenderingEngineUnit extends RenderingEngineUnit {
         renderAllRenderables();
     }
 
+    @Override
+    public void renderAlternative() {
+        renderAllRenderablesAlternative();
+    }
 }

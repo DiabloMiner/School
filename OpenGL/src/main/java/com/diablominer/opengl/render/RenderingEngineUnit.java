@@ -11,10 +11,18 @@ import java.util.Set;
 public abstract class RenderingEngineUnit {
 
     protected ShaderProgram shaderProgram;
+    protected ShaderProgram alternativeShaderProgram;
     private List<Renderable> renderables;
 
     public RenderingEngineUnit(ShaderProgram shaderProgram) {
         this.shaderProgram = shaderProgram;
+        this.alternativeShaderProgram = null;
+        renderables = new ArrayList<>();
+    }
+
+    public RenderingEngineUnit(ShaderProgram shaderProgram, ShaderProgram alternativeShaderProgram) {
+        this.shaderProgram = shaderProgram;
+        this.alternativeShaderProgram = alternativeShaderProgram;
         renderables = new ArrayList<>();
     }
 
@@ -41,6 +49,15 @@ public abstract class RenderingEngineUnit {
     public void renderAllRenderables() {
         for (Renderable renderable : renderables) {
             renderable.draw(shaderProgram);
+        }
+    }
+
+    public void renderAllRenderablesAlternative() {
+        if (alternativeShaderProgram != null) {
+            for (Renderable renderable : renderables) {
+                renderable.draw(alternativeShaderProgram);
+            }
+        } else {
         }
     }
 
@@ -74,5 +91,7 @@ public abstract class RenderingEngineUnit {
     public abstract void updateRenderState(Camera camera, ShaderProgram shaderProgram);
 
     public abstract void render();
+
+    public abstract void renderAlternative();
 
 }
