@@ -4,15 +4,21 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.Objects;
 
 public class Edge {
 
+    private final static float epsilon = Math.ulp(1.0f);
+
     private Face face;
     private final Vector3f tail, originalTail;
     private final Vector3f top, originalTop;
+
+    public enum OverlappingType {
+        Overlapping,
+        Identical,
+        None;
+    }
 
     public Edge(Vector3f tail, Vector3f top, Face face) {
         this.tail = new Vector3f(tail);
@@ -30,12 +36,19 @@ public class Edge {
         this.face = null;
     }
 
-    public boolean isOverlapping(Edge edge) {
-        return (edge.tail.equals(this.tail) && edge.top.equals(this.top)) || (edge.tail.equals(this.top) && edge.top.equals(this.tail));
+    public OverlappingType isOverlapping(Edge edge) {
+        if ((edge.tail.equals(this.tail) && edge.top.equals(this.top)) || (edge.tail.equals(this.top) && edge.top.equals(this.tail))) {
+            return OverlappingType.Identical;
+        } else if (hasSameDirection(edge) && (isPointInEdge(edge.tail) || isPointInEdge(edge.top))) {
+            return OverlappingType.Overlapping;
+        } else {
+            return OverlappingType.None;
+        }
     }
 
-    public Vector3f isColliding(Edge edge, float epsilon) {
-        if (!isOverlapping(edge)) {
+    public Vector3f isColliding(Edge edge) {
+        OverlappingType overlappingType = isOverlapping(edge);
+        if (overlappingType.equals(OverlappingType.None)) {
             Vector3f e = new Vector3f(tail).sub(top).normalize();
             Vector3f f = new Vector3f(edge.tail).sub(edge.top).normalize();
             Vector3f g = new Vector3f(edge.top).sub(this.top);
@@ -53,13 +66,19 @@ public class Edge {
                 } else {
                     point = new Vector3f(this.top).sub(l);
                 }
-                if (isPointInEdge(point, epsilon) && edge.isPointInEdge(point, epsilon)) {
+                if (isPointInEdge(point) && edge.isPointInEdge(point)) {
                     return point;
                 }
             }
             return new Vector3f(0.0f);
-        } else {
+        } else if (overlappingType.equals(OverlappingType.Identical)) {
             return getMiddlePoint();
+        } else {
+            if (isPointInEdge(edge.top)) {
+                return new Vector3f(edge.top);
+            } else {
+                return new Vector3f(edge.tail);
+            }
         }
     }
 
@@ -68,11 +87,19 @@ public class Edge {
         this.top.set(Transforms.mulVectorWithMatrix4(originalTop, worldMatrix));
     }
 
+    public boolean hasSameDirection(Edge edge) {
+        Vector3f dir = getEdgeDirection();
+        Vector3f edgeDir = edge.getEdgeDirection();
+        Vector3f edgeAltDir = new Vector3f(edge.getEdgeDirection()).mul(-1.0f);
+
+        return (dir.equals(edgeDir) || dir.equals(edgeAltDir));
+    }
+
     public Vector3f getEdgeDirection() {
         return new Vector3f(top).sub(tail);
     }
 
-    public boolean isPointInEdge(Vector3f pointToBeTested, float epsilon) {
+    public boolean isPointInEdge(Vector3f pointToBeTested) {
         float d1 = new Vector3f(top).sub(pointToBeTested).length();
         float d2 = new Vector3f(tail).sub(pointToBeTested).length();
         float edgePointDistance = new Vector3f(top).sub(tail).length();

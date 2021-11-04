@@ -5,7 +5,6 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import java.util.Objects;
 
 public class Collision {
 
@@ -14,7 +13,7 @@ public class Collision {
     private Vector3f point;
     private Vector3f normal;
     private PhysicsObject normalObj, otherObj;
-    private CollisionType ct;
+    public CollisionType ct;
 
     public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj) {
         this.point = new Vector3f(point);
