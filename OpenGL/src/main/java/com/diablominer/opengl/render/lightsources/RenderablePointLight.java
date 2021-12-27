@@ -5,11 +5,9 @@ import com.diablominer.opengl.main.LogicalEngine;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +72,23 @@ public class RenderablePointLight extends PhysicsObject {
             if (this.bv.isIntersecting(physicsObject.bv)) {
                 // Narrow Phase
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
-                    List<Collision> collisions = new ArrayList<>();
+                    // TODO: Remove
+                    Vector3f norm = new Vector3f(0.0f, 1.0f, 0.0f);
+                    Vector3f p1 = new Vector3f(0.0f).add(0.0f, 1.0f, 0.0f);
+                    Vector3f p2 = new Vector3f(this.position).add(0.0f, -1.0f, 0.0f).sub(physicsObject.position);
+                    if (p1.dot(norm) >= 0) {
+                        norm.normalize();
+                    } else {
+                        norm.mul(-1.0f).normalize();
+                    }
+                    float d = p1.dot(norm);
+                    if ((p2.dot(norm) - d) < -Math.ulp(1.0f)) {
+                        this.position.add(new Vector3f(p1).sub(new Vector3f(p2)));
+                    }
+                    updateObjectState(0.0);
+                    physicsObject.updateObjectState(0.0);
+
+                    HashSet<Collision> collisions = new HashSet<>();
                     obbTree.updateTriangles(this.modelMatrix);
                     physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);
 
@@ -89,15 +103,22 @@ public class RenderablePointLight extends PhysicsObject {
                     }
 
                     // TODO: No collisions are reported
-                    // TODO: Collisions only come from one edge; Check if isPointInsideTriangle really works
-                    // TODO: Some face collisions are not reported --> missing points
-                    // TODO: All colliding faces (in point vs face) are apart from one another in the y dimension
+                    // TODO: Check if calcDeterminate works; Only face edge collisions are reported
+                    // TODO: Problem is in face-edge collisions
+                    // TODO: Possible Solution: Have edge-edge points who are in faces have their faces normals and remove face-edge colls
+                    // TODO: Try to check if coplanar collisions works and then implement a solution getting to the coplanar collisons
+                        // TODO: Are wrong, fix
+                        // TODO: Check if physics system is right, else implement LCP
 
+                    Vector3d dVA = new Vector3d(this.velocity);
+                    Vector3d dVB = new Vector3d(physicsObject.velocity);
+                    Vector3d dWA = new Vector3d(this.angularVelocity);
+                    Vector3d dWB = new Vector3d(physicsObject.angularVelocity);
                     int colliding = 0;
                     Vector3f vec = new Vector3f(0.0f);
                     List<Collision> col = new ArrayList<>();
                     for (Collision collision : collisions) {
-                        collision.collisionResponse(this, physicsObject);
+                        collision.collisionResponse(this, dVA, dVB, dWA, dWB);
                         if (collision.ct.equals(CollisionType.Colliding)) {
                             colliding++;
                             col.add(collision);
@@ -107,6 +128,11 @@ public class RenderablePointLight extends PhysicsObject {
                     System.out.println();
 
                     vec.div(colliding);
+
+                    this.velocity.set(dVA);
+                    physicsObject.velocity.set(dVB);
+                    this.angularVelocity.set(dWA);
+                    physicsObject.angularVelocity.set(dWB);
 
                     LogicalEngine.addAlreadyCollidedPhysicsObject(this);
                     LogicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);

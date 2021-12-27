@@ -26,7 +26,7 @@ public class OBBTree {
 
         List<Face> triangles = new ArrayList<>();
         for (int i = 2; i < points.size(); i += 3) {
-            triangles.add(new Face(points.get(i - 2), points.get(i - 1), points.get(i)));
+            triangles.add(new Face(points.get(i - 2), points.get(i - 1), points.get(i), false));
         }
 
         int length = size == 1 ? 0 : ((size - 1 - 2) / 2);

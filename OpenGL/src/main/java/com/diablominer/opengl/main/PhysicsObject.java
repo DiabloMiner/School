@@ -7,6 +7,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.Objects;
 import java.util.Set;
 
 public abstract class PhysicsObject implements GameObject {
@@ -33,4 +34,16 @@ public abstract class PhysicsObject implements GameObject {
 
     public abstract Matrix3f getInertia();
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PhysicsObject that = (PhysicsObject) o;
+        return Float.compare(that.coefficientOfRestitution, coefficientOfRestitution) == 0 && Float.compare(that.mass, mass) == 0 && bv.equals(that.bv) && obbTree.equals(that.obbTree) && inertia.equals(that.inertia) && position.equals(that.position) && velocity.equals(that.velocity) && force.equals(that.force) && orientation.equals(that.orientation) && angularVelocity.equals(that.angularVelocity) && torque.equals(that.torque) && modelMatrix.equals(that.modelMatrix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bv, obbTree, coefficientOfRestitution, mass, inertia, position, velocity, force, orientation, angularVelocity, torque, modelMatrix);
+    }
 }

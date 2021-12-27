@@ -6,7 +6,6 @@ import org.joml.*;
 
 import java.lang.Math;
 import java.util.*;
-import java.util.function.Predicate;
 
 public class Face {
 
@@ -25,46 +24,39 @@ public class Face {
     private final Vector3f centroid;
     private float area;
 
+    private final boolean normalFromOrigin;
+
     enum FaceIntersectionType {
         Intersection,
         NoIntersection,
         Coplanar;
     }
 
+
+    /**
+     * This face's normal is constructed from the origin automatically. For reference see: {@link #Face(Vector3f, Vector3f, Vector3f, boolean) Face}
+     * @param edge Provides first and second vertex with top and tail
+     * @param vertex3 Third vertex
+     */
     public Face(Edge edge, Vector3f vertex3) {
-        Vector3f vertex1 = edge.getTop();
-        Vector3f vertex2 = edge.getTail();
-        this.definingVertices.add(new Vector3f(vertex1));
-        this.definingVertices.add(new Vector3f(vertex2));
-        this.definingVertices.add(new Vector3f(vertex3));
-        this.originalVertices.add(vertex1);
-        this.originalVertices.add(vertex2);
-        this.originalVertices.add(vertex3);
-
-        edges.add(new Edge(vertex1, vertex2, this));
-        edges.add(new Edge(vertex1, vertex3, this));
-        edges.add(new Edge(vertex2, vertex3, this));
-
-        supportVector = vertex2;
-        Vector3f normal = new Vector3f(new Vector3f(vertex2).sub(vertex1)).cross(new Vector3f(vertex3).sub(vertex1));
-        if (normal.dot(supportVector) >= 0) {
-            normalizedNormal = normal.normalize();
-        } else {
-            normalizedNormal = normal.normalize().mul(-1.0f);
-        }
-        offset = normalizedNormal.dot(supportVector);
-
-        centroid = determineCentroid();
-        area = determineArea();
+        this(edge.getTop(), edge.getTail(), vertex3, true);
     }
 
-    public Face(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3) {
+    /**
+     * @param vertex1 First vertex
+     * @param vertex2 Second vertex
+     * @param vertex3 Third vertex
+     * @param normalFromOrigin Determines if normal is constructed according to the <a href="https://en.wikipedia.org/wiki/Hesse_normal_form">Hesse normal form</a> which means the normal will point away from the origin of the coordinate system
+     */
+    public Face(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3, boolean normalFromOrigin) {
+        this.normalFromOrigin = normalFromOrigin;
+
         this.definingVertices.add(new Vector3f(vertex1));
         this.definingVertices.add(new Vector3f(vertex2));
         this.definingVertices.add(new Vector3f(vertex3));
-        this.originalVertices.add(vertex1);
-        this.originalVertices.add(vertex2);
-        this.originalVertices.add(vertex3);
+        this.originalVertices.add(new Vector3f(vertex1));
+        this.originalVertices.add(new Vector3f(vertex2));
+        this.originalVertices.add(new Vector3f(vertex3));
 
         edges.add(new Edge(vertex1, vertex2, this));
         edges.add(new Edge(vertex1, vertex3, this));
@@ -72,10 +64,14 @@ public class Face {
 
         supportVector = vertex2;
         Vector3f normal = new Vector3f(new Vector3f(vertex2).sub(vertex1)).cross(new Vector3f(vertex3).sub(vertex1));
-        if (normal.dot(supportVector) >= 0) {
-            normalizedNormal = normal.normalize();
+        if (normalFromOrigin) {
+            if (normal.dot(supportVector) >= 0) {
+                normalizedNormal = normal.normalize();
+            } else {
+                normalizedNormal = normal.normalize().mul(-1.0f);
+            }
         } else {
-            normalizedNormal = normal.normalize().mul(-1.0f);
+            normalizedNormal = normal.normalize();
         }
         offset = normalizedNormal.dot(supportVector);
 
@@ -176,20 +172,22 @@ public class Face {
 
         FaceIntersectionType intersectionType = areTrianglesIntersectingPlanes(face);
         if (intersectionType == FaceIntersectionType.Intersection && areTrianglesColliding(face)) {
-            f1.add(this);
-            f2.add(face);
-            for (Edge otherEdge : face.getEdges()) {
+            // TODO: Remove
+            if (face.supportVector.equals(-9.0f, -7.0f, -1.0f) && offset == -7.0) {
+                f2.add(this);
+            } else if (face.supportVector.equals(-9.0f, -7.0f, -3.0f) && offset == -7.0) {
+                f1.add(this);
+            }
+            /*for (Edge otherEdge : face.getEdges()) {
                 Vector3f point = areFaceAndEdgeColliding(otherEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
                     correctPoint(point);
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2));
+                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2, this));
                 }
-            }
-            for (Edge otherEdge : face.getEdges()) {
+            }*/
+            // TODO: Test if able to reimplement
+            /*for (Edge otherEdge : face.getEdges()) {
                 for (Edge thisEdge : this.getEdges()) {
-                    if (this.definingVertices.stream().anyMatch(vec -> new Vector3f(-9.0f, -7.0f, -3.0f).equals(vec)) && this.definingVertices.stream().anyMatch(vec -> new Vector3f(-7.0f, -7.0f, -3.0f).equals(vec)) && this.definingVertices.stream().anyMatch(vec -> new Vector3f(-9.0f, -7.0f, -1.0f).equals(vec))) {
-                        System.out.println("YYYYYYYYYYYYYYYYEss");
-                    }
                     Vector3f point = otherEdge.isColliding(thisEdge);
                     if (!point.equals(0.0f, 0.0f, 0.0f)) {
                         correctPoint(point);
@@ -204,24 +202,24 @@ public class Face {
                             }
                         }
 
-                        contacts.add(new Collision(point, normal, pObj1, pObj2));
+                        contacts.add(new Collision(point, normal, pObj1, pObj2, this));
                     }
                 }
-            }
+            }*/
             for (Vector3f point : face.definingVertices) {
                 if (isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2));
+                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2, this));
                 }
             }
 
-            for (Edge otherEdge : getEdges()) {
+            /*for (Edge otherEdge : getEdges()) {
                 Vector3f point = face.areFaceAndEdgeColliding(otherEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
                     correctPoint(point);
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1));
+                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1, this));
                 }
-            }
-            for (Edge otherEdge : getEdges()) {
+            }*/
+            /*for (Edge otherEdge : getEdges()) {
                 for (Edge thisEdge : face.getEdges()) {
                     Vector3f point = otherEdge.isColliding(thisEdge);
                     if (!point.equals(0.0f, 0.0f, 0.0f)) {
@@ -237,24 +235,30 @@ public class Face {
                             }
                         }
 
-                        contacts.add(new Collision(point, normal, pObj2, pObj1));
+                        contacts.add(new Collision(point, normal, pObj2, pObj1, this));
                     }
                 }
-            }
+            }*/
             for (Vector3f point : definingVertices) {
                 if (face.isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1));
+                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1, this));
                 }
             }
         } else if (intersectionType == FaceIntersectionType.Coplanar && areTrianglesCollidingCoplanar(face)) {
-            for (Edge otherEdge : face.getEdges()) {
+            // TODO: Remove
+            if (face.supportVector.equals(-9.0f, -7.0f, -1.0f) && offset == -7.0) {
+                f2.add(this);
+            } else if (face.supportVector.equals(-9.0f, -7.0f, -3.0f) && offset == -7.0) {
+                f1.add(this);
+            }
+            /*for (Edge otherEdge : face.getEdges()) {
                 Vector3f point = areFaceAndEdgeColliding(otherEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
                     correctPoint(point);
                     contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2));
                 }
-            }
-            for (Edge otherEdge : face.getEdges()) {
+            }*/
+            /*for (Edge otherEdge : face.getEdges()) {
                 for (Edge thisEdge : this.getEdges()) {
                     Vector3f point = otherEdge.isColliding(thisEdge);
                     if (!point.equals(0.0f, 0.0f, 0.0f)) {
@@ -270,24 +274,25 @@ public class Face {
                             }
                         }
 
-                        contacts.add(new Collision(point, normal, pObj1, pObj2));
+                        contacts.add(new Collision(point, normal, pObj1, pObj2, this));
                     }
                 }
-            }
+            }*/
+            // TODO: Points from both objects have to be used and edge method should be debugged
             for (Vector3f point : face.definingVertices) {
                 if (isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2));
+                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2, this));
                 }
             }
 
-            for (Edge otherEdge : getEdges()) {
+            /*for (Edge otherEdge : getEdges()) {
                 Vector3f point = face.areFaceAndEdgeColliding(otherEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
                     correctPoint(point);
                     contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1));
                 }
-            }
-            for (Edge otherEdge : getEdges()) {
+            }*/
+            /*for (Edge otherEdge : getEdges()) {
                 for (Edge thisEdge : face.getEdges()) {
                     Vector3f point = otherEdge.isColliding(thisEdge);
                     if (!point.equals(0.0f, 0.0f, 0.0f)) {
@@ -303,13 +308,13 @@ public class Face {
                             }
                         }
 
-                        contacts.add(new Collision(point, normal, pObj2, pObj1));
+                        contacts.add(new Collision(point, normal, pObj2, pObj1, this));
                     }
                 }
-            }
+            }*/
             for (Vector3f point : definingVertices) {
                 if (face.isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1));
+                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1, this));
                 }
             }
         }
@@ -323,6 +328,11 @@ public class Face {
         Vector3f p2 = face.definingVertices.get(0);
         Vector3f q2 = face.definingVertices.get(1);
         Vector3f r2 = face.definingVertices.get(2);
+
+        // TODO: Remove
+        if (new Vector3f(normalizedNormal).mul(normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f)) && new Vector3f(face.normalizedNormal).mul(face.normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f))) {
+            System.out.println("Ye");
+        }
 
         double det1 = calculateDeterminant(p2, q2, r2, p1);
         double det2 = calculateDeterminant(p2, q2, r2, q1);
@@ -338,6 +348,10 @@ public class Face {
 
         if (areThisFaceSignsTheSame) {
             if (isDet1Zero) {
+
+                if (new Vector3f(normalizedNormal).mul(normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f))) {
+                    System.out.println("Ye");
+                }
                 return FaceIntersectionType.Coplanar;
             } else {
                 return FaceIntersectionType.NoIntersection;
@@ -345,6 +359,10 @@ public class Face {
         } else {
             if (areOtherFaceSignsTheSame) {
                 if (isDet4Zero) {
+
+                    if (new Vector3f(normalizedNormal).mul(normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f))) {
+                        System.out.println("Ye");
+                    }
                     return FaceIntersectionType.Coplanar;
                 } else {
                     return FaceIntersectionType.NoIntersection;
@@ -356,12 +374,48 @@ public class Face {
     }
 
     private boolean areTrianglesColliding(Face face) {
-        Vector3f p1 = this.definingVertices.get(0);
-        Vector3f q1 = this.definingVertices.get(1);
-        Vector3f r1 = this.definingVertices.get(2);
-        Vector3f p2 = face.definingVertices.get(0);
-        Vector3f q2 = face.definingVertices.get(1);
-        Vector3f r2 = face.definingVertices.get(2);
+        // TODO: Remove Code
+        if (this.definingVertices.stream().anyMatch(vec -> vec.equals(new Vector3f(-7.0f, -7.0f, -3.0f))) && face.definingVertices.stream().anyMatch(vec -> vec.equals(new Vector3f(-7.0f, -7.003805f, -3.0f)))) {
+            System.out.println("T");
+        }
+
+        Vector3f p1 = null;
+        Vector3f q1 = null;
+        Vector3f r1 = null;
+        for (Vector3f vertex : definingVertices) {
+            List<Vector3f> remainingVertices = new ArrayList<>(definingVertices);
+            remainingVertices.remove(vertex);
+            if (remainingVertices.stream().noneMatch(vec -> Math.signum(face.signedDistance(vertex)) == Math.signum(face.signedDistance(vec)))) {
+                p1 = (vertex);
+                q1 = (remainingVertices.get(0));
+                r1 = (remainingVertices.get(1));
+                updateVertices(p1, q1, r1);
+                break;
+            }
+        }
+
+        Vector3f p2 = null;
+        Vector3f q2 = null;
+        Vector3f r2 = null;
+        for (Vector3f vertex : face.definingVertices) {
+            List<Vector3f> remainingVertices = new ArrayList<>(face.definingVertices);
+            remainingVertices.remove(vertex);
+            if (remainingVertices.stream().noneMatch(vec -> Math.signum(signedDistance(vertex)) == Math.signum(signedDistance(vec)))) {
+                p2 = (vertex);
+                q2 = (remainingVertices.get(0));
+                r2 = (remainingVertices.get(1));
+                face.updateVertices(p2, q2, r2);
+                break;
+            }
+        }
+
+        if ((Math.signum(face.signedDistance(p1)) == -1.0f) || (Math.signum(face.signedDistance(p1)) == 0.0f && Math.signum(face.signedDistance(q1)) == 1.0f)) {
+            Transforms.swapTwoVectors(q2, r2);
+        }
+
+        if ((Math.signum(signedDistance(p2)) == -1.0f) || (Math.signum(signedDistance(p2)) == 0.0f && Math.signum(signedDistance(q2)) == 1.0f)) {
+            Transforms.swapTwoVectors(q1, r1);
+        }
 
         return ((calculateDeterminant(p1, q1, p2, q2)) <= 0.0f && (calculateDeterminant(p1, r1, r2, p2)) <= 0.0f);
     }
@@ -374,11 +428,7 @@ public class Face {
                 }
             }
         }
-        if (isTriangleContainedInOtherTriangle(face)) {
-            return true;
-        } else {
-            return face.isTriangleContainedInOtherTriangle(this);
-        }
+        return (isTriangleContainedInOtherTriangle(face) || face.isTriangleContainedInOtherTriangle(this));
     }
 
     private boolean isTriangleContainedInOtherTriangle(Face face) {
@@ -406,6 +456,14 @@ public class Face {
             return false;
         }
 
+        // TODO: Maybe make better solution and test
+        for (Vector3f vertex : this.definingVertices) {
+            if (p.equals(vertex)) {
+                return true;
+            }
+        }
+
+        // TODO: Remove Code
         /*double area = (double) (new Vector3f(B).sub(A).cross(new Vector3f(C).sub(A)).length()) / 2.0;
         double alpha = new Vector3d(B).sub(p).cross(new Vector3d(C).sub(p)).length() / (2 * area);
         double beta = new Vector3d(C).sub(p).cross(new Vector3d(A).sub(p)).length() / (2 * area);
@@ -422,7 +480,7 @@ public class Face {
         Vector3f e1 = new Vector3f(definingVertices.get(1)).sub(definingVertices.get(0));
         Vector3f e2 = new Vector3f(definingVertices.get(2)).sub(definingVertices.get(0));
         Vector3f s = new Vector3f(edge.getTail()).sub(definingVertices.get(0));
-        Vector3f d = new Vector3f(edge.getEdgeDirection());
+        Vector3f d = edge.getEdgeDirection();
         Vector3f r = new Vector3f(s).cross(e1);
         Vector3f q = new Vector3f(d).cross(e2);
         float a = e1.dot(q);
@@ -448,21 +506,38 @@ public class Face {
         }
     }
 
+    private void updateVertices(Vector3f v0, Vector3f v1, Vector3f v2) {
+        Vector3f temp0 = new Vector3f(v0);
+        Vector3f temp1 = new Vector3f(v1);
+        Vector3f temp2 = new Vector3f(v2);
+        this.definingVertices.get(0).set(temp0);
+        this.definingVertices.get(1).set(temp1);
+        this.definingVertices.get(2).set(temp2);
+    }
+
+    private void update() {
+        this.supportVector.set(this.definingVertices.get(1));
+        Vector3f normal = new Vector3f(new Vector3f(definingVertices.get(1)).sub(definingVertices.get(0))).cross(new Vector3f(definingVertices.get(2)).sub(definingVertices.get(0)));
+        if (normalFromOrigin) {
+            if (normal.dot(supportVector) >= 0) {
+                normalizedNormal.set(normal.normalize());
+            } else {
+                normalizedNormal.set(normal.normalize().mul(-1.0f));
+            }
+        } else {
+            normalizedNormal.set(normal.normalize());
+        }
+        offset = normalizedNormal.dot(supportVector);
+        centroid.set(determineCentroid());
+        area = determineArea();
+    }
+
     public void update(Matrix4f worldMatrix) {
         this.definingVertices.get(0).set(Transforms.mulVectorWithMatrix4(this.originalVertices.get(0), worldMatrix));
         this.definingVertices.get(1).set(Transforms.mulVectorWithMatrix4(this.originalVertices.get(1), worldMatrix));
         this.definingVertices.get(2).set(Transforms.mulVectorWithMatrix4(this.originalVertices.get(2), worldMatrix));
 
-        this.supportVector.set(this.definingVertices.get(1));
-        Vector3f normal = new Vector3f(new Vector3f(definingVertices.get(1)).sub(definingVertices.get(0))).cross(new Vector3f(definingVertices.get(2)).sub(definingVertices.get(0)));
-        if (normal.dot(supportVector) >= 0) {
-            normalizedNormal.set(normal.normalize());
-        } else {
-            normalizedNormal.set(normal.normalize().mul(-1.0f));
-        }
-        offset = normalizedNormal.dot(supportVector);
-        centroid.set(determineCentroid());
-        area = determineArea();
+        update();
 
         for (Edge edge : edges) {
             edge.update(worldMatrix);
@@ -471,6 +546,8 @@ public class Face {
 
     private double calculateDeterminant(Vector3f a, Vector3f b, Vector3f c, Vector3f d) {
         return new Vector3d(d).sub(a).dot(new Vector3d(b).sub(a).cross(new Vector3d(c).sub(a)));
+        // TODO: Remove one
+        // return -1.0f * new Matrix4d(new Vector4d(a, 1.0), new Vector4d(b, 1.0), new Vector4d(c, 1.0), new Vector4d(d, 1.0)).determinant();
     }
 
     @Override
