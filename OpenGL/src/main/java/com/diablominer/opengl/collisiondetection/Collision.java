@@ -2,8 +2,10 @@ package com.diablominer.opengl.collisiondetection;
 
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.utils.Transforms;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import org.joml.*;
+
+import java.lang.Math;
+import java.util.Objects;
 
 
 public class Collision {
@@ -13,13 +15,18 @@ public class Collision {
     private Vector3f point;
     private Vector3f normal;
     private PhysicsObject normalObj, otherObj;
-    public CollisionType ct;
 
-    public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj) {
+    // TODO: Remove
+    // Just for testing
+    public CollisionType ct;
+    public Face face;
+
+    public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj, Face face) {
         this.point = new Vector3f(point);
         this.normal = new Vector3f(normal);
         this.normalObj = normalObj;
         this.otherObj = otherObj;
+        this.face = face;
 
         Vector3f newPoint = new Vector3f(point).add(normal);
         if (normalObj.position.distance(newPoint) < normalObj.position.distance(point)) {
@@ -27,9 +34,13 @@ public class Collision {
         }
     }
 
-    public void collisionResponse(PhysicsObject thisPhysObj, PhysicsObject otherPhysObj) {
+    public void collisionResponse(PhysicsObject thisPhObj, Vector3d dVA, Vector3d dVB, Vector3d dWA, Vector3d dWB) {
         if (determineCollisionType(otherObj).equals(CollisionType.Colliding)) {
-            collidingCollisionResponse(normalObj, otherObj);
+            if (thisPhObj == normalObj) {
+                collidingCollisionResponse(dVA, dVB, dWA, dWB);
+            } else {
+                collidingCollisionResponse(dVB, dVA, dWB, dWA);
+            }
         }
     }
 
@@ -46,23 +57,23 @@ public class Collision {
         }
     }
 
-    private void collidingCollisionResponse(PhysicsObject thisPhysObj, PhysicsObject otherPhysObj) {
-        Vector3f rA = new Vector3f(point).sub(thisPhysObj.position);
-        Vector3f rB = new Vector3f(point).sub(otherPhysObj.position);
-        Vector3f kA = new Vector3f(rA).cross(normal);
-        Vector3f kB = new Vector3f(rB).cross(normal);
-        Vector3f uA = Transforms.mulVectorWithMatrix4(kA, new Matrix4f().identity().set(thisPhysObj.inertia).invert());
-        Vector3f uB = Transforms.mulVectorWithMatrix4(kB, new Matrix4f().identity().set(otherPhysObj.inertia).invert());
+    private void collidingCollisionResponse(Vector3d dVA, Vector3d dVB, Vector3d dWA, Vector3d dWB) {
+        Vector3d rA = new Vector3d(point).sub(normalObj.position);
+        Vector3d rB = new Vector3d(point).sub(otherObj.position);
+        Vector3d kA = new Vector3d(rA).cross(new Vector3d(normal));
+        Vector3d kB = new Vector3d(rB).cross(new Vector3d(normal));
+        Vector3d uA = Transforms.round(Transforms.mulVectorWithMatrix4(kA, new Matrix4d().identity().set(new Matrix3d(normalObj.inertia)).invert()), 2);
+        Vector3d uB = Transforms.round(Transforms.mulVectorWithMatrix4(kB, new Matrix4d().identity().set(new Matrix3d(otherObj.inertia)).invert()), 2);
 
-        double numerator = -(1 + thisPhysObj.coefficientOfRestitution) * (normal.dot(new Vector3f(thisPhysObj.velocity).sub(otherPhysObj.velocity)) + (thisPhysObj.angularVelocity.dot(kA)) - otherPhysObj.angularVelocity.dot(kB));
-        double denominator = (1.0 / thisPhysObj.mass) + (1.0 / otherPhysObj.mass) + kA.dot(uA) + kB.dot(uB);
+        double numerator = -(1 + normalObj.coefficientOfRestitution) * (new Vector3d(normal).dot(new Vector3d(normalObj.velocity).sub(new Vector3d(otherObj.velocity))) + (new Vector3d(normalObj.angularVelocity).dot(kA)) - new Vector3d(otherObj.angularVelocity).dot(kB));
+        double denominator = (1.0 / (double) normalObj.mass) + (1.0 / (double) otherObj.mass) + kA.dot(uA) + kB.dot(uB);
         double f = numerator / denominator;
-        Vector3f impulse = new Vector3f(normal).mul((float) f);
+        Vector3d impulse = new Vector3d(normal).mul(f);
 
-        thisPhysObj.velocity.add(new Vector3f(impulse).div(thisPhysObj.mass));
-        otherPhysObj.velocity.sub(new Vector3f(impulse).div(otherPhysObj.mass));
-        thisPhysObj.angularVelocity.add(Transforms.mulVectorWithMatrix4(new Vector3f(rA).cross(impulse), new Matrix4f(thisPhysObj.getInertia()).invert()));
-        otherPhysObj.angularVelocity.sub(Transforms.mulVectorWithMatrix4(new Vector3f(rB).cross(impulse), new Matrix4f(otherPhysObj.getInertia()).invert()));
+        dVA.add(new Vector3d(impulse).div(normalObj.mass));
+        dVB.sub(new Vector3d(impulse).div(otherObj.mass));
+        dWA.add(new Vector3d(uA).mul(f));
+        dWB.sub(new Vector3d(uB).mul(f));
     }
 
     public Vector3f getPoint() {
@@ -73,4 +84,24 @@ public class Collision {
         return normal;
     }
 
+    private void fixZeros() {
+        Transforms.fixZeros(point);
+        Transforms.fixZeros(normal);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Collision collision = (Collision) o;
+        fixZeros();
+        collision.fixZeros();
+        return point.equals(collision.point) && normal.equals(collision.normal) && normalObj.equals(collision.normalObj) && otherObj.equals(collision.otherObj);
+    }
+
+    @Override
+    public int hashCode() {
+        fixZeros();
+        return Objects.hash(point, normal, normalObj, otherObj);
+    }
 }

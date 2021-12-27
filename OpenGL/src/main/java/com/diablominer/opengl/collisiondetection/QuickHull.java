@@ -99,10 +99,10 @@ public class QuickHull {
         }
 
         // Add the first four faces and add their neighbours
-        Face face1 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2));
-        Face face2 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(3));
-        Face face3 = new Face(startingPoints.get(0), startingPoints.get(2), startingPoints.get(3));
-        Face face4 = new Face(startingPoints.get(1), startingPoints.get(2), startingPoints.get(3));
+        Face face1 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(2), true);
+        Face face2 = new Face(startingPoints.get(0), startingPoints.get(1), startingPoints.get(3), true);
+        Face face3 = new Face(startingPoints.get(0), startingPoints.get(2), startingPoints.get(3), true);
+        Face face4 = new Face(startingPoints.get(1), startingPoints.get(2), startingPoints.get(3), true);
         faces.add(face1);
         faces.add(face2);
         faces.add(face3);

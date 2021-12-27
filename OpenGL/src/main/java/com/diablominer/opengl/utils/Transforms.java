@@ -128,10 +128,15 @@ public class Transforms {
         return new Vector3f(vec4.x, vec4.y, vec4.z);
     }
 
-    public static Vector3d mulVectorWithMatrix4(Vector3d vec, Matrix4f mat) {
+    public static Vector3d mulVectorWithMatrix4(Vector3d vec, Matrix4d mat) {
         Vector4d vec4 = new Vector4d(vec.x, vec.y, vec.z, 1.0f);
         vec4.mul(mat);
         return new Vector3d(vec4.x, vec4.y, vec4.z);
+    }
+
+    public static Vector3d round(Vector3d vec, int digit) {
+        vec.set(new Vector3d(vec).mul(java.lang.Math.pow(10, digit)).round().div(java.lang.Math.pow(10, digit)));
+        return vec;
     }
 
     public static Vector3f copyVector(Vector3f vec) {
@@ -182,6 +187,24 @@ public class Transforms {
         Vector3f col = new Vector3f(0.0f);
         mat.getColumn(column, col);
         return col;
+    }
+
+    public static void swapTwoVectors(Vector3f vec1, Vector3f vec2) {
+        Vector3f tempVec = new Vector3f(vec1);
+        vec1.set(vec2);
+        vec2.set(tempVec);
+    }
+
+    /**
+     * Sets -0.0fs to to 0.0f for the purpose of comparing them
+     * @param vec Vector which may have false zeros
+     */
+    public static void fixZeros(Vector3f vec) {
+        for (int i = 0; i < 3; i++) {
+            if (vec.get(i) == -0.0f) {
+                vec.setComponent(i, 0.0f);
+            }
+        }
     }
 
 }

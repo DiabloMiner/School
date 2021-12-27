@@ -8,13 +8,13 @@ import java.util.Set;
 public abstract class LogicalEngine {
 
     protected static List<GameObject> gameObjects;
-    protected static Set<PhysicsObject> allPhysicsObjects;
-    // TODO: Remove static modifier and make it dynamic
-    protected static Set<PhysicsObject> alreadyCollidedPhysicsObjects = new HashSet<>();
+    protected static List<PhysicsObject> allPhysicsObjects;
+    // TODO: Remove static modifier and make it dynamic and make it list again
+    protected static List<PhysicsObject> alreadyCollidedPhysicsObjects = new ArrayList<>();
 
     public LogicalEngine() {
         gameObjects = new ArrayList<>();
-        allPhysicsObjects = new HashSet<>();
+        allPhysicsObjects = new ArrayList<>();
     }
 
     public void addGameObject(GameObject gameObject) {
