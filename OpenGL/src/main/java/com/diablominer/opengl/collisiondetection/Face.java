@@ -6,6 +6,7 @@ import org.joml.*;
 
 import java.lang.Math;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class Face {
 
@@ -167,158 +168,56 @@ public class Face {
         conflictList.removeAll(verticesToBeRemoved);
     }
 
-    public List<Collision> isColliding(Face face, PhysicsObject pObj1, PhysicsObject pObj2, HashSet<Face> f1, HashSet<Face> f2) {
+    public List<Collision> isColliding(Face face, PhysicsObject thisPObj, PhysicsObject otherPObj) {
         List<Collision> contacts = new ArrayList<>();
 
         FaceIntersectionType intersectionType = areTrianglesIntersectingPlanes(face);
         if (intersectionType == FaceIntersectionType.Intersection && areTrianglesColliding(face)) {
-            // TODO: Remove
-            if (face.supportVector.equals(-9.0f, -7.0f, -1.0f) && offset == -7.0) {
-                f2.add(this);
-            } else if (face.supportVector.equals(-9.0f, -7.0f, -3.0f) && offset == -7.0) {
-                f1.add(this);
-            }
-            /*for (Edge otherEdge : face.getEdges()) {
-                Vector3f point = areFaceAndEdgeColliding(otherEdge);
-                if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                    correctPoint(point);
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2, this));
-                }
-            }*/
-            // TODO: Test if able to reimplement
-            /*for (Edge otherEdge : face.getEdges()) {
-                for (Edge thisEdge : this.getEdges()) {
-                    Vector3f point = otherEdge.isColliding(thisEdge);
-                    if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                        correctPoint(point);
+            determineVertexIntersections(face, contacts, thisPObj, otherPObj);
+            face.determineVertexIntersections(this, contacts, otherPObj, thisPObj);
 
-                        Vector3f normal;
-                        if ((point.equals(otherEdge.getMiddlePoint()) && point.equals(thisEdge.getMiddlePoint())) || thisEdge.hasSameDirection(otherEdge)) {
-                            normal = normalizedNormal;
-                        } else {
-                            normal = new Vector3f(thisEdge.getEdgeDirection()).cross(otherEdge.getEdgeDirection()).normalize();
-                            if (Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).add(normal)).length()) < Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).sub(normal)).length())) {
-                                normal.mul(-1.0f);
-                            }
-                        }
-
-                        contacts.add(new Collision(point, normal, pObj1, pObj2, this));
-                    }
-                }
-            }*/
-            for (Vector3f point : face.definingVertices) {
-                if (isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2, this));
-                }
-            }
-
-            /*for (Edge otherEdge : getEdges()) {
-                Vector3f point = face.areFaceAndEdgeColliding(otherEdge);
-                if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                    correctPoint(point);
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1, this));
-                }
-            }*/
-            /*for (Edge otherEdge : getEdges()) {
-                for (Edge thisEdge : face.getEdges()) {
-                    Vector3f point = otherEdge.isColliding(thisEdge);
-                    if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                        correctPoint(point);
-
-                        Vector3f normal;
-                        if (point.equals(otherEdge.getMiddlePoint()) && point.equals(thisEdge.getMiddlePoint()) || thisEdge.hasSameDirection(otherEdge)) {
-                            normal = face.normalizedNormal;
-                        } else {
-                            normal = new Vector3f(thisEdge.getEdgeDirection()).cross(otherEdge.getEdgeDirection()).normalize();
-                            if (Math.abs(new Vector3f(getCentroid()).sub(new Vector3f(point).add(normal)).length()) < Math.abs(new Vector3f(getCentroid()).sub(new Vector3f(point).sub(normal)).length())) {
-                                normal.mul(-1.0f);
-                            }
-                        }
-
-                        contacts.add(new Collision(point, normal, pObj2, pObj1, this));
-                    }
-                }
-            }*/
-            for (Vector3f point : definingVertices) {
-                if (face.isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1, this));
-                }
-            }
+            determineEdgeIntersections(face, contacts, thisPObj, otherPObj);
+            face.determineEdgeIntersections(this, contacts, thisPObj, otherPObj);
         } else if (intersectionType == FaceIntersectionType.Coplanar && areTrianglesCollidingCoplanar(face)) {
-            // TODO: Remove
-            if (face.supportVector.equals(-9.0f, -7.0f, -1.0f) && offset == -7.0) {
-                f2.add(this);
-            } else if (face.supportVector.equals(-9.0f, -7.0f, -3.0f) && offset == -7.0) {
-                f1.add(this);
-            }
-            /*for (Edge otherEdge : face.getEdges()) {
-                Vector3f point = areFaceAndEdgeColliding(otherEdge);
-                if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                    correctPoint(point);
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2));
-                }
-            }*/
-            /*for (Edge otherEdge : face.getEdges()) {
-                for (Edge thisEdge : this.getEdges()) {
-                    Vector3f point = otherEdge.isColliding(thisEdge);
-                    if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                        correctPoint(point);
-
-                        Vector3f normal;
-                        if (point.equals(otherEdge.getMiddlePoint()) && point.equals(thisEdge.getMiddlePoint()) || thisEdge.hasSameDirection(otherEdge)) {
-                            normal = normalizedNormal;
-                        } else {
-                            normal = new Vector3f(thisEdge.getEdgeDirection()).cross(otherEdge.getEdgeDirection()).normalize();
-                            if (Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).add(normal)).length()) < Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).sub(normal)).length())) {
-                                normal.mul(-1.0f);
-                            }
-                        }
-
-                        contacts.add(new Collision(point, normal, pObj1, pObj2, this));
-                    }
-                }
-            }*/
             // TODO: Points from both objects have to be used and edge method should be debugged
-            for (Vector3f point : face.definingVertices) {
-                if (isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, normalizedNormal, pObj1, pObj2, this));
-                }
-            }
+            determineVertexIntersections(face, contacts, thisPObj, otherPObj);
+            face.determineVertexIntersections(this, contacts, otherPObj, thisPObj);
 
-            /*for (Edge otherEdge : getEdges()) {
-                Vector3f point = face.areFaceAndEdgeColliding(otherEdge);
+            determineEdgeIntersections(face, contacts, thisPObj, otherPObj);
+            face.determineEdgeIntersections(this, contacts, thisPObj, otherPObj);
+        }
+        return contacts;
+    }
+
+    private void determineVertexIntersections(Face face, List<Collision> contacts, PhysicsObject thisPObj, PhysicsObject otherPObj) {
+        for (Vector3f point : face.definingVertices) {
+            if (isPointInsideTriangle(point)) {
+                contacts.add(new Collision(point, normalizedNormal, thisPObj, otherPObj, this));
+            }
+        }
+    }
+
+    private void determineEdgeIntersections(Face face, List<Collision> contacts, PhysicsObject thisPObj, PhysicsObject otherPObj) {
+        for (Edge otherEdge : face.getEdges()) {
+            for (Edge thisEdge : this.getEdges()) {
+                Vector3f point = otherEdge.isColliding(thisEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
                     correctPoint(point);
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1));
-                }
-            }*/
-            /*for (Edge otherEdge : getEdges()) {
-                for (Edge thisEdge : face.getEdges()) {
-                    Vector3f point = otherEdge.isColliding(thisEdge);
-                    if (!point.equals(0.0f, 0.0f, 0.0f)) {
-                        correctPoint(point);
 
-                        Vector3f normal;
-                        if (point.equals(otherEdge.getMiddlePoint()) && point.equals(thisEdge.getMiddlePoint()) || thisEdge.hasSameDirection(otherEdge)) {
-                            normal = face.normalizedNormal;
-                        } else {
-                            normal = new Vector3f(thisEdge.getEdgeDirection()).cross(otherEdge.getEdgeDirection()).normalize();
-                            if (Math.abs(new Vector3f(getCentroid()).sub(new Vector3f(point).add(normal)).length()) < Math.abs(new Vector3f(getCentroid()).sub(new Vector3f(point).sub(normal)).length())) {
-                                normal.mul(-1.0f);
-                            }
+                    Vector3f normal;
+                    if (point.equals(otherEdge.getMiddlePoint()) && point.equals(thisEdge.getMiddlePoint()) || thisEdge.hasSameDirection(otherEdge)) {
+                        normal = normalizedNormal;
+                    } else {
+                        normal = new Vector3f(thisEdge.getEdgeDirection()).cross(otherEdge.getEdgeDirection()).normalize();
+                        if (Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).add(normal)).length()) < Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).sub(normal)).length())) {
+                            normal.mul(-1.0f);
                         }
-
-                        contacts.add(new Collision(point, normal, pObj2, pObj1, this));
                     }
-                }
-            }*/
-            for (Vector3f point : definingVertices) {
-                if (face.isPointInsideTriangle(point)) {
-                    contacts.add(new Collision(point, face.normalizedNormal, pObj2, pObj1, this));
+
+                    contacts.add(new Collision(point, normal, thisPObj, otherPObj, this));
                 }
             }
         }
-        return contacts;
     }
 
     private FaceIntersectionType areTrianglesIntersectingPlanes(Face face) {
@@ -328,11 +227,6 @@ public class Face {
         Vector3f p2 = face.definingVertices.get(0);
         Vector3f q2 = face.definingVertices.get(1);
         Vector3f r2 = face.definingVertices.get(2);
-
-        // TODO: Remove
-        if (new Vector3f(normalizedNormal).mul(normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f)) && new Vector3f(face.normalizedNormal).mul(face.normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f))) {
-            System.out.println("Ye");
-        }
 
         double det1 = calculateDeterminant(p2, q2, r2, p1);
         double det2 = calculateDeterminant(p2, q2, r2, q1);
@@ -374,11 +268,6 @@ public class Face {
     }
 
     private boolean areTrianglesColliding(Face face) {
-        // TODO: Remove Code
-        if (this.definingVertices.stream().anyMatch(vec -> vec.equals(new Vector3f(-7.0f, -7.0f, -3.0f))) && face.definingVertices.stream().anyMatch(vec -> vec.equals(new Vector3f(-7.0f, -7.003805f, -3.0f)))) {
-            System.out.println("T");
-        }
-
         Vector3f p1 = null;
         Vector3f q1 = null;
         Vector3f r1 = null;
@@ -443,35 +332,24 @@ public class Face {
         }
     }
 
-    private boolean isPointInsideTriangle(Vector3f p) {
+    public boolean isPointInsideTriangle(Vector3f p) {
+        // General method used is from "Foundations of Physically Based Modelling and Animation": Barycentric coordinates
         Vector3f A = definingVertices.get(0);
         Vector3f B = definingVertices.get(1);
         Vector3f C = definingVertices.get(2);
-        Vector3d u = new Vector3d(B).sub(A);
-        Vector3d v = new Vector3d(C).sub(A);
-        Vector3d n = new Vector3d(u).cross(v).normalize();
-        Vector3d w = new Vector3d(p).sub(A);
+        Vector3f vn = (new Vector3f(B).sub(A)).cross(new Vector3f(C).sub(B));
+        float a = vn.length();
+        Vector3f n = new Vector3f(vn).normalize();
+        Vector3f w = new Vector3f(p).sub(A);
 
+        // This is used to prevent points situated at a different level in the normal direction of the face from being reported
         if (n.dot(w) < -epsilon || n.dot(w) > epsilon) {
             return false;
         }
 
-        // TODO: Maybe make better solution and test
-        for (Vector3f vertex : this.definingVertices) {
-            if (p.equals(vertex)) {
-                return true;
-            }
-        }
-
-        // TODO: Remove Code
-        /*double area = (double) (new Vector3f(B).sub(A).cross(new Vector3f(C).sub(A)).length()) / 2.0;
-        double alpha = new Vector3d(B).sub(p).cross(new Vector3d(C).sub(p)).length() / (2 * area);
-        double beta = new Vector3d(C).sub(p).cross(new Vector3d(A).sub(p)).length() / (2 * area);
-        double gamma = 1 - alpha - beta;*/
-
-        double gamma = new Vector3d(u).cross(w).dot(n) / new Vector3d(n).dot(n);
-        double beta = new Vector3d(w).cross(v).dot(n) / new Vector3d(n).dot(n);
-        double alpha = 1.0 - gamma - beta;
+        float alpha = (new Vector3f(C).sub(B)).cross(new Vector3f(p).sub(B)).dot(n) / a;
+        float beta = (new Vector3f(A).sub(C)).cross(new Vector3f(p).sub(C)).dot(n) / a;
+        float gamma = 1.0f - alpha - beta;
 
         return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && gamma >= 0 && gamma <= 1;
     }
@@ -546,8 +424,6 @@ public class Face {
 
     private double calculateDeterminant(Vector3f a, Vector3f b, Vector3f c, Vector3f d) {
         return new Vector3d(d).sub(a).dot(new Vector3d(b).sub(a).cross(new Vector3d(c).sub(a)));
-        // TODO: Remove one
-        // return -1.0f * new Matrix4d(new Vector4d(a, 1.0), new Vector4d(b, 1.0), new Vector4d(c, 1.0), new Vector4d(d, 1.0)).determinant();
     }
 
     @Override
