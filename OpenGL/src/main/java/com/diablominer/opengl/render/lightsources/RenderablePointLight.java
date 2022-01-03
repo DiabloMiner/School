@@ -2,16 +2,14 @@ package com.diablominer.opengl.render.lightsources;
 
 import com.diablominer.opengl.collisiondetection.*;
 import com.diablominer.opengl.main.LogicalEngine;
+import com.diablominer.opengl.main.MyGame;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
-import java.lang.Math;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class RenderablePointLight extends PhysicsObject {
 
@@ -63,7 +61,7 @@ public class RenderablePointLight extends PhysicsObject {
     }
 
     @Override
-    public void collide(Set<PhysicsObject> physicsObjects) {
+    public void collide(LogicalEngine logicalEngine, Set<PhysicsObject> physicsObjects) {
         // Collision Detection
         bv.update(new Vector3f(position).sub(bv.getCenter()));
         for (PhysicsObject physicsObject : physicsObjects) {
@@ -73,7 +71,7 @@ public class RenderablePointLight extends PhysicsObject {
                 // Narrow Phase
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
                     // TODO: Remove
-                    Vector3f norm = new Vector3f(0.0f, 1.0f, 0.0f);
+                    /*Vector3f norm = new Vector3f(0.0f, 1.0f, 0.0f);
                     Vector3f p1 = new Vector3f(0.0f).add(0.0f, 1.0f, 0.0f);
                     Vector3f p2 = new Vector3f(this.position).add(0.0f, -1.0f, 0.0f).sub(physicsObject.position);
                     if (p1.dot(norm) >= 0) {
@@ -87,58 +85,162 @@ public class RenderablePointLight extends PhysicsObject {
                     }
                     updateObjectState(0.0);
                     physicsObject.updateObjectState(0.0);
+                    obbTree.updateTriangles(this.modelMatrix);
+                    physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);*/
 
-                    HashSet<Collision> collisions = new HashSet<>();
+                    double time = resetPosition(physicsObject);
+
+                    updateObjectState(0.0);
+                    physicsObject.updateObjectState(0.0);
                     obbTree.updateTriangles(this.modelMatrix);
                     physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);
 
-                    HashSet<Face> f1 = new HashSet<>();
-                    HashSet<Face> f2 = new HashSet<>();
+
+                    HashSet<Collision> collisions = new HashSet<>();
                     for (int i = 1; i< obbTree.getCollisionNodes().size(); i += 2) {
                         for (Face face : obbTree.getCollisionNodes().get(i - 1).getTriangles()) {
                             for (Face otherFace : obbTree.getCollisionNodes().get(i).getTriangles()) {
-                                collisions.addAll(face.isColliding(otherFace, this, physicsObject, f1, f2));
+                                collisions.addAll(face.isColliding(otherFace, this, physicsObject));
                             }
                         }
                     }
 
-                    // TODO: No collisions are reported
-                    // TODO: Check if calcDeterminate works; Only face edge collisions are reported
-                    // TODO: Problem is in face-edge collisions
-                    // TODO: Possible Solution: Have edge-edge points who are in faces have their faces normals and remove face-edge colls
-                    // TODO: Try to check if coplanar collisions works and then implement a solution getting to the coplanar collisons
-                        // TODO: Are wrong, fix
-                        // TODO: Check if physics system is right, else implement LCP
+                    // TODO: Finish integrating time critical cd: USE DOUBLE and debug face: edge-edge intersections
+                    // TODO: Finish cleaning up the code
 
-                    Vector3d dVA = new Vector3d(this.velocity);
-                    Vector3d dVB = new Vector3d(physicsObject.velocity);
-                    Vector3d dWA = new Vector3d(this.angularVelocity);
-                    Vector3d dWB = new Vector3d(physicsObject.angularVelocity);
-                    int colliding = 0;
-                    Vector3f vec = new Vector3f(0.0f);
-                    List<Collision> col = new ArrayList<>();
+                    // Determine which points are colliding and prepare for the calculation of the average point
+                    Vector3f averagePos = new Vector3f(0.0f);
+                    List<Collision> collidingPoints = new ArrayList<>();
                     for (Collision collision : collisions) {
-                        collision.collisionResponse(this, dVA, dVB, dWA, dWB);
-                        if (collision.ct.equals(CollisionType.Colliding)) {
-                            colliding++;
-                            col.add(collision);
-                            vec.add(collision.getPoint());
+                        if (collision.isColliding()) {
+                            averagePos.add(collision.getPoint());
+                            collidingPoints.add(collision);
                         }
                     }
                     System.out.println();
 
-                    vec.div(colliding);
+                    // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
+                    // to create a new a collision and calculate the collision response
+                    averagePos.div(collidingPoints.size());
+                    Vector3f normal = new Vector3f(0.0f);
+                    for (Collision collision : collidingPoints) {
+                        if (collision.getFace().isPointInsideTriangle(averagePos)) {
+                            normal.set(collision.getFace().getNormalizedNormal());
+                            new Collision(averagePos, normal, collision.getNormalObj(), collision.getOtherObj()).collisionResponse();
+                            break;
+                        }
+                    }
 
-                    this.velocity.set(dVA);
-                    physicsObject.velocity.set(dVB);
-                    this.angularVelocity.set(dWA);
-                    physicsObject.angularVelocity.set(dWB);
+                    double remainingTime = ((double) MyGame.millisecondsPerSimulationFrame / 1000.0) - time;
+                    updateObjectState(remainingTime);
 
-                    LogicalEngine.addAlreadyCollidedPhysicsObject(this);
-                    LogicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);
+                    logicalEngine.addAlreadyCollidedPhysicsObject(this);
+                    logicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);
+                    obbTree.clearCollisionNodes();
+                    physicsObject.obbTree.clearCollisionNodes();
                 }
             }
         }
+    }
+
+    private Vector3d findGreatestPenetrationDepth(PhysicsObject physicsObject) {
+        subVelocityFromPosition();
+        physicsObject.subVelocityFromPosition();
+
+        updateObjectState(0.0);
+        physicsObject.updateObjectState(0.0);
+        Matrix4f thisMat = new Matrix4f(this.modelMatrix);
+        Matrix4f otherMat = new Matrix4f(physicsObject.modelMatrix);
+        obbTree.updatePoints(thisMat);
+        physicsObject.obbTree.updatePoints(otherMat);
+
+        List<Vector3d> thisPenetrationDepths = determinePenetrationDepths(1, physicsObject.velocity, physicsObject.angularVelocity);
+        List<Vector3d> otherPenetrationDepths = physicsObject.determinePenetrationDepths(0, this.velocity, this.angularVelocity);
+
+        obbTree.updatePoints(thisMat.invert());
+        physicsObject.obbTree.updatePoints(otherMat.invert());
+
+        Vector3d greatestPenetrationDepth = new Vector3d(0.0f);
+        for (Vector3d thisPenDepth : thisPenetrationDepths) {
+            if (thisPenDepth.distance(otherPenetrationDepths.get(thisPenetrationDepths.indexOf(thisPenDepth))) > greatestPenetrationDepth.length()) {
+                greatestPenetrationDepth.set(new Vector3d(thisPenDepth).sub(otherPenetrationDepths.get(thisPenetrationDepths.indexOf(thisPenDepth))));
+            }
+        }
+
+        return greatestPenetrationDepth;
+    }
+
+    private double resetPosition(PhysicsObject physicsObject) {
+        Vector3d greatestPenetrationDepth = findGreatestPenetrationDepth(physicsObject);
+        double time = 0.0;
+
+        if (new Vector3d(this.velocity).equals(new Vector3d(0.0), epsilon) || new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0), epsilon)) {
+            if (new Vector3d(this.velocity).equals(new Vector3d(0.0), epsilon) && new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0), epsilon)) {
+                Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), velocity);
+                changePositionAccordingToPenetrationDepth(thisPenDepth);
+
+                Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), physicsObject.velocity);
+                physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
+
+                time = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
+            } else {
+                if (new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0f), epsilon)) {
+                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), velocity);
+
+                    changePositionAccordingToPenetrationDepth(penDepth);
+                    physicsObject.addVelocityToPosition();
+
+                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                } else {
+                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), physicsObject.velocity);
+
+                    addVelocityToPosition();
+                    physicsObject.changePositionAccordingToPenetrationDepth(penDepth);
+
+                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                }
+            }
+        } else {
+            if (isVelPointingTowardsObject(physicsObject) && physicsObject.isVelPointingTowardsObject(this)) {
+                double velRatio = distanceToObjectWithVel(physicsObject) / physicsObject.distanceToObjectWithVel(this);
+                double otherPenetrationRatio = 1.0 / (velRatio + 1.0);
+                double thisPenetrationRatio = 1.0 - otherPenetrationRatio;
+
+                Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).mul(thisPenetrationRatio), velocity);
+                changePositionAccordingToPenetrationDepth(thisPenDepth);
+
+                Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).mul(otherPenetrationRatio), physicsObject.velocity);
+                physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
+
+                time = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
+            } else {
+                if (!physicsObject.isVelPointingTowardsObject(this)) {
+                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), velocity);
+
+                    changePositionAccordingToPenetrationDepth(penDepth);
+                    physicsObject.addVelocityToPosition();
+
+                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                } else if (!isVelPointingTowardsObject(physicsObject)) {
+                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), physicsObject.velocity);
+
+                    addVelocityToPosition();
+                    physicsObject.changePositionAccordingToPenetrationDepth(penDepth);
+
+                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                } else {
+                    Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), velocity);
+                    changePositionAccordingToPenetrationDepth(thisPenDepth);
+
+                    Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), physicsObject.velocity);
+                    physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
+
+                    time = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
+                }
+            }
+        }
+
+        return time;
     }
 
     @Override
@@ -156,14 +258,6 @@ public class RenderablePointLight extends PhysicsObject {
         Matrix4f modelMatrix = new Matrix4f().identity().translationRotate(position.x, position.y, position.z, orientation);
         pointLight.setPosition(position);
         model.setModelMatrix(modelMatrix);
-    }
-
-    public Model getModel() {
-        return model;
-    }
-
-    public PointLight getPointLight() {
-        return pointLight;
     }
 
     private Vector3f determineCenterOfMass(List<Vector3f> uniqueVertices) {
@@ -219,6 +313,14 @@ public class RenderablePointLight extends PhysicsObject {
             factor += (1.0f / steps);
         }
         return newList;
+    }
+
+    public Model getModel() {
+        return model;
+    }
+
+    public PointLight getPointLight() {
+        return pointLight;
     }
 
 }

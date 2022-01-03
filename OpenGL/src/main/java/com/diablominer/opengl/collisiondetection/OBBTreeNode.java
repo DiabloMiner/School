@@ -371,6 +371,12 @@ public class OBBTreeNode {
         }
     }
 
+    public void updatePoints(Matrix4f worldMat) {
+        for (Vector3f point : points) {
+            point.set(Transforms.mulVectorWithMatrix4(point, worldMat));
+        }
+    }
+
     /**
      * This is a debug function. It returns vertices, so the obb can be visualized.
      */

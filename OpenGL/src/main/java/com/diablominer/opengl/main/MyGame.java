@@ -18,8 +18,8 @@ public class MyGame implements Game {
     private long lastTime;
     private long accumulator;
 
-    private static final long millisecondsPerFrame = 16;
-    private static final long millisecondsPerSimulationFrame = 10;
+    public static final long millisecondsPerFrame = 16;
+    public static final long millisecondsPerSimulationFrame = 10;
 
     public static void main(String[] args) throws Exception {
         new MyGame();

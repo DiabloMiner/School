@@ -58,7 +58,7 @@ public class Edge {
             float h = fCrossG.length();
             float k = fCrossE.length();
 
-            if (h > epsilon && k > epsilon) {
+            if (h > -epsilon && k > -epsilon) {
                 Vector3f point;
                 Vector3f l = new Vector3f(e).mul(h / k);
                 if (Math.signum(fCrossG.x) == Math.signum(fCrossE.x) && Math.signum(fCrossG.y) == Math.signum(fCrossE.y) && Math.signum(fCrossG.z) == Math.signum(fCrossE.z)) {

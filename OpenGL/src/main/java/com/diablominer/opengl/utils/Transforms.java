@@ -195,6 +195,31 @@ public class Transforms {
         vec2.set(tempVec);
     }
 
+    public static Vector3f safeDiv(Vector3f vec1, Vector3f vec2) {
+        Vector3f result = new Vector3f(0.0f);
+        for (int i = 0; i < 3; i++) {
+            if (!Float.isNaN((vec1.get(i) / vec2.get(i)))) {
+                result.setComponent(i, vec1.get(i) / vec2.get(i));
+            }
+        }
+        return result;
+    }
+
+    public static Vector3d safeDiv(Vector3d vec1, Vector3f vec2) {
+        Vector3d vec2d = new Vector3d(vec2);
+        return Transforms.safeDiv(vec1, vec2d);
+    }
+
+    public static Vector3d safeDiv(Vector3d vec1, Vector3d vec2) {
+        Vector3d result = new Vector3d(0.0f);
+        for (int i = 0; i < 3; i++) {
+            if (!Double.isNaN((vec1.get(i) / vec2.get(i)))) {
+                result.setComponent(i, vec1.get(i) / vec2.get(i));
+            }
+        }
+        return result;
+    }
+
     /**
      * Sets -0.0fs to to 0.0f for the purpose of comparing them
      * @param vec Vector which may have false zeros

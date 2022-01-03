@@ -126,6 +126,7 @@ public class OBBTree {
     public boolean isColliding(OBBTree otherTree, Matrix4f thisMatrix, Matrix4f otherMatrix) {
         collisionNodes.clear();
         isColliding(otherTree, this.getNodes()[0], otherTree.getNodes()[0], thisMatrix, otherMatrix);
+        otherTree.collisionNodes.addAll(collisionNodes);
         return collisionNodes.size() != 0;
     }
 
@@ -148,10 +149,20 @@ public class OBBTree {
         }
     }
 
+    public void updatePoints(Matrix4f worldMat) {
+        for (OBBTreeNode node : nodes) {
+            node.updatePoints(worldMat);
+        }
+    }
+
     public void updateTriangles(Matrix4f worldMat) {
         for (OBBTreeNode node : nodes) {
             node.updateTriangles(worldMat);
         }
+    }
+
+    public void clearCollisionNodes() {
+        collisionNodes.clear();
     }
 
     public OBBTreeNode[] getNodes() {

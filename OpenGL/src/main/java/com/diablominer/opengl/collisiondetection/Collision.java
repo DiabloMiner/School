@@ -15,11 +15,7 @@ public class Collision {
     private Vector3f point;
     private Vector3f normal;
     private PhysicsObject normalObj, otherObj;
-
-    // TODO: Remove
-    // Just for testing
-    public CollisionType ct;
-    public Face face;
+    private Face face;
 
     public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj, Face face) {
         this.point = new Vector3f(point);
@@ -34,30 +30,37 @@ public class Collision {
         }
     }
 
-    public void collisionResponse(PhysicsObject thisPhObj, Vector3d dVA, Vector3d dVB, Vector3d dWA, Vector3d dWB) {
-        if (determineCollisionType(otherObj).equals(CollisionType.Colliding)) {
-            if (thisPhObj == normalObj) {
-                collidingCollisionResponse(dVA, dVB, dWA, dWB);
-            } else {
-                collidingCollisionResponse(dVB, dVA, dWB, dWA);
-            }
+    public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj) {
+        this.point = new Vector3f(point);
+        this.normal = new Vector3f(normal);
+        this.normalObj = normalObj;
+        this.otherObj = otherObj;
+        this.face = null;
+
+        Vector3f newPoint = new Vector3f(point).add(normal);
+        if (normalObj.position.distance(newPoint) < normalObj.position.distance(point)) {
+            this.normal.mul(-1.0f);
         }
     }
 
-    private CollisionType determineCollisionType(PhysicsObject thisPhysObj) {
-        if (normal.dot(thisPhysObj.velocity) < -epsilon) {
-            ct = CollisionType.Colliding;
+    public void collisionResponse() {
+        if (determineCollisionType().equals(CollisionType.Colliding)) {
+            collidingCollisionResponse();
+        }
+    }
+
+    private CollisionType determineCollisionType() {
+        float relativeVelocity = normal.dot((new Vector3f(otherObj.velocity).add(new Vector3f(otherObj.angularVelocity).cross(new Vector3f(point).sub(otherObj.position)))).sub(new Vector3f(normalObj.velocity).add(new Vector3f(normalObj.angularVelocity).cross(new Vector3f(point).sub(normalObj.position)))));
+        if (relativeVelocity < -epsilon) {
             return CollisionType.Colliding;
-        } else if (normal.dot(thisPhysObj.velocity) > -epsilon && normal.dot(thisPhysObj.velocity) < epsilon) {
-            ct = CollisionType.Resting;
+        } else if (relativeVelocity > -epsilon && relativeVelocity < epsilon) {
             return CollisionType.Resting;
         } else {
-            ct = CollisionType.Separating;
             return CollisionType.Separating;
         }
     }
 
-    private void collidingCollisionResponse(Vector3d dVA, Vector3d dVB, Vector3d dWA, Vector3d dWB) {
+    private void collidingCollisionResponse() {
         Vector3d rA = new Vector3d(point).sub(normalObj.position);
         Vector3d rB = new Vector3d(point).sub(otherObj.position);
         Vector3d kA = new Vector3d(rA).cross(new Vector3d(normal));
@@ -70,10 +73,22 @@ public class Collision {
         double f = numerator / denominator;
         Vector3d impulse = new Vector3d(normal).mul(f);
 
-        dVA.add(new Vector3d(impulse).div(normalObj.mass));
-        dVB.sub(new Vector3d(impulse).div(otherObj.mass));
-        dWA.add(new Vector3d(uA).mul(f));
-        dWB.sub(new Vector3d(uB).mul(f));
+        normalObj.velocity.add(new Vector3f().set(new Vector3d(impulse).div(normalObj.mass)));
+        otherObj.velocity.sub(new Vector3f().set(new Vector3d(impulse).div(otherObj.mass)));
+        normalObj.angularVelocity.add(new Vector3f().set(new Vector3d(uA).mul(f)));
+        normalObj.angularVelocity.sub(new Vector3f().set(new Vector3d(uB).mul(f)));
+    }
+
+    public boolean isColliding() {
+        return determineCollisionType().equals(CollisionType.Colliding);
+    }
+
+    public boolean isResting() {
+        return determineCollisionType().equals(CollisionType.Resting);
+    }
+
+    public boolean isSeparating() {
+        return determineCollisionType().equals(CollisionType.Separating);
     }
 
     public Vector3f getPoint() {
@@ -82,6 +97,18 @@ public class Collision {
 
     public Vector3f getNormal() {
         return normal;
+    }
+
+    public Face getFace() {
+        return face;
+    }
+
+    public PhysicsObject getNormalObj() {
+        return normalObj;
+    }
+
+    public PhysicsObject getOtherObj() {
+        return otherObj;
     }
 
     private void fixZeros() {
