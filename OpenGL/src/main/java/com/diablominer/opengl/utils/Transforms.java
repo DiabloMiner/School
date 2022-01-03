@@ -211,7 +211,7 @@ public class Transforms {
     }
 
     public static Vector3d safeDiv(Vector3d vec1, Vector3d vec2) {
-        Vector3d result = new Vector3d(0.0f);
+        Vector3d result = new Vector3d(0.0);
         for (int i = 0; i < 3; i++) {
             if (!Double.isNaN((vec1.get(i) / vec2.get(i)))) {
                 result.setComponent(i, vec1.get(i) / vec2.get(i));

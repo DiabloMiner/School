@@ -13,8 +13,8 @@ import java.util.*;
 
 public class RenderablePointLight extends PhysicsObject {
 
-    private Model model;
-    private PointLight pointLight;
+    private final Model model;
+    private final PointLight pointLight;
 
     private Vector3f momentum = new Vector3f(0.0f);
     private Vector3f angularMomentum = new Vector3f(0.0f);
@@ -62,7 +62,7 @@ public class RenderablePointLight extends PhysicsObject {
 
     @Override
     public void collide(LogicalEngine logicalEngine, Set<PhysicsObject> physicsObjects) {
-        // Collision Detection
+        // Collision Detection:
         bv.update(new Vector3f(position).sub(bv.getCenter()));
         for (PhysicsObject physicsObject : physicsObjects) {
             // Broad Phase
@@ -70,32 +70,16 @@ public class RenderablePointLight extends PhysicsObject {
             if (this.bv.isIntersecting(physicsObject.bv)) {
                 // Narrow Phase
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
-                    // TODO: Remove
-                    /*Vector3f norm = new Vector3f(0.0f, 1.0f, 0.0f);
-                    Vector3f p1 = new Vector3f(0.0f).add(0.0f, 1.0f, 0.0f);
-                    Vector3f p2 = new Vector3f(this.position).add(0.0f, -1.0f, 0.0f).sub(physicsObject.position);
-                    if (p1.dot(norm) >= 0) {
-                        norm.normalize();
-                    } else {
-                        norm.mul(-1.0f).normalize();
-                    }
-                    float d = p1.dot(norm);
-                    if ((p2.dot(norm) - d) < -Math.ulp(1.0f)) {
-                        this.position.add(new Vector3f(p1).sub(new Vector3f(p2)));
-                    }
-                    updateObjectState(0.0);
-                    physicsObject.updateObjectState(0.0);
-                    obbTree.updateTriangles(this.modelMatrix);
-                    physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);*/
+                    // Reset objects to position at which the collision happened and determine unused time
+                    double unusedTime = resetPosition(physicsObject);
 
-                    double time = resetPosition(physicsObject);
-
+                    // Update state of objects
                     updateObjectState(0.0);
                     physicsObject.updateObjectState(0.0);
                     obbTree.updateTriangles(this.modelMatrix);
                     physicsObject.obbTree.updateTriangles(physicsObject.modelMatrix);
 
-
+                    // Find collision points
                     HashSet<Collision> collisions = new HashSet<>();
                     for (int i = 1; i< obbTree.getCollisionNodes().size(); i += 2) {
                         for (Face face : obbTree.getCollisionNodes().get(i - 1).getTriangles()) {
@@ -104,9 +88,6 @@ public class RenderablePointLight extends PhysicsObject {
                             }
                         }
                     }
-
-                    // TODO: Finish integrating time critical cd: USE DOUBLE and debug face: edge-edge intersections
-                    // TODO: Finish cleaning up the code
 
                     // Determine which points are colliding and prepare for the calculation of the average point
                     Vector3f averagePos = new Vector3f(0.0f);
@@ -117,8 +98,8 @@ public class RenderablePointLight extends PhysicsObject {
                             collidingPoints.add(collision);
                         }
                     }
-                    System.out.println();
 
+                    // Collision Response:
                     // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
                     // to create a new a collision and calculate the collision response
                     averagePos.div(collidingPoints.size());
@@ -131,8 +112,12 @@ public class RenderablePointLight extends PhysicsObject {
                         }
                     }
 
-                    double remainingTime = ((double) MyGame.millisecondsPerSimulationFrame / 1000.0) - time;
+                    // Use the remaining time of the time step to update the object's state
+                    double remainingTime = (MyGame.millisecondsPerSimulationFrame / 1000.0) - unusedTime;
                     updateObjectState(remainingTime);
+                    if (remainingTime < -epsilon) {
+                        System.err.println("Error: Remaining time after collision is negative. This means movement which should take a fraction of the timestep took more time than the timestep itself.");
+                    }
 
                     logicalEngine.addAlreadyCollidedPhysicsObject(this);
                     logicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);
@@ -144,11 +129,6 @@ public class RenderablePointLight extends PhysicsObject {
     }
 
     private Vector3d findGreatestPenetrationDepth(PhysicsObject physicsObject) {
-        subVelocityFromPosition();
-        physicsObject.subVelocityFromPosition();
-
-        updateObjectState(0.0);
-        physicsObject.updateObjectState(0.0);
         Matrix4f thisMat = new Matrix4f(this.modelMatrix);
         Matrix4f otherMat = new Matrix4f(physicsObject.modelMatrix);
         obbTree.updatePoints(thisMat);
@@ -171,9 +151,18 @@ public class RenderablePointLight extends PhysicsObject {
     }
 
     private double resetPosition(PhysicsObject physicsObject) {
-        Vector3d greatestPenetrationDepth = findGreatestPenetrationDepth(physicsObject);
-        double time = 0.0;
+        // Reset position to before the collision
+        subVelocityFromPosition();
+        physicsObject.subVelocityFromPosition();
 
+        updateObjectState(0.0);
+        physicsObject.updateObjectState(0.0);
+
+        // Determine greatest penetration-depth from all penetrating parts of the two objects
+        Vector3d greatestPenetrationDepth = findGreatestPenetrationDepth(physicsObject);
+
+        // Determine how much the object should pushed back and how much time this would have taken (if executed in its own timestep)
+        double unusedTime = 0.0;
         if (new Vector3d(this.velocity).equals(new Vector3d(0.0), epsilon) || new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0), epsilon)) {
             if (new Vector3d(this.velocity).equals(new Vector3d(0.0), epsilon) && new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0), epsilon)) {
                 Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), velocity);
@@ -182,7 +171,7 @@ public class RenderablePointLight extends PhysicsObject {
                 Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), physicsObject.velocity);
                 physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
 
-                time = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
+                unusedTime = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
             } else {
                 if (new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0f), epsilon)) {
                     Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), velocity);
@@ -190,14 +179,14 @@ public class RenderablePointLight extends PhysicsObject {
                     changePositionAccordingToPenetrationDepth(penDepth);
                     physicsObject.addVelocityToPosition();
 
-                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
                 } else {
                     Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), physicsObject.velocity);
 
                     addVelocityToPosition();
                     physicsObject.changePositionAccordingToPenetrationDepth(penDepth);
 
-                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
                 }
             }
         } else {
@@ -212,7 +201,7 @@ public class RenderablePointLight extends PhysicsObject {
                 Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).mul(otherPenetrationRatio), physicsObject.velocity);
                 physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
 
-                time = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
+                unusedTime = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
             } else {
                 if (!physicsObject.isVelPointingTowardsObject(this)) {
                     Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), velocity);
@@ -220,14 +209,14 @@ public class RenderablePointLight extends PhysicsObject {
                     changePositionAccordingToPenetrationDepth(penDepth);
                     physicsObject.addVelocityToPosition();
 
-                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
                 } else if (!isVelPointingTowardsObject(physicsObject)) {
                     Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), physicsObject.velocity);
 
                     addVelocityToPosition();
                     physicsObject.changePositionAccordingToPenetrationDepth(penDepth);
 
-                    time = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
+                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
                 } else {
                     Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), velocity);
                     changePositionAccordingToPenetrationDepth(thisPenDepth);
@@ -235,12 +224,12 @@ public class RenderablePointLight extends PhysicsObject {
                     Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), physicsObject.velocity);
                     physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
 
-                    time = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
+                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
                 }
             }
         }
 
-        return time;
+        return unusedTime;
     }
 
     @Override

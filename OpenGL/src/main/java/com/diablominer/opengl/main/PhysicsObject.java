@@ -2,7 +2,6 @@ package com.diablominer.opengl.main;
 
 import com.diablominer.opengl.collisiondetection.BoundingVolume;
 import com.diablominer.opengl.collisiondetection.OBBTree;
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
 import java.lang.Math;
@@ -15,7 +14,7 @@ public abstract class PhysicsObject implements GameObject {
 
     public PhysicsObject() {
         LogicalEngine.allPhysicsObjects.add(this);
-    };
+    }
 
     public BoundingVolume bv;
     public OBBTree obbTree;
@@ -48,8 +47,7 @@ public abstract class PhysicsObject implements GameObject {
     }
 
     public double determineTimeThroughVelocity(Vector3d thisPenDepth) {
-        Vector3d temp = Transforms.safeDiv(new Vector3d(this.velocity).mul(thisPenDepth.get(thisPenDepth.maxComponent())), velocity);
-        return Math.abs(temp.get(temp.maxComponent()));
+        return Math.abs(thisPenDepth.get(thisPenDepth.maxComponent()));
     }
 
     public List<Vector3d> determinePenetrationDepths(int startingIndex, Vector3f velocity, Vector3f angularVelocity) {
@@ -94,7 +92,7 @@ public abstract class PhysicsObject implements GameObject {
     }
 
     public void subVelocityFromPosition() {
-        this.position.add(new Vector3f().set(new Vector3d(this.velocity).mul(MyGame.millisecondsPerSimulationFrame / 1000.0)));
+        this.position.sub(new Vector3f().set(new Vector3d(this.velocity).mul(MyGame.millisecondsPerSimulationFrame / 1000.0)));
         if (!angularVelocity.equals(new Vector3f(0.0f), epsilon)) {
             this.orientation.add(new Quaternionf().set(new Quaterniond().fromAxisAngleRad(new Vector3d(angularVelocity), new Vector3d(angularVelocity).length()).scale(MyGame.millisecondsPerSimulationFrame / 1000.0)).invert());
         }

@@ -12,10 +12,10 @@ public class Collision {
 
     public static final float epsilon = Math.ulp(1.0f);
 
-    private Vector3f point;
-    private Vector3f normal;
-    private PhysicsObject normalObj, otherObj;
-    private Face face;
+    private final Vector3f point;
+    private final Vector3f normal;
+    private final PhysicsObject normalObj, otherObj;
+    private final Face face;
 
     public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj, Face face) {
         this.point = new Vector3f(point);
