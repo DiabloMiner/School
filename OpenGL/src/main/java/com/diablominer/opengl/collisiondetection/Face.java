@@ -6,7 +6,6 @@ import org.joml.*;
 
 import java.lang.Math;
 import java.util.*;
-import java.util.function.Predicate;
 
 public class Face {
 
@@ -179,7 +178,6 @@ public class Face {
             determineEdgeIntersections(face, contacts, thisPObj, otherPObj);
             face.determineEdgeIntersections(this, contacts, thisPObj, otherPObj);
         } else if (intersectionType == FaceIntersectionType.Coplanar && areTrianglesCollidingCoplanar(face)) {
-            // TODO: Points from both objects have to be used and edge method should be debugged
             determineVertexIntersections(face, contacts, thisPObj, otherPObj);
             face.determineVertexIntersections(this, contacts, otherPObj, thisPObj);
 
@@ -242,10 +240,6 @@ public class Face {
 
         if (areThisFaceSignsTheSame) {
             if (isDet1Zero) {
-
-                if (new Vector3f(normalizedNormal).mul(normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f))) {
-                    System.out.println("Ye");
-                }
                 return FaceIntersectionType.Coplanar;
             } else {
                 return FaceIntersectionType.NoIntersection;
@@ -253,10 +247,6 @@ public class Face {
         } else {
             if (areOtherFaceSignsTheSame) {
                 if (isDet4Zero) {
-
-                    if (new Vector3f(normalizedNormal).mul(normalizedNormal).equals(new Vector3f(0.0f, 1.0f, 0.0f))) {
-                        System.out.println("Ye");
-                    }
                     return FaceIntersectionType.Coplanar;
                 } else {
                     return FaceIntersectionType.NoIntersection;
