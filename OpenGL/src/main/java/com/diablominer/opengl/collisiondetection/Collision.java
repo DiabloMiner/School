@@ -1,5 +1,6 @@
 package com.diablominer.opengl.collisiondetection;
 
+import com.diablominer.opengl.main.MyGame;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
@@ -68,15 +69,33 @@ public class Collision {
         Vector3d uA = Transforms.round(Transforms.mulVectorWithMatrix4(kA, new Matrix4d().identity().set(new Matrix3d(normalObj.inertia)).invert()), 2);
         Vector3d uB = Transforms.round(Transforms.mulVectorWithMatrix4(kB, new Matrix4d().identity().set(new Matrix3d(otherObj.inertia)).invert()), 2);
 
-        double numerator = -(1 + normalObj.coefficientOfRestitution) * (new Vector3d(normal).dot(new Vector3d(normalObj.velocity).sub(new Vector3d(otherObj.velocity))) + (new Vector3d(normalObj.angularVelocity).dot(kA)) - new Vector3d(otherObj.angularVelocity).dot(kB));
+        double coefficientOfRestitution = (normalObj.coefficientOfRestitution + otherObj.coefficientOfRestitution) / 2;
+
+        double numerator = -(1 + coefficientOfRestitution) * (new Vector3d(normal).dot(new Vector3d(normalObj.velocity).sub(new Vector3d(otherObj.velocity))) + (new Vector3d(normalObj.angularVelocity).dot(kA)) - new Vector3d(otherObj.angularVelocity).dot(kB));
         double denominator = (1.0 / (double) normalObj.mass) + (1.0 / (double) otherObj.mass) + kA.dot(uA) + kB.dot(uB);
         double f = numerator / denominator;
         Vector3d impulse = new Vector3d(normal).mul(f);
 
-        normalObj.velocity.add(new Vector3f().set(new Vector3d(impulse).div(normalObj.mass)));
-        otherObj.velocity.sub(new Vector3f().set(new Vector3d(impulse).div(otherObj.mass)));
+        Vector3d normalObjFrictionImpulse = computeFrictionImpulse(normalObj);
+        Vector3d otherObjFrictionImpulse = computeFrictionImpulse(otherObj);
+
+        // TODO: Implement Coulomb friction correctly (min(vel, frictionVel))
+
+        // Add impulses to velocities (Friction impulses are currently only added to translational velocity)
+        normalObj.velocity.add(new Vector3f().set(new Vector3d(impulse).add(normalObjFrictionImpulse).div(normalObj.mass)));
+        otherObj.velocity.sub(new Vector3f().set(new Vector3d(impulse).sub(otherObjFrictionImpulse).div(otherObj.mass)));
         normalObj.angularVelocity.add(new Vector3f().set(new Vector3d(uA).mul(f)));
         normalObj.angularVelocity.sub(new Vector3f().set(new Vector3d(uB).mul(f)));
+    }
+
+    private Vector3d computeFrictionImpulse(PhysicsObject physicsObject) {
+        Vector3d vT = new Vector3d(physicsObject.velocity).sub(new Vector3d(physicsObject.velocity).normalize().mul(new Vector3d(normal).dot(new Vector3d(physicsObject.velocity))));
+        double coefficientOfKineticFriction = (normalObj.coefficientOfKineticFriction + otherObj.coefficientOfKineticFriction) / 2;
+
+        double frictionImpulse = new Vector3d(vT).mul(physicsObject.mass).length() * coefficientOfKineticFriction;
+        Vector3d impulseByFriction = new Vector3d(vT).mul(-1.0).normalize();
+        impulseByFriction.mul(frictionImpulse);
+        return impulseByFriction;
     }
 
     public boolean isColliding() {

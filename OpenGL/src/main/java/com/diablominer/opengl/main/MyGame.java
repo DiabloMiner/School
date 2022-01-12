@@ -145,6 +145,8 @@ public class MyGame implements Game {
 
     @Override
     public void mainLoop() throws Exception {
+        // TODO: Look at time system and make it more dynamic
+        // TODO: Make Engine use a non-fixed number of lights
         while (!renderingEngine.getWindow().shouldClose()) {
             long currentTime = System.currentTimeMillis();
             long deltaTime = currentTime - lastTime;

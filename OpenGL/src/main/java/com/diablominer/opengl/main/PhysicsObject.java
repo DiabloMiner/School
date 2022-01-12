@@ -11,6 +11,7 @@ public abstract class PhysicsObject implements GameObject {
 
     public static float epsilon = Math.ulp(1.0f);
     public static double bigNumber = 100000000.0;
+    public static double factor = 2.0;
 
     public PhysicsObject() {
         LogicalEngine.allPhysicsObjects.add(this);
@@ -20,6 +21,7 @@ public abstract class PhysicsObject implements GameObject {
     public OBBTree obbTree;
 
     public float coefficientOfRestitution;
+    public float coefficientOfKineticFriction;
     public float mass;
     public Matrix3f inertia;
     public Vector3f position;
@@ -55,7 +57,7 @@ public abstract class PhysicsObject implements GameObject {
         Map<Double, List<Vector3d>> multiplePoints = new HashMap<>();
         for (int i = startingIndex; i < obbTree.getCollisionNodes().size(); i += 2) {
             Vector3d nearestPoint = new Vector3d(this.position).add(bigNumber, bigNumber, bigNumber);
-            for (Vector3f point : obbTree.getCollisionNodes().get(i).getPoints()) {
+            for (Vector3f point : new HashSet<>(obbTree.getCollisionNodes().get(i).getPoints())) {
                 if (point.distance(this.position) < nearestPoint.distance(new Vector3d(this.position))) {
                     nearestPoint.set(point);
                 }
@@ -69,18 +71,43 @@ public abstract class PhysicsObject implements GameObject {
                 }
             }
 
+            Set<Vector3d> vecList = new HashSet<>();
+            Map<Double, List<Vector3d>> modifiedMultiplePoints = new HashMap<>(multiplePoints);
             if (multiplePoints.get(nearestPoint.distance(new Vector3d(this.position))).size() > 1) {
-                Vector3d averagePoint = new Vector3d(0.0);
-                for (Vector3d point : multiplePoints.get(nearestPoint.distance(new Vector3d(this.position)))) {
-                    averagePoint.add(point);
-                }
-                averagePoint.div(multiplePoints.get(nearestPoint.distance(new Vector3d(this.position))).size());
+                vecList.addAll(multiplePoints.get(nearestPoint.distance(new Vector3d(this.position))));
+                modifiedMultiplePoints.remove(nearestPoint.distance(new Vector3d(this.position)));
+
+                Vector3d averagePoint = determineAveragePoint(multiplePoints.get(nearestPoint.distance(new Vector3d(this.position))));
                 nearestPoint.set(averagePoint);
+            } else {
+                vecList.add(nearestPoint);
             }
+
+            for (Double key : modifiedMultiplePoints.keySet()) {
+                if (key <= (nearestPoint.distance(new Vector3d(this.position)) * factor)) {
+                    Vector3d earlierAveragePoint = determineAveragePoint(vecList);
+                    vecList.addAll(modifiedMultiplePoints.get(key));
+                    Vector3d laterAveragePoint = determineAveragePoint(vecList);
+
+                    if (laterAveragePoint.distance(new Vector3d(this.position)) >= earlierAveragePoint.distance(new Vector3d(this.position))) {
+                        modifiedMultiplePoints.get(key).forEach(vecList::remove);
+                    }
+                }
+            }
+            nearestPoint.set(determineAveragePoint(vecList));
 
             thisPenetrationDepths.add(nearestPoint.add(new Vector3d(velocity).mul(MyGame.millisecondsPerSimulationFrame / 1000.0f).add(new Vector3d(angularVelocity).cross(nearestPoint).mul(MyGame.millisecondsPerSimulationFrame / 1000.0))));
         }
         return thisPenetrationDepths;
+    }
+
+    private Vector3d determineAveragePoint(Collection<Vector3d> list) {
+        Vector3d avgPoint = new Vector3d(0.0);
+        for (Vector3d point : list) {
+            avgPoint.add(point);
+        }
+        avgPoint.div(list.size());
+        return avgPoint;
     }
 
     public void changePositionAccordingToPenetrationDepth(Vector3d penetrationDepth) {

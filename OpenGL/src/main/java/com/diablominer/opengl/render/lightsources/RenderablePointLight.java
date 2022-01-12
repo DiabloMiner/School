@@ -28,12 +28,13 @@ public class RenderablePointLight extends PhysicsObject {
         List<Vector3f> uniqueVertices = model.getAllUniqueVertices();
         mass = 10.0f;
         coefficientOfRestitution = 1.0f;
+        coefficientOfKineticFriction = 0.4f;
         position = determineCenterOfMass(uniqueVertices);
         inertia = createInertiaTensor(uniqueVertices, true);
         position.add(pointLight.getPosition());
 
-        velocity = new Vector3f(0.0f, forceY / mass, 0.0f);
-        force = new Vector3f(0.0f, 0.0f, 0.0f);
+        velocity = new Vector3f(forceY / 10000.0f, 0.0f, 0.0f);
+        force = new Vector3f(0.0f, forceY, 0.0f);
         orientation = new Quaternionf();
         angularVelocity = new Vector3f(0.0f);
         torque = new Vector3f(0.0f, 0.0f, 0.0f);
@@ -72,6 +73,9 @@ public class RenderablePointLight extends PhysicsObject {
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
                     // Reset objects to position at which the collision happened and determine unused time
                     double unusedTime = resetPosition(physicsObject);
+
+                    // TODO: Fix penetration depth "bug" & implement friction properly
+                    // TODO: Consider rotational motion in reset position function
 
                     // Update state of objects
                     updateObjectState(0.0);
@@ -116,7 +120,10 @@ public class RenderablePointLight extends PhysicsObject {
                     double remainingTime = (MyGame.millisecondsPerSimulationFrame / 1000.0) - unusedTime;
                     updateObjectState(remainingTime);
                     if (remainingTime < -epsilon) {
-                        System.err.println("Error: Remaining time after collision is negative. This means movement which should take a fraction of the timestep took more time than the timestep itself.");
+                        System.err.println("Error: Remaining time after collision is negative.");
+                    }
+                    if (remainingTime < -epsilon) {
+                        System.err.println("Error: Remaining time after collision is greater than the timestep.");
                     }
 
                     logicalEngine.addAlreadyCollidedPhysicsObject(this);
