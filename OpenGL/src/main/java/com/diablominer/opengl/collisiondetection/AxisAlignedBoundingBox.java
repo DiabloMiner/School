@@ -13,8 +13,8 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
 
     public AxisAlignedBoundingBox(Vector3f centerPoint, List<Vector3f> vertices) {
         size = determineSideSize(vertices);
-        this.max = new Vector3f(centerPoint).add(new Vector3f(Math.sqrt(3 * size)));
-        this.min = new Vector3f(centerPoint).sub(new Vector3f(Math.sqrt(3 * size)));
+        this.max = new Vector3f(centerPoint).add(new Vector3f(size / 2.0f));
+        this.min = new Vector3f(centerPoint).sub(new Vector3f(size / 2.0f));
         BoundingVolume.allBoundingVolumes.add(this);
     }
 
@@ -86,6 +86,6 @@ public class AxisAlignedBoundingBox implements BoundingVolume {
             }
         }
 
-        return mostDistantPoint.x - (mostDistantPoint.x * -1.0f);
+        return Math.abs(mostDistantPoint.x - (mostDistantPoint.x * -1.0f));
     }
 }

@@ -9,6 +9,7 @@ import com.diablominer.opengl.render.RenderingEngineUnit;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
+import java.lang.Math;
 import java.util.*;
 
 public class RenderablePointLight extends PhysicsObject {
@@ -72,7 +73,7 @@ public class RenderablePointLight extends PhysicsObject {
                 // Narrow Phase
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
                     // Reset objects to position at which the collision happened and determine unused time
-                    double unusedTime = resetPosition(physicsObject);
+                    double usedTime = resetPosition(physicsObject);
 
                     // TODO: Fix penetration depth "bug" & implement friction properly
                     // TODO: Consider rotational motion in reset position function
@@ -103,6 +104,10 @@ public class RenderablePointLight extends PhysicsObject {
                         }
                     }
 
+                    // TODO: Fix makeVectorPositive Method: Changes direction currently!
+                    // TODO: Change bottom edge of cube to be the same as top edge
+                    // Not all points that should be generated are
+
                     // Collision Response:
                     // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
                     // to create a new a collision and calculate the collision response
@@ -117,12 +122,12 @@ public class RenderablePointLight extends PhysicsObject {
                     }
 
                     // Use the remaining time of the time step to update the object's state
-                    double remainingTime = (MyGame.millisecondsPerSimulationFrame / 1000.0) - unusedTime;
+                    double remainingTime = (MyGame.millisecondsPerSimulationFrame / 1000.0) - usedTime;
                     updateObjectState(remainingTime);
                     if (remainingTime < -epsilon) {
                         System.err.println("Error: Remaining time after collision is negative.");
                     }
-                    if (remainingTime < -epsilon) {
+                    if (remainingTime > (MyGame.millisecondsPerSimulationFrame / 1000.0)) {
                         System.err.println("Error: Remaining time after collision is greater than the timestep.");
                     }
 
@@ -167,6 +172,7 @@ public class RenderablePointLight extends PhysicsObject {
 
         // Determine greatest penetration-depth from all penetrating parts of the two objects
         Vector3d greatestPenetrationDepth = findGreatestPenetrationDepth(physicsObject);
+        correctPenetrationDepth(physicsObject, greatestPenetrationDepth);
 
         // Determine how much the object should pushed back and how much time this would have taken (if executed in its own timestep)
         double unusedTime = 0.0;
@@ -237,6 +243,29 @@ public class RenderablePointLight extends PhysicsObject {
         }
 
         return unusedTime;
+    }
+
+    private void correctPenetrationDepth(PhysicsObject physicsObject, Vector3d penetrationDepth) {
+        Vector3d relativeVelocity = new Vector3d(physicsObject.velocity).sub(this.velocity).normalize();
+        Vector3d precisionVector = new Vector3d(0.0);
+
+        for (int i = 0; i < 3; i++) {
+            double precision;
+            if (relativeVelocity.get(i) != 0.0) {
+                precision = Math.abs(penetrationDepth.get(i) / relativeVelocity.get(i));
+            } else {
+                precision = -1.0;
+            }
+            precision = (precision > (1.0 + epsilon)) ? -1.0 : precision;
+            precisionVector.setComponent(i, precision);
+        }
+
+        double approximateCollisionTime = (penetrationDepth.get(Transforms.getMaxComponent(precisionVector)) / relativeVelocity.get(Transforms.getMaxComponent(precisionVector)));
+        for (int j = 0; j < 3; j++) {
+            if (j != Transforms.getMaxComponent(precisionVector)) {
+                penetrationDepth.setComponent(j, approximateCollisionTime * relativeVelocity.get(j));
+            }
+        }
     }
 
     @Override

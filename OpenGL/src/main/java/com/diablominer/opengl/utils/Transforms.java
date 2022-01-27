@@ -220,6 +220,26 @@ public class Transforms {
         return result;
     }
 
+    public static int getMaxComponent(Vector3d vec) {
+        int maxComp = 0;
+        for (int i = 0; i < 3; i++) {
+            if (vec.get(i) > vec.get(maxComp)) {
+                maxComp = i;
+            }
+        }
+        return maxComp;
+    }
+
+    public static Vector3f makeComponentsPositive(Vector3f vec) {
+        Vector3f result = new Vector3f(vec);
+        for (int i = 0; i < 3; i++) {
+            if (result.get(i) < 0.0f) {
+                result.setComponent(i, result.get(i) * -1.0f);
+            }
+        }
+        return result;
+    }
+
     /**
      * Sets -0.0fs to to 0.0f for the purpose of comparing them
      * @param vec Vector which may have false zeros

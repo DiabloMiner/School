@@ -198,6 +198,9 @@ public class Face {
     private void determineEdgeIntersections(Face face, List<Collision> contacts, PhysicsObject thisPObj, PhysicsObject otherPObj) {
         for (Edge otherEdge : face.getEdges()) {
             for (Edge thisEdge : this.getEdges()) {
+                if (otherEdge.getTail().equals(new Vector3f(-7.0027475f, -7.0f, -1.0f)) && otherEdge.getTop().equals(new Vector3f(-7.0027475f, -7.0f, -3.0f)) && thisEdge.getTop().equals(new Vector3f(-7.0f, -7.0f, -1.0f)) && thisEdge.getTail().equals(new Vector3f(-9.0f, -7.0f, -3.0f))) {
+                    System.out.println("test");
+                }
                 Vector3f point = otherEdge.isColliding(thisEdge);
                 if (!point.equals(0.0f, 0.0f, 0.0f)) {
                     correctPoint(point);
@@ -210,6 +213,11 @@ public class Face {
                         if (Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).add(normal)).length()) < Math.abs(new Vector3f(face.getCentroid()).sub(new Vector3f(point).sub(normal)).length())) {
                             normal.mul(-1.0f);
                         }
+                    }
+
+                    // TODO: Remove
+                    if (point.equals(new Vector3f(-9.0f, -7.0f, -3.0f))) {
+                        System.out.println("test");
                     }
 
                     contacts.add(new Collision(point, normal, thisPObj, otherPObj, this));

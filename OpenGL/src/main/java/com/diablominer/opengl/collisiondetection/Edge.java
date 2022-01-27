@@ -2,6 +2,7 @@ package com.diablominer.opengl.collisiondetection;
 
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 import java.util.Objects;
@@ -49,22 +50,22 @@ public class Edge {
     public Vector3f isColliding(Edge edge) {
         OverlappingType overlappingType = isOverlapping(edge);
         if (overlappingType.equals(OverlappingType.None)) {
-            Vector3f e = new Vector3f(tail).sub(top).normalize();
-            Vector3f f = new Vector3f(edge.tail).sub(edge.top).normalize();
-            Vector3f g = new Vector3f(edge.top).sub(this.top);
+            Vector3d e = new Vector3d(tail).sub(top).normalize();
+            Vector3d f = new Vector3d(edge.tail).sub(edge.top).normalize();
+            Vector3d g = new Vector3d(edge.top).sub(this.top);
 
-            Vector3f fCrossG = new Vector3f(f).cross(g);
-            Vector3f fCrossE = new Vector3f(f).cross(e);
-            float h = fCrossG.length();
-            float k = fCrossE.length();
+            Vector3d fCrossG = new Vector3d(f).cross(g);
+            Vector3d fCrossE = new Vector3d(f).cross(e);
+            double h = fCrossG.length();
+            double k = fCrossE.length();
 
             if (h > -epsilon && k > -epsilon) {
                 Vector3f point;
-                Vector3f l = new Vector3f(e).mul(h / k);
+                Vector3d l = new Vector3d(e).mul(h / k);
                 if (Math.signum(fCrossG.x) == Math.signum(fCrossE.x) && Math.signum(fCrossG.y) == Math.signum(fCrossE.y) && Math.signum(fCrossG.z) == Math.signum(fCrossE.z)) {
-                    point = new Vector3f(this.top).add(l);
+                    point = new Vector3f(this.top).add(new Vector3f().set(l));
                 } else {
-                    point = new Vector3f(this.top).sub(l);
+                    point = new Vector3f(this.top).sub(new Vector3f().set(l));
                 }
                 if (isPointInEdge(point) && edge.isPointInEdge(point)) {
                     return point;
