@@ -1,6 +1,5 @@
 package com.diablominer.opengl.collisiondetection;
 
-import com.diablominer.opengl.main.MyGame;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
@@ -142,12 +141,15 @@ public class Collision {
         Collision collision = (Collision) o;
         fixZeros();
         collision.fixZeros();
-        return point.equals(collision.point) && normal.equals(collision.normal) && normalObj.equals(collision.normalObj) && otherObj.equals(collision.otherObj);
+        Vector3f posNorm = Transforms.makeComponentsPositive(normal);
+        Vector3f otherPosNorm = Transforms.makeComponentsPositive(normal);
+        return point.equals(collision.point) && posNorm.equals(otherPosNorm);
     }
 
     @Override
     public int hashCode() {
         fixZeros();
-        return Objects.hash(point, normal, normalObj, otherObj);
+        Vector3f positiveNormal = Transforms.makeComponentsPositive(normal);
+        return Objects.hash(point, positiveNormal);
     }
 }
