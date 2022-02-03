@@ -75,9 +75,6 @@ public class RenderablePointLight extends PhysicsObject {
                     // Reset objects to position at which the collision happened and determine unused time
                     double usedTime = resetPosition(physicsObject);
 
-                    // TODO: Fix penetration depth "bug" & implement friction properly
-                    // TODO: Consider rotational motion in reset position function
-
                     // Update state of objects
                     updateObjectState(0.0);
                     physicsObject.updateObjectState(0.0);
@@ -95,7 +92,7 @@ public class RenderablePointLight extends PhysicsObject {
                     }
 
                     // Determine which points are colliding and prepare for the calculation of the average point
-                    Vector3f averagePos = new Vector3f(0.0f);
+                    Vector3d averagePos = new Vector3d(0.0);
                     List<Collision> collidingPoints = new ArrayList<>();
                     for (Collision collision : collisions) {
                         if (collision.isColliding()) {
@@ -104,19 +101,21 @@ public class RenderablePointLight extends PhysicsObject {
                         }
                     }
 
-                    // TODO: Fix makeVectorPositive Method: Changes direction currently!
-                    // TODO: Change bottom edge of cube to be the same as top edge
-                    // Not all points that should be generated are
+                    // TODO: Average Point is close to expected result but doesnt quite match it
+                    // TODO: Fix penetration depth "bug" & implement friction properly
+                    // TODO: Consider rotational motion in reset position function
 
                     // Collision Response:
                     // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
                     // to create a new a collision and calculate the collision response
                     averagePos.div(collidingPoints.size());
+                    Transforms.positiveDir(new Vector3f(0.0f, -1.0f, 1.0f));
+                    Transforms.positiveDir(new Vector3f(0.0f, 1.0f, -1.0f));
                     Vector3f normal = new Vector3f(0.0f);
                     for (Collision collision : collidingPoints) {
-                        if (collision.getFace().isPointInsideTriangle(averagePos)) {
+                        if (collision.getFace().isPointInsideTriangle(new Vector3f().set(averagePos))) {
                             normal.set(collision.getFace().getNormalizedNormal());
-                            new Collision(averagePos, normal, collision.getNormalObj(), collision.getOtherObj()).collisionResponse();
+                            new Collision(new Vector3f().set(averagePos), normal, collision.getNormalObj(), collision.getOtherObj()).collisionResponse();
                             break;
                         }
                     }
