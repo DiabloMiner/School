@@ -141,15 +141,15 @@ public class Collision {
         Collision collision = (Collision) o;
         fixZeros();
         collision.fixZeros();
-        Vector3f posNorm = Transforms.makeComponentsPositive(normal);
-        Vector3f otherPosNorm = Transforms.makeComponentsPositive(normal);
+        Vector3f posNorm = Transforms.positiveDir(normal);
+        Vector3f otherPosNorm = Transforms.positiveDir(normal);
         return point.equals(collision.point) && posNorm.equals(otherPosNorm);
     }
 
     @Override
     public int hashCode() {
         fixZeros();
-        Vector3f positiveNormal = Transforms.makeComponentsPositive(normal);
+        Vector3f positiveNormal = Transforms.positiveDir(normal);
         return Objects.hash(point, positiveNormal);
     }
 }

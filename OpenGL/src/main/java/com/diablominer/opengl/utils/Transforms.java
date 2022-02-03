@@ -230,18 +230,41 @@ public class Transforms {
         return maxComp;
     }
 
-    public static Vector3f makeComponentsPositive(Vector3f vec) {
-        Vector3f result = new Vector3f(vec);
+    /**
+     * Generates the vector with the highest possible amount of positive components out of the inputted vector.
+     * If there is an equal number of positive and negative components, the maximum component of the result will be positive.
+     */
+    public static Vector3f positiveDir(Vector3f vec) {
+        int numOfPos = 0;
+        int numOfZeros = 0;
+        int firstNonZeroComp = -1;
         for (int i = 0; i < 3; i++) {
-            if (result.get(i) < 0.0f) {
-                result.setComponent(i, result.get(i) * -1.0f);
+            if (vec.get(i) > 0.0f) {
+                numOfPos++;
+            } else if (vec.get(i) == 0.0f) {
+                numOfZeros++;
+            }
+
+            if (firstNonZeroComp == -1 && vec.get(i) != 0.0f) {
+                firstNonZeroComp = i;
+            }
+        }
+
+        Vector3f result = new Vector3f(vec);
+        if (numOfPos == 1 && numOfZeros == 1) {
+            if (vec.get(firstNonZeroComp) < 0.0f) {
+                result.mul(-1.0f);
+            }
+        } else {
+            if (numOfPos < (3 - numOfZeros)) {
+                result.mul(-1.0f);
             }
         }
         return result;
     }
 
     /**
-     * Sets -0.0fs to to 0.0f for the purpose of comparing them
+     * Sets -0.0fs to 0.0f for the purpose of comparing them
      * @param vec Vector which may have false zeros
      */
     public static void fixZeros(Vector3f vec) {
