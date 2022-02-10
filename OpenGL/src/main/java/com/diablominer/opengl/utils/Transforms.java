@@ -230,6 +230,17 @@ public class Transforms {
         return maxComp;
     }
 
+    public static Vector3d safeNormalize(Vector3d vec) {
+        Vector3d result = new Vector3d(vec);
+        double length = result.length();
+        for (int i = 0; i < 3; i++) {
+            if (result.get(i) != 0.0) {
+                result.setComponent(i, result.get(i) / length);
+            }
+        }
+        return result;
+    }
+
     /**
      * Generates the vector with the highest possible amount of positive components out of the inputted vector.
      * If there is an equal number of positive and negative components, the maximum component of the result will be positive.

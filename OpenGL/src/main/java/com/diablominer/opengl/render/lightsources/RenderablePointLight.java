@@ -104,13 +104,12 @@ public class RenderablePointLight extends PhysicsObject {
                     // TODO: Average Point is close to expected result but doesnt quite match it
                     // TODO: Fix penetration depth "bug" & implement friction properly
                     // TODO: Consider rotational motion in reset position function
+                    // TODO: Third collision: Bodies suddenly become one
 
                     // Collision Response:
                     // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
                     // to create a new a collision and calculate the collision response
                     averagePos.div(collidingPoints.size());
-                    Transforms.positiveDir(new Vector3f(0.0f, -1.0f, 1.0f));
-                    Transforms.positiveDir(new Vector3f(0.0f, 1.0f, -1.0f));
                     Vector3f normal = new Vector3f(0.0f);
                     for (Collision collision : collidingPoints) {
                         if (collision.getFace().isPointInsideTriangle(new Vector3f().set(averagePos))) {
