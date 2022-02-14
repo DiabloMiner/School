@@ -76,4 +76,8 @@ public class Camera {
         product.normalize().mul(cameraSpeed);
         position.add(product);
     }
+
+    public void moveDown(float cameraSpeed) {
+        position.sub(0.0f, cameraSpeed, 0.0f);
+    }
 }
