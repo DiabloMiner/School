@@ -11,15 +11,15 @@ import org.lwjgl.system.MemoryUtil;
 
 public class MyGame implements Game {
 
+    public static final long millisecondsPerFrame = 16;
+    public static final long millisecondsPerSimulationFrame = 10;
+
     private MyRenderingEngine renderingEngine;
     private MyLogicalEngine logicalEngine;
     private int frames = 0;
     private long frameTime;
     private long lastTime;
     private long accumulator;
-
-    public static final long millisecondsPerFrame = 16;
-    public static final long millisecondsPerSimulationFrame = 10;
 
     public static void main(String[] args) throws Exception {
         new MyGame();

@@ -17,9 +17,6 @@ public class RenderablePointLight extends PhysicsObject {
     private final Model model;
     private final PointLight pointLight;
 
-    private Vector3f momentum = new Vector3f(0.0f);
-    private Vector3f angularMomentum = new Vector3f(0.0f);
-
     public RenderablePointLight(PointLight pointLight, float forceY, String path, LogicalEngine logicalEngine, RenderingEngineUnit renderingEngineUnit) {
         super();
         logicalEngine.addGameObject(this);
@@ -49,11 +46,11 @@ public class RenderablePointLight extends PhysicsObject {
     public void updateObjectState(double timeStep) {
         Matrix3f inertia = new Matrix3f().identity().rotate(orientation).mul(this.inertia).mul(new Matrix3f().identity().rotate(orientation).transpose());
 
-        angularMomentum = new Vector3f(torque).mul((float) timeStep);
+        Vector3f angularMomentum = new Vector3f(torque).mul((float) timeStep);
         angularVelocity.add(new Vector3f(angularMomentum).mul(new Matrix3f(inertia).invert()));
         orientation.integrate((float) timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
-        momentum = new Vector3f(force).mul((float) timeStep);
+        Vector3f momentum = new Vector3f(force).mul((float) timeStep);
         velocity.add(new Vector3f(momentum).div(mass));
         position.add(new Vector3f(velocity).mul((float) timeStep));
 
@@ -101,10 +98,7 @@ public class RenderablePointLight extends PhysicsObject {
                         }
                     }
 
-                    // TODO: Average Point is close to expected result but doesnt quite match it
-                    // TODO: Fix penetration depth "bug" & implement friction properly
                     // TODO: Consider rotational motion in reset position function
-                    // TODO: Third collision: Bodies suddenly become one
 
                     // Collision Response:
                     // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
@@ -121,13 +115,14 @@ public class RenderablePointLight extends PhysicsObject {
 
                     // Use the remaining time of the time step to update the object's state
                     double remainingTime = (MyGame.millisecondsPerSimulationFrame / 1000.0) - usedTime;
-                    updateObjectState(remainingTime);
                     if (remainingTime < -epsilon) {
                         System.err.println("Error: Remaining time after collision is negative.");
                     }
                     if (remainingTime > (MyGame.millisecondsPerSimulationFrame / 1000.0)) {
                         System.err.println("Error: Remaining time after collision is greater than the timestep.");
                     }
+                    updateObjectState(remainingTime);
+                    physicsObject.updateObjectState(remainingTime);
 
                     logicalEngine.addAlreadyCollidedPhysicsObject(this);
                     logicalEngine.addAlreadyCollidedPhysicsObject(physicsObject);

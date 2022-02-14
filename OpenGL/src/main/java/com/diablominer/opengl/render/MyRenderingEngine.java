@@ -520,6 +520,9 @@ public class MyRenderingEngine extends RenderingEngine {
         if (window.getInput().isKeyDown(GLFW.GLFW_KEY_D)) {
             camera.moveRight(cameraSpeed);
         }
+        if (window.getInput().isKeyDown(GLFW.GLFW_KEY_SPACE)) {
+            camera.moveDown(cameraSpeed);
+        }
     }
 
     private void updateUniformBufferBlocks(Camera cam) {

@@ -75,10 +75,8 @@ public class Collision {
         double f = numerator / denominator;
         Vector3d impulse = new Vector3d(normal).mul(f);
 
-        // TODO: Implement Coulomb friction correctly (min(vel, frictionVel))
-        // TODO: Move compute code in applyFrictionImpulse method; Maybe generally implement a apply impulse method
-        Vector3d normalObjFrictionImpulse = computeFrictionImpulse(normalObj);
-        Vector3d otherObjFrictionImpulse = computeFrictionImpulse(otherObj);
+        double normalObjFrictionImpulse = computeFrictionImpulse(normalObj);
+        double otherObjFrictionImpulse = computeFrictionImpulse(otherObj);
 
         // Add impulses to velocities (Friction impulses are currently only added to translational velocity)
         normalObj.velocity.add(new Vector3f().set(new Vector3d(impulse).div(normalObj.mass)));
@@ -89,20 +87,15 @@ public class Collision {
         normalObj.angularVelocity.sub(new Vector3f().set(new Vector3d(uB).mul(f)));
     }
 
-    private void applyFrictionImpulse(PhysicsObject physicsObject, Vector3d frictionImpulse) {
+    private void applyFrictionImpulse(PhysicsObject physicsObject, double frictionImpulse) {
         Vector3d tangentialVelDir = Transforms.safeNormalize(computeTangentialVelocity(physicsObject));
-        physicsObject.velocity.sub(new Vector3f().set(new Vector3d(tangentialVelDir).mul(Math.min(frictionImpulse.length(), physicsObject.velocity.length() * physicsObject.mass)).div(physicsObject.mass)));
+        physicsObject.velocity.sub(new Vector3f().set(new Vector3d(tangentialVelDir).mul(Math.min(frictionImpulse, physicsObject.velocity.length() * physicsObject.mass)).div(physicsObject.mass)));
     }
 
-    private Vector3d computeFrictionImpulse(PhysicsObject physicsObject) {
+    private double computeFrictionImpulse(PhysicsObject physicsObject) {
         Vector3d vN = computeNormalVelocity(physicsObject);
-        Vector3d vT = new Vector3d(physicsObject.velocity).sub(vN);
         double coefficientOfKineticFriction = (normalObj.coefficientOfKineticFriction + otherObj.coefficientOfKineticFriction) / 2;
-
-        double frictionImpulse = new Vector3d(vN).mul(physicsObject.mass).length() * coefficientOfKineticFriction;
-        Vector3d impulseByFriction = Transforms.safeNormalize(new Vector3d(vT).mul(-1.0));
-        impulseByFriction.mul(frictionImpulse);
-        return impulseByFriction;
+        return new Vector3d(vN).mul(physicsObject.mass).length() * coefficientOfKineticFriction;
     }
 
     private Vector3d computeNormalVelocity(PhysicsObject physicsObject) {
