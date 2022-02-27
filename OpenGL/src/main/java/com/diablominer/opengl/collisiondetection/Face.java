@@ -212,14 +212,6 @@ public class Face {
                         }
                     }
 
-                    // TODO: Remove
-                    if (point.equals(new Vector3f(-9.0f, -7.0f, -3.0f))) {
-                        System.out.println("test");
-                    }
-                    if (point.equals(new Vector3f(-7.0027475f, -7.0f, -1.0f))) {
-                        System.out.println("test");
-                    }
-
                     contacts.add(new Collision(point, normal, thisPObj, otherPObj, this));
                 }
             }

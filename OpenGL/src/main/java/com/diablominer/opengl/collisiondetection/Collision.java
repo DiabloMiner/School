@@ -81,10 +81,11 @@ public class Collision {
         // Add impulses to velocities (Friction impulses are currently only added to translational velocity)
         normalObj.velocity.add(new Vector3f().set(new Vector3d(impulse).div(normalObj.mass)));
         otherObj.velocity.sub(new Vector3f().set(new Vector3d(impulse).div(otherObj.mass)));
-        applyFrictionImpulse(normalObj, normalObjFrictionImpulse);
-        applyFrictionImpulse(otherObj, otherObjFrictionImpulse);
         normalObj.angularVelocity.add(new Vector3f().set(new Vector3d(uA).mul(f)));
         normalObj.angularVelocity.sub(new Vector3f().set(new Vector3d(uB).mul(f)));
+
+        applyFrictionImpulse(normalObj, normalObjFrictionImpulse);
+        applyFrictionImpulse(otherObj, otherObjFrictionImpulse);
     }
 
     private void applyFrictionImpulse(PhysicsObject physicsObject, double frictionImpulse) {
