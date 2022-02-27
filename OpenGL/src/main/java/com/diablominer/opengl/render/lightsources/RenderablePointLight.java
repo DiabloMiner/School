@@ -6,13 +6,13 @@ import com.diablominer.opengl.main.MyGame;
 import com.diablominer.opengl.main.PhysicsObject;
 import com.diablominer.opengl.render.renderables.Model;
 import com.diablominer.opengl.render.RenderingEngineUnit;
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
-import java.lang.Math;
 import java.util.*;
 
 public class RenderablePointLight extends PhysicsObject {
+
+    public static long startTime = 0;
 
     private final Model model;
     private final PointLight pointLight;
@@ -69,6 +69,7 @@ public class RenderablePointLight extends PhysicsObject {
             if (this.bv.isIntersecting(physicsObject.bv)) {
                 // Narrow Phase
                 if (this.obbTree.isColliding(physicsObject.obbTree, this.modelMatrix, physicsObject.modelMatrix)) {
+                    System.out.println(System.currentTimeMillis() - RenderablePointLight.startTime);
                     // Reset objects to position at which the collision happened and determine unused time
                     double usedTime = resetPosition(physicsObject);
 
@@ -97,8 +98,6 @@ public class RenderablePointLight extends PhysicsObject {
                             collidingPoints.add(collision);
                         }
                     }
-
-                    // TODO: Consider rotational motion in reset position function
 
                     // Collision Response:
                     // Calculate the average point, search in the collisions for a face which contains this point and use this face's saved normal and physics-objects
@@ -129,134 +128,6 @@ public class RenderablePointLight extends PhysicsObject {
                     obbTree.clearCollisionNodes();
                     physicsObject.obbTree.clearCollisionNodes();
                 }
-            }
-        }
-    }
-
-    private Vector3d findGreatestPenetrationDepth(PhysicsObject physicsObject) {
-        Matrix4f thisMat = new Matrix4f(this.modelMatrix);
-        Matrix4f otherMat = new Matrix4f(physicsObject.modelMatrix);
-        obbTree.updatePoints(thisMat);
-        physicsObject.obbTree.updatePoints(otherMat);
-
-        List<Vector3d> thisPenetrationDepths = determinePenetrationDepths(1, physicsObject.velocity, physicsObject.angularVelocity);
-        List<Vector3d> otherPenetrationDepths = physicsObject.determinePenetrationDepths(0, this.velocity, this.angularVelocity);
-
-        obbTree.updatePoints(thisMat.invert());
-        physicsObject.obbTree.updatePoints(otherMat.invert());
-
-        Vector3d greatestPenetrationDepth = new Vector3d(0.0f);
-        for (Vector3d thisPenDepth : thisPenetrationDepths) {
-            if (thisPenDepth.distance(otherPenetrationDepths.get(thisPenetrationDepths.indexOf(thisPenDepth))) > greatestPenetrationDepth.length()) {
-                greatestPenetrationDepth.set(new Vector3d(thisPenDepth).sub(otherPenetrationDepths.get(thisPenetrationDepths.indexOf(thisPenDepth))));
-            }
-        }
-
-        return greatestPenetrationDepth;
-    }
-
-    private double resetPosition(PhysicsObject physicsObject) {
-        // Reset position to before the collision
-        subVelocityFromPosition();
-        physicsObject.subVelocityFromPosition();
-
-        updateObjectState(0.0);
-        physicsObject.updateObjectState(0.0);
-
-        // Determine greatest penetration-depth from all penetrating parts of the two objects
-        Vector3d greatestPenetrationDepth = findGreatestPenetrationDepth(physicsObject);
-        correctPenetrationDepth(physicsObject, greatestPenetrationDepth);
-
-        // Determine how much the object should pushed back and how much time this would have taken (if executed in its own timestep)
-        double unusedTime = 0.0;
-        if (new Vector3d(this.velocity).equals(new Vector3d(0.0), epsilon) || new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0), epsilon)) {
-            if (new Vector3d(this.velocity).equals(new Vector3d(0.0), epsilon) && new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0), epsilon)) {
-                Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), velocity);
-                changePositionAccordingToPenetrationDepth(thisPenDepth);
-
-                Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), physicsObject.velocity);
-                physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
-
-                unusedTime = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
-            } else {
-                if (new Vector3d(physicsObject.velocity).equals(new Vector3d(0.0f), epsilon)) {
-                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), velocity);
-
-                    changePositionAccordingToPenetrationDepth(penDepth);
-                    physicsObject.addVelocityToPosition();
-
-                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
-                } else {
-                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), physicsObject.velocity);
-
-                    addVelocityToPosition();
-                    physicsObject.changePositionAccordingToPenetrationDepth(penDepth);
-
-                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
-                }
-            }
-        } else {
-            if (isVelPointingTowardsObject(physicsObject) && physicsObject.isVelPointingTowardsObject(this)) {
-                double velRatio = distanceToObjectWithVel(physicsObject) / physicsObject.distanceToObjectWithVel(this);
-                double otherPenetrationRatio = 1.0 / (velRatio + 1.0);
-                double thisPenetrationRatio = 1.0 - otherPenetrationRatio;
-
-                Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).mul(thisPenetrationRatio), velocity);
-                changePositionAccordingToPenetrationDepth(thisPenDepth);
-
-                Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).mul(otherPenetrationRatio), physicsObject.velocity);
-                physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
-
-                unusedTime = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
-            } else {
-                if (!physicsObject.isVelPointingTowardsObject(this)) {
-                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), velocity);
-
-                    changePositionAccordingToPenetrationDepth(penDepth);
-                    physicsObject.addVelocityToPosition();
-
-                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
-                } else if (!isVelPointingTowardsObject(physicsObject)) {
-                    Vector3d penDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth), physicsObject.velocity);
-
-                    addVelocityToPosition();
-                    physicsObject.changePositionAccordingToPenetrationDepth(penDepth);
-
-                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(penDepth), physicsObject.determineTimeThroughVelocity(penDepth));
-                } else {
-                    Vector3d thisPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), velocity);
-                    changePositionAccordingToPenetrationDepth(thisPenDepth);
-
-                    Vector3d otherPenDepth = Transforms.safeDiv(new Vector3d(greatestPenetrationDepth).div(2.0), physicsObject.velocity);
-                    physicsObject.changePositionAccordingToPenetrationDepth(otherPenDepth);
-
-                    unusedTime = java.lang.Math.max(determineTimeThroughVelocity(thisPenDepth), physicsObject.determineTimeThroughVelocity(otherPenDepth));
-                }
-            }
-        }
-
-        return unusedTime;
-    }
-
-    private void correctPenetrationDepth(PhysicsObject physicsObject, Vector3d penetrationDepth) {
-        Vector3d relativeVelocity = new Vector3d(physicsObject.velocity).sub(this.velocity).normalize();
-        Vector3d precisionVector = new Vector3d(0.0);
-
-        for (int i = 0; i < 3; i++) {
-            double precision;
-            if (relativeVelocity.get(i) != 0.0) {
-                precision = Math.abs(penetrationDepth.get(i) / relativeVelocity.get(i));
-            } else {
-                precision = -1.0;
-            }
-            precision = (precision > (1.0 + epsilon)) ? -1.0 : precision;
-            precisionVector.setComponent(i, precision);
-        }
-
-        double approximateCollisionTime = (penetrationDepth.get(Transforms.getMaxComponent(precisionVector)) / relativeVelocity.get(Transforms.getMaxComponent(precisionVector)));
-        for (int j = 0; j < 3; j++) {
-            if (j != Transforms.getMaxComponent(precisionVector)) {
-                penetrationDepth.setComponent(j, approximateCollisionTime * relativeVelocity.get(j));
             }
         }
     }
