@@ -330,7 +330,7 @@ public class MyRenderingEngine extends RenderingEngine {
         GL33.glReadBuffer(GL33.GL_NONE);
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("Omnidirectional-Shadow framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+            System.err.println("Directional-Shadow framebuffer 2 has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 
