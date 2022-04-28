@@ -2,10 +2,7 @@ package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.render.renderables.Renderable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class RenderingEngineUnit {
 
@@ -15,6 +12,11 @@ public abstract class RenderingEngineUnit {
     public RenderingEngineUnit(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram) {
         this.shaderProgram = shaderProgram;
         renderables = new ArrayList<>();
+    }
+
+    public RenderingEngineUnit(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, com.diablominer.opengl.examples.learning.Renderable[] renderables) {
+        this.shaderProgram = shaderProgram;
+        this.renderables = new ArrayList<>(Arrays.asList(renderables));
     }
 
     public abstract void updateRenderState();

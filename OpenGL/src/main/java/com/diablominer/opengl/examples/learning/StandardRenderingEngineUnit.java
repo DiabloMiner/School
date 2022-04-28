@@ -11,12 +11,12 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
     }
 
     public StandardRenderingEngineUnit(ShaderProgram shaderProgram, Renderable[] renderables) {
-        super(shaderProgram);
-        this.renderables.addAll(Arrays.asList(renderables));
+        super(shaderProgram, renderables);
     }
 
     @Override
     public void updateRenderState() {
+        // TODO: Test blurRenderer and implement on paper advise
         // TODO: Introduce method for getting a Engine reference and make RenderingEngine
         // TODO: Create new classes: Introduce new Postprocessing Shader for Bloom, IBL, Shadowcasting ; Review assimp code ; (Improve old texture code with new code)
     }

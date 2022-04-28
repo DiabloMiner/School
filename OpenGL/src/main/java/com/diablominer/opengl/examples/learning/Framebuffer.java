@@ -73,6 +73,27 @@ public class Framebuffer {
         allFramebuffers.add(this);
     }
 
+    public Framebuffer(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
+        id = GL33.glGenFramebuffers();
+        FramebufferTexture2D texture = new FramebufferTexture2D(width, height, internalFormat, format, type, attachment);
+        attached2DTextures = new ArrayList<>(List.of(texture));
+        attachedCubeMaps = new ArrayList<>();
+        attachedRenderbuffers = new ArrayList<>();
+        this.width = width;
+        this.height = height;
+
+        bind();
+        texture.bind();
+        createAttached2DTexture(texture);
+        texture.unbind();
+        unbind();
+        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
+            System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+        }
+
+        allFramebuffers.add(this);
+    }
+
     public Framebuffer(FramebufferCubeMap[] textures) {
         id = GL33.glGenFramebuffers();
         attached2DTextures = new ArrayList<>();
@@ -124,6 +145,10 @@ public class Framebuffer {
             renderbuffer.bind();
             createAttachedRenderBuffer(renderbuffer);
             Renderbuffer.unbind();
+
+            if (renderbuffer.attachment.isColorAttachment) {
+                colorAttachments.add(renderbuffer.attachment);
+            }
         }
         setDrawBuffers(colorAttachments);
         unbind();
@@ -157,6 +182,10 @@ public class Framebuffer {
             renderbuffer.bind();
             createAttachedRenderBuffer(renderbuffer);
             Renderbuffer.unbind();
+
+            if (renderbuffer.attachment.isColorAttachment) {
+                colorAttachments.add(renderbuffer.attachment);
+            }
         }
         setDrawBuffers(colorAttachments);
         unbind();
@@ -209,48 +238,6 @@ public class Framebuffer {
         this.height = height;
     }
 
-    public static Framebuffer getStandardFramebuffer() {
-        if (standardFramebuffer == null) {
-            standardFramebuffer = new Framebuffer(0);
-            allFramebuffers.add(standardFramebuffer);
-        }
-        return standardFramebuffer;
-    }
-
-    public static void unbind() {
-        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-    }
-
-    public static void unbind(int target) {
-        GL33.glBindFramebuffer(target, 0);
-    }
-
-    public static void blitFrameBuffers(Framebuffer f1, Framebuffer f2, int srcX0, int srcY0, int srcX1, int srcY1, int destX0, int destY0, int destX1, int destY1) {
-        for (FramebufferTexture2D texture : f1.attached2DTextures) {
-            f1.bind();
-            GL33.glReadBuffer(texture.getFramebufferAttachment().glType);
-            f2.bind();
-            GL33.glDrawBuffer(texture.getFramebufferAttachment().glType);
-            f1.bind(GL33.GL_READ_FRAMEBUFFER);
-            f2.bind(GL33.GL_DRAW_BUFFER);
-            GL33.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, destX0, destY0, destX1, destY1, texture.getFramebufferAttachment().glBitType, GL33.GL_NEAREST);
-
-            Framebuffer.unbind(GL33.GL_READ_FRAMEBUFFER);
-            Framebuffer.unbind(GL33.GL_DRAW_FRAMEBUFFER);
-            Framebuffer.unbind();
-        }
-
-        for (FramebufferRenderbuffer renderbuffer : f1.attachedRenderbuffers) {
-            f1.bind(GL33.GL_READ_FRAMEBUFFER);
-            f2.bind(GL33.GL_DRAW_BUFFER);
-            GL33.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, destX0, destY0, destX1, destY1, renderbuffer.getFramebufferAttachment().glBitType, GL33.GL_NEAREST);
-
-            Framebuffer.unbind(GL33.GL_READ_FRAMEBUFFER);
-            Framebuffer.unbind(GL33.GL_DRAW_FRAMEBUFFER);
-            Framebuffer.unbind();
-        }
-    }
-
     public void destroy() {
         for (Texture2D texture2D : attached2DTextures) {
             texture2D.destroy();
@@ -296,6 +283,48 @@ public class Framebuffer {
         if (width == -1 && height == -1) {
             width = renderbuffer.width;
             height = renderbuffer.height;
+        }
+    }
+
+    public static Framebuffer getStandardFramebuffer() {
+        if (standardFramebuffer == null) {
+            standardFramebuffer = new Framebuffer(0);
+            allFramebuffers.add(standardFramebuffer);
+        }
+        return standardFramebuffer;
+    }
+
+    public static void unbind() {
+        GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+    }
+
+    public static void unbind(int target) {
+        GL33.glBindFramebuffer(target, 0);
+    }
+
+    public static void blitFrameBuffers(Framebuffer f1, Framebuffer f2, int srcX0, int srcY0, int srcX1, int srcY1, int destX0, int destY0, int destX1, int destY1) {
+        for (FramebufferTexture2D texture : f1.attached2DTextures) {
+            f1.bind();
+            GL33.glReadBuffer(texture.getFramebufferAttachment().glType);
+            f2.bind();
+            GL33.glDrawBuffer(texture.getFramebufferAttachment().glType);
+            f1.bind(GL33.GL_READ_FRAMEBUFFER);
+            f2.bind(GL33.GL_DRAW_BUFFER);
+            GL33.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, destX0, destY0, destX1, destY1, texture.getFramebufferAttachment().glBitType, GL33.GL_NEAREST);
+
+            Framebuffer.unbind(GL33.GL_READ_FRAMEBUFFER);
+            Framebuffer.unbind(GL33.GL_DRAW_FRAMEBUFFER);
+            Framebuffer.unbind();
+        }
+
+        for (FramebufferRenderbuffer renderbuffer : f1.attachedRenderbuffers) {
+            f1.bind(GL33.GL_READ_FRAMEBUFFER);
+            f2.bind(GL33.GL_DRAW_BUFFER);
+            GL33.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, destX0, destY0, destX1, destY1, renderbuffer.getFramebufferAttachment().glBitType, GL33.GL_NEAREST);
+
+            Framebuffer.unbind(GL33.GL_READ_FRAMEBUFFER);
+            Framebuffer.unbind(GL33.GL_DRAW_FRAMEBUFFER);
+            Framebuffer.unbind();
         }
     }
 

@@ -13,7 +13,6 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class Learning6 {
 
@@ -25,10 +24,11 @@ public class Learning6 {
     private static Camera camera;
     private static Quad quad;
     private static ExpandedUniformBufferBlock matricesUniforms, lightUniforms;
-    private static FramebufferRenderer mainRenderingUnit;
+    private static FramebufferRenderer mainRenderer;
+    private static GaussianBlurRenderer blurRenderer;
     private static EventManager eventManager;
-
     private static Framebuffer intermediateFb;
+    private static Framebuffer[] pingPongFbs;
 
     public static void init() throws Exception {
         if (!GLFW.glfwInit()) {
@@ -126,6 +126,7 @@ public class Learning6 {
 
         ShaderProgram shaderProgram = new ShaderProgram("L6VS", "L6FS");
         ShaderProgram lsShaderProgram = new ShaderProgram("L6VS", "L4FS_LS");
+        ShaderProgram gaussianShaderProgram = new ShaderProgram("L6VS", "L6_GaussianBlur"),
         simpleShaderProgram = new ShaderProgram("L6SVS", "L6SFS");
 
         DirectionalLight dirLight = new DirectionalLight(new Vector3f(-0.7f, 1.0f, 2.9f), new Vector3f(0.0f, 0.0f, 0.2f));
@@ -134,11 +135,13 @@ public class Learning6 {
 
         Model helloWorld = new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f).normalize()));
 
-        mainRenderingUnit = new FramebufferRenderer(new FramebufferTexture2D[] {new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA, 4, FramebufferAttachment.COLOR_ATTACHMENT0)},
+        mainRenderer = new FramebufferRenderer(new FramebufferTexture2D[] {new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT1)},
                 new FramebufferRenderbuffer[] {new FramebufferRenderbuffer(GL33.GL_DEPTH24_STENCIL8, window.width, window.height, 4, FramebufferAttachment.DEPTH_AND_STENCIL_ATTACHMENT)},
-                new RenderingEngineUnit[]{new StandardRenderingEngineUnit(shaderProgram, new Renderable[] {helloWorld}), new LightRenderingEngineUnit(lsShaderProgram)});
-        intermediateFb = new Framebuffer(new FramebufferTexture2D[] {new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, FramebufferAttachment.COLOR_ATTACHMENT0)}, new FramebufferRenderbuffer[] {new FramebufferRenderbuffer(GL33.GL_DEPTH24_STENCIL8, window.width, window.height, FramebufferAttachment.DEPTH_AND_STENCIL_ATTACHMENT)});
+                new RenderingEngineUnit[] {new StandardRenderingEngineUnit(shaderProgram, new Renderable[] {helloWorld}), new LightRenderingEngineUnit(lsShaderProgram)});
+        intermediateFb = new Framebuffer(new FramebufferTexture2D[] {new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, FramebufferAttachment.COLOR_ATTACHMENT0)}, new FramebufferRenderbuffer[] {new FramebufferRenderbuffer(GL33.GL_DEPTH24_STENCIL8, window.width, window.height, FramebufferAttachment.DEPTH_AND_STENCIL_ATTACHMENT)});
         quad = new Quad(new ArrayList<>(Arrays.asList(intermediateFb.getAttached2DTextures().get(0))));
+        Quad blurQuad = new Quad(new ArrayList<>(Arrays.asList(mainRenderer.getAttached2DTextures().get(1))));
+        blurRenderer = new GaussianBlurRenderer(new Framebuffer[] {new Framebuffer(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, FramebufferAttachment.COLOR_ATTACHMENT0), new Framebuffer(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, FramebufferAttachment.COLOR_ATTACHMENT0)}, new RenderingEngineUnit[]{new SimpleRenderingEngineUnit(gaussianShaderProgram, new Renderable[]{blurQuad})}, 10);
 
         matricesUniforms = new ExpandedUniformBufferBlock(1, 2, GL33.GL_DYNAMIC_DRAW, "Matrices");
         lightUniforms = new ExpandedUniformBufferBlock(7, 0, GL33.GL_DYNAMIC_DRAW, "Lights");
@@ -171,9 +174,9 @@ public class Learning6 {
     }
 
     public static void render() {
-        mainRenderingUnit.render();
+        mainRenderer.render();
 
-        Framebuffer.blitFrameBuffers(mainRenderingUnit, intermediateFb);
+        Framebuffer.blitFrameBuffers(mainRenderer, intermediateFb);
 
         Framebuffer.getStandardFramebuffer().bind();
         GL33.glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
