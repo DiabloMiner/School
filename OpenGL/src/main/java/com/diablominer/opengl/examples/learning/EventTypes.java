@@ -6,7 +6,8 @@ public enum EventTypes {
     CameraDirectionUpdate(CameraDirectionUpdate.class),
     CameraPositionUpdate(CameraPositionUpdate.class),
     CameraZoomUpdate(CameraZoomUpdate.class),
-    KeyPressEvent(KeyPressEvent.class);
+    KeyPressEvent(KeyPressEvent.class),
+    PingPongIterationEvent(PingPongIterationEvent.class);
 
     public final Class<?> classValue;
 

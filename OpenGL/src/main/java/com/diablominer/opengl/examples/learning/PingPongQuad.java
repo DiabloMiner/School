@@ -2,7 +2,7 @@ package com.diablominer.opengl.examples.learning;
 
 import java.util.ArrayList;
 
-public class PingPongQuad extends Model {
+public class PingPongQuad extends Model implements PingPongIterationObserver {
 
     private final PingPongQuadMesh quadMesh;
     private boolean firstIteration, horizontal;
@@ -11,11 +11,8 @@ public class PingPongQuad extends Model {
         super(new ArrayList<>(), new ArrayList<>());
         quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
         this.meshes.add(quadMesh);
-    }
 
-    public void update(boolean firstIteration, boolean horizontal) {
-        this.firstIteration = firstIteration;
-        this.horizontal = horizontal;
+        Learning6.getEventManager().addEventObserver(EventTypes.PingPongIterationEvent, this);
     }
 
     @Override
@@ -23,4 +20,14 @@ public class PingPongQuad extends Model {
         quadMesh.draw(shaderProgram, firstIteration, horizontal);
     }
 
+    @Override
+    public void update(Event event) {
+        update((PingPongIterationEvent) event);
+    }
+
+    @Override
+    public void update(PingPongIterationEvent event) {
+        this.firstIteration = event.firstIteration;
+        this.horizontal = event.horizontal;
+    }
 }

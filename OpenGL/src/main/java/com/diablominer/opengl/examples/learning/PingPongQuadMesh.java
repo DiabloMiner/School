@@ -8,7 +8,6 @@ import java.util.Collection;
 
 public class PingPongQuadMesh extends Mesh {
 
-
     public static final float[] vertices = {
             -1.0f,  1.0f,
             -1.0f, -1.0f,
