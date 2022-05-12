@@ -5,7 +5,6 @@ import org.lwjgl.opengl.GL33;
 public class PingPongRenderingEngineUnit extends RenderingEngineUnit {
 
     private final PingPongQuad quad;
-    public boolean firstIteration, horizontal;
 
     public PingPongRenderingEngineUnit(ShaderProgram shaderProgram, Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex) {
         super(shaderProgram);
@@ -19,15 +18,7 @@ public class PingPongRenderingEngineUnit extends RenderingEngineUnit {
     }
 
     @Override
-    public void update(ShaderProgram shaderProgram) {
-        quad.update(firstIteration, horizontal);
-    }
-
-    public void updateIterationValues(boolean firstIteration, boolean horizontal) {
-        this.firstIteration = firstIteration;
-        this.horizontal = horizontal;
-        update();
-    }
+    public void update(ShaderProgram shaderProgram) {}
 
     @Override
     public void render() {

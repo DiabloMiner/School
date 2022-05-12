@@ -123,7 +123,7 @@ public class Learning6 {
         GL33.glCullFace(GL33.GL_BACK);
 
         ShaderProgram shaderProgram = new ShaderProgram("L6VS", "L6FS");
-        ShaderProgram lsShaderProgram = new ShaderProgram("L6VS", "L4FS_LS");
+        ShaderProgram lsShaderProgram = new ShaderProgram("L6VS", "L6FS_LS");
         ShaderProgram simpleShaderProgram = new ShaderProgram("L6SVS", "L6SFS");
         ShaderProgram blurShaderProgram = new ShaderProgram("L6SVS", "L6_GaussianBlur");
 
