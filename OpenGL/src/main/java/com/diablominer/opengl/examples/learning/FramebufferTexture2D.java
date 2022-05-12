@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 public class FramebufferTexture2D extends Texture2D implements FramebufferObject {
 
     public FramebufferAttachment attachment;
-    private int internalFormat, format, type, samples;
+    private final int internalFormat, format, type, samples;
 
     public FramebufferTexture2D(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
         super(width, height, internalFormat, format, type);

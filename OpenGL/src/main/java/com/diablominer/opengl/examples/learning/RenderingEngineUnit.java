@@ -2,10 +2,7 @@ package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.render.renderables.Renderable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class RenderingEngineUnit {
 
@@ -17,9 +14,14 @@ public abstract class RenderingEngineUnit {
         renderables = new ArrayList<>();
     }
 
-    public abstract void updateRenderState();
+    public RenderingEngineUnit(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, com.diablominer.opengl.examples.learning.Renderable[] renderables) {
+        this.shaderProgram = shaderProgram;
+        this.renderables = new ArrayList<>(Arrays.asList(renderables));
+    }
 
-    public abstract void updateRenderState(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram);
+    public abstract void update();
+
+    public abstract void update(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram);
 
     public abstract void render();
 
@@ -33,6 +35,13 @@ public abstract class RenderingEngineUnit {
         }
     }
 
+    public void renderAllRenderables(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram) {
+        com.diablominer.opengl.examples.learning.ShaderProgram temporaryShaderProgram = this.shaderProgram;
+        this.shaderProgram = shaderProgram;
+        renderAllRenderables();
+        this.shaderProgram = temporaryShaderProgram;
+    }
+
     public void destroyAllRenderables() {
         for (com.diablominer.opengl.examples.learning.Renderable renderable : renderables) {
             renderable.destroy();
@@ -41,13 +50,6 @@ public abstract class RenderingEngineUnit {
 
     public void destroyShaderProgram() {
         shaderProgram.destroy();
-    }
-
-    public void renderWithAnotherShaderProgram(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram) {
-        com.diablominer.opengl.examples.learning.ShaderProgram temporaryShaderProgram = this.shaderProgram;
-        this.shaderProgram = shaderProgram;
-        render();
-        this.shaderProgram = temporaryShaderProgram;
     }
 
     public Set<Renderable> containsRenderables(Set<com.diablominer.opengl.render.renderables.Renderable> renderables) {

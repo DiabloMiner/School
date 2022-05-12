@@ -2,8 +2,6 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
-import java.util.Arrays;
-
 public class StandardRenderingEngineUnit extends RenderingEngineUnit {
 
     public StandardRenderingEngineUnit(ShaderProgram shaderProgram) {
@@ -11,28 +9,23 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
     }
 
     public StandardRenderingEngineUnit(ShaderProgram shaderProgram, Renderable[] renderables) {
-        super(shaderProgram);
-        this.renderables.addAll(Arrays.asList(renderables));
+        super(shaderProgram, renderables);
     }
 
     @Override
-    public void updateRenderState() {
-        // TODO: Introduce method for getting a Engine reference and make RenderingEngine
-        // TODO: Create new classes: Introduce new Postprocessing Shader for Bloom, IBL, Shadowcasting ; Review assimp code ; (Improve old texture code with new code)
+    public void update() {
+        update(this.shaderProgram);
+        // TODO: Implement on paper advise ; Maybe PingPongIterationEvent
+        // TODO: Introduce method for getting a Engine reference and make RenderingEngine non static
+        // TODO: Make IBL, Shadowcasting available ; Review assimp code ; (Improve old texture code with new code)
     }
 
     @Override
-    public void updateRenderState(ShaderProgram shaderProgram) {}
+    public void update(ShaderProgram shaderProgram) {}
 
     @Override
     public void render() {
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
-
-        renderAllRenderables();
-
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        render(this.shaderProgram);
     }
 
     @Override
@@ -40,7 +33,7 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);
 
-        renderWithAnotherShaderProgram(shaderProgram);
+        renderAllRenderables(shaderProgram);
 
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);

@@ -5,7 +5,7 @@ import java.util.Collection;
 
 public class Quad extends Model {
 
-    private QuadMesh quadMesh;
+    private final QuadMesh quadMesh;
 
     public Quad(Collection<Texture2D> textures) {
         super(new ArrayList<>(), new ArrayList<>());
@@ -19,4 +19,5 @@ public class Quad extends Model {
             mesh.draw(shaderProgram);
         }
     }
+
 }

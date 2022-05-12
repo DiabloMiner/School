@@ -29,13 +29,7 @@ public class LightRenderingEngineUnit extends StandardRenderingEngineUnit {
 
     @Override
     public void render() {
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
-
-        renderAllLights();
-
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        render(this.shaderProgram);
     }
 
     @Override

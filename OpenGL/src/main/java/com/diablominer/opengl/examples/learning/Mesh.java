@@ -48,7 +48,6 @@ public class Mesh {
     }
 
     private void setUpMesh() {
-
         ArrayList<float[]> vertexAttributeArrays = new ArrayList<>(Arrays.asList(vertices, normals, texCoords, tangents, biTangents));
         vertexAttributeSizes.addAll(Arrays.asList(vertexSize, normalSize, texCoordSize, tangentSize, bitangentSize));
         vao = new MeshVAO(vertexAttributeArrays, vertexAttributeSizes, indices, GL33.GL_STATIC_DRAW);
