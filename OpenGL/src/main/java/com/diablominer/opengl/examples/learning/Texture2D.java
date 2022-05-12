@@ -104,8 +104,8 @@ public class Texture2D implements Texture {
 
     public void unbind() {
         if (index != -1) {
-            GL33.glBindTexture(target, 0);
             GL33.glActiveTexture(GL33.GL_TEXTURE0 + this.index);
+            GL33.glBindTexture(target, 0);
             alreadyBound.remove(this);
         }
     }
