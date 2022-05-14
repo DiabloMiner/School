@@ -78,9 +78,7 @@ public class Camera implements KeyPressObserver {
     }
 
     @Override
-    public void update(Event event) {
-        update((KeyPressEvent) event);
-    }
+    public void update(Event event) {}
 
     @Override
     public void update(KeyPressEvent event) {

@@ -15,7 +15,6 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
     @Override
     public void update() {
         update(this.shaderProgram);
-        // TODO: Examine event system and why there was no light shader
         // TODO: Introduce method for getting a Engine reference and make RenderingEngine non static
         // TODO: Make IBL, Shadowcasting available ; Review assimp code ; (Improve old texture code with new code)
     }

@@ -11,13 +11,7 @@ public class CameraUpdatedSpotLight extends SpotLight implements CameraPositionO
     }
 
     @Override
-    public void update(Event event) {
-        if (event.getClass().equals(CameraPositionUpdate.class)) {
-            update((CameraPositionUpdate) event);
-        } else {
-            update((CameraDirectionUpdate) event);
-        }
-    }
+    public void update(Event event) {}
 
     @Override
     public void update(CameraPositionUpdate event) {
