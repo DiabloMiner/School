@@ -21,9 +21,7 @@ public class PingPongQuad extends Model implements PingPongIterationObserver {
     }
 
     @Override
-    public void update(Event event) {
-        update((PingPongIterationEvent) event);
-    }
+    public void update(Event event) {}
 
     @Override
     public void update(PingPongIterationEvent event) {

@@ -1,11 +1,12 @@
 package com.diablominer.opengl.examples.learning;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class EventManager {
 
-    public List<Event> currentEvents;
-    public Map<Class<?>, Set<EventObserver>> eventObservers;
+    private final List<Event> currentEvents;
+    private final Map<Class<?>, Set<EventObserver>> eventObservers;
 
     public EventManager() {
         currentEvents = new ArrayList<>();
@@ -31,7 +32,12 @@ public class EventManager {
     public void executeEvent(Event event) {
         Set<EventObserver> observers = eventObservers.getOrDefault(event.getClass(), new HashSet<>());
         for (EventObserver observer : observers) {
-            observer.update(event);
+            try {
+                observer.getClass().getMethod(EventObserver.class.getMethods()[0].getName(), event.getClass()).invoke(observer, event);
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                System.err.println("Event could not be executed. Exception: ");
+                e.printStackTrace();
+            }
         }
     }
 
