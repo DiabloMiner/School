@@ -6,7 +6,6 @@ struct Material {
     sampler2D texture_color1;
     sampler2D texture_metallic1;
     sampler2D texture_roughness1;
-    sampler2D texture_ao1;
 };
 
 struct DirectionaLight {
@@ -166,7 +165,6 @@ void main() {
 
     float metallic = texture(material.texture_metallic1, outTexCoords).r;
     float roughness = texture(material.texture_roughness1, outTexCoords).r;
-    float ao = texture(material.texture_ao1, outTexCoords).r;
 
     vec3 F0 = vec3(0.04f);
     F0 = mix(F0, texture(material.texture_color1, outTexCoords).rgb, metallic);

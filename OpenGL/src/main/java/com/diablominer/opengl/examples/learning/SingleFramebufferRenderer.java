@@ -71,7 +71,7 @@ public class SingleFramebufferRenderer extends Renderer {
     }
 
     public void destroy() {
-        destroyAllRenderers();
+        destroyRenderingEngineUnits();
         destroyFramebuffers();
     }
 
