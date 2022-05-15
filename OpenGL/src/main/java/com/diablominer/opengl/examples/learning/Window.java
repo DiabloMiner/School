@@ -23,7 +23,7 @@ public class Window {
             @Override
             public void invoke(long window, int width, int height) {
                 setSize(width, height);
-                Learning6.resize = true;
+                Learning6.engineInstance.resize = true;
             }
         };
         GLFW.glfwSetWindowSizeCallback(id, windowsizecallback);
@@ -52,7 +52,7 @@ public class Window {
         GLFWWindowCloseCallback closeCallback = new GLFWWindowCloseCallback() {
             @Override
             public void invoke(long window) {
-                Learning6.continueEngineLoop = false;
+                Learning6.engineInstance.continueEngineLoop = false;
             }
         };
         GLFW.glfwSetWindowCloseCallback(id, closeCallback);

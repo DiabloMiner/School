@@ -6,8 +6,8 @@ public class CameraUpdatedSpotLight extends SpotLight implements CameraPositionO
 
     public CameraUpdatedSpotLight(Vector3f position, Vector3f direction, Vector3f color) {
         super(position, direction, color);
-        Learning6.getEventManager().addEventObserver(EventTypes.CameraPositionUpdate, this);
-        Learning6.getEventManager().addEventObserver(EventTypes.CameraDirectionUpdate, this);
+        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.CameraPositionUpdate, this);
+        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.CameraDirectionUpdate, this);
     }
 
     @Override

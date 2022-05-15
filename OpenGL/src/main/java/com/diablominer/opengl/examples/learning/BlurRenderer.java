@@ -45,7 +45,7 @@ public class BlurRenderer extends Renderer {
             framebuffer.bind();
             GL33.glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
             GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-            Learning6.getEventManager().executeEvent(new PingPongIterationEvent(i == 0, horizontal));
+            Learning6.engineInstance.getEventManager().executeEvent(new PingPongIterationEvent(i == 0, horizontal));
             renderingEngineUnit.render(shaderProgram);
 
             horizontal = !horizontal;

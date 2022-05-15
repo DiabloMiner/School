@@ -12,7 +12,7 @@ public class PingPongQuad extends Model implements PingPongIterationObserver {
         quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
         this.meshes.add(quadMesh);
 
-        Learning6.getEventManager().addEventObserver(EventTypes.PingPongIterationEvent, this);
+        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.PingPongIterationEvent, this);
     }
 
     @Override
