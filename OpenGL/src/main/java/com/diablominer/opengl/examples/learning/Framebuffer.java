@@ -118,31 +118,7 @@ public class Framebuffer {
     }
 
     public Framebuffer(FramebufferCubeMap cubeMap) {
-        id = GL33.glGenFramebuffers();
-        attached2DTextures = new ArrayList<>();
-        attachedCubeMaps = new ArrayList<>(Collections.singletonList(cubeMap));
-        attachedRenderbuffers = new ArrayList<>();
-        this.width = cubeMap.width;
-        this.height = cubeMap.height;
-
-        List<FramebufferAttachment> colorAttachments = new ArrayList<>();
-        bind();
-        for (FramebufferCubeMap texture : attachedCubeMaps) {
-            texture.bind();
-            createAttachedCubeMap(texture);
-            texture.unbind();
-
-            if (texture.attachment.isColorAttachment) {
-                colorAttachments.add(texture.attachment);
-            }
-        }
-        setDrawBuffers(colorAttachments);
-        unbind();
-        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
-        }
-
-        allFramebuffers.add(this);
+        this(new FramebufferCubeMap[] {cubeMap});
     }
 
     public Framebuffer(FramebufferTexture2D[] textures, FramebufferRenderbuffer[] renderbuffers) {

@@ -1,5 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -7,7 +8,7 @@ import java.util.*;
 
 public class PointLight implements Light {
 
-    public static final int shaderIndex = 1;
+    public static final int sortingIndex = 1;
     public static List<PointLight> allPointLights = new ArrayList<>();
 
     public Vector3f position, color;
@@ -28,4 +29,20 @@ public class PointLight implements Light {
     public List<Vector4f> getData() {
         return new ArrayList<>(Arrays.asList(new Vector4f(position, 0.0f), new Vector4f(color, 0.0f)));
     }
+
+    @Override
+    public void initializeShadowRenderer(Renderable[] renderables) {
+
+    }
+
+    @Override
+    public Renderer getShadowRenderer() {
+        return null;
+    }
+
+    @Override
+    public Matrix4f getLightSpaceMatrix() {
+        return null;
+    }
+
 }
