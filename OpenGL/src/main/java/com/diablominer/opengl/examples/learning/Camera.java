@@ -7,13 +7,33 @@ import org.lwjgl.glfw.GLFW;
 
 public class Camera implements KeyPressObserver {
 
+    public static float firstFov = 45.0f, firstNear = 0.1f, firstFar = 100.0f;
+
     public Vector3f position, direction, right, up;
-    public float yaw, pitch, fov;
+    public float yaw, pitch, fov, near, far;
 
     public Camera(Vector3f position, Vector3f direction) {
         yaw = -90.0f;
         pitch = 0.0f;
-        fov = 45.0f;
+        fov = firstFov;
+        near = firstNear;
+        far = firstFar;
+
+        this.position = new Vector3f(position);
+        this.direction = new Vector3f(direction);
+        Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
+        right = new Vector3f(tempUp).cross(direction).normalize();
+        this.up = new Vector3f(direction).cross(right);
+
+        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.KeyPressEvent, this);
+    }
+
+    public Camera(Vector3f position, Vector3f direction, float near, float far) {
+        yaw = -90.0f;
+        pitch = 0.0f;
+        fov = firstFov;
+        this.near = near;
+        this.far = far;
 
         this.position = new Vector3f(position);
         this.direction = new Vector3f(direction);
@@ -99,4 +119,7 @@ public class Camera implements KeyPressObserver {
         view.lookAt(position, getFront(), up);
         return view;
     }
+
+
+
 }

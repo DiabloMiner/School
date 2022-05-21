@@ -1,5 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -14,6 +15,12 @@ public interface Light {
     List<Vector4f> getData();
 
     Vector3f getColor();
+
+    void initializeShadowRenderer(Renderable[] renderables);
+
+    Renderer getShadowRenderer();
+
+    Matrix4f getLightSpaceMatrix();
 
     static Vector4f[] getDataOfAllLights() {
         sortAllLights();
@@ -41,16 +48,26 @@ public interface Light {
 
             private int determineShaderIndex(Light o) {
                 if (o instanceof DirectionalLight) {
-                    return DirectionalLight.shaderIndex;
+                    return DirectionalLight.sortingIndex;
                 } else if (o instanceof PointLight) {
-                    return PointLight.shaderIndex;
+                    return PointLight.sortingIndex;
                 } else {
-                    return SpotLight.shaderIndex;
+                    return SpotLight.sortingIndex;
                 }
             }
         });
     }
 
+    static void createShadowRenderers(Renderable[] renderables) {
+        for (Light light : allLights) {
+            light.initializeShadowRenderer(renderables);
+        }
+    }
 
+    static void renderShadowMaps() {
+        for (Light light : allLights) {
+            light.getShadowRenderer().render();
+        }
+    }
 
 }
