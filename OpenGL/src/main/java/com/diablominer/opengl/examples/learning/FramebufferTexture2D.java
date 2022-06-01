@@ -3,6 +3,7 @@ package com.diablominer.opengl.examples.learning;
 import org.lwjgl.opengl.GL33;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 public class FramebufferTexture2D extends Texture2D implements FramebufferObject {
 
@@ -11,6 +12,15 @@ public class FramebufferTexture2D extends Texture2D implements FramebufferObject
 
     public FramebufferTexture2D(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
         super(width, height, internalFormat, format, type);
+        this.attachment = attachment;
+        this.internalFormat = internalFormat;
+        this.format = format;
+        this.type = type;
+        this.samples = -1;
+    }
+
+    public FramebufferTexture2D(int width, int height, int internalFormat, int format, int type, FloatBuffer borderColor, FramebufferAttachment attachment) {
+        super(width, height, internalFormat, format, type, borderColor);
         this.attachment = attachment;
         this.internalFormat = internalFormat;
         this.format = format;

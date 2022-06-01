@@ -24,6 +24,13 @@ public class Model extends Renderable {
         this.path = "";
     }
 
+    public Model(List<Mesh> meshes, List<Texture2D> loadedTexture2DS, boolean throwsShadow) {
+        super(throwsShadow);
+        this.meshes = new ArrayList<>(meshes);
+        this.loadedTexture2DS = new ArrayList<>(loadedTexture2DS);
+        this.path = "";
+    }
+
     public Model(String path, Vector3f position) {
         super(position);
         meshes = new ArrayList<>();

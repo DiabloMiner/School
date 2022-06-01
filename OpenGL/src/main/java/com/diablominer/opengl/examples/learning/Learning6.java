@@ -214,4 +214,8 @@ public class Learning6 {
         return this.window;
     }
 
+    public MainRenderingEngine getMainRenderingEngine() {
+        return mainRenderingEngine;
+    }
+
 }

@@ -2,7 +2,9 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +51,31 @@ public class UniformBufferBlock extends Buffer {
         bindToUniformBlockBinding();
     }
 
+    public void setUniformBlockData(int offset, double[] data) {
+        bind();
+        GL33.glBufferSubData(bindingTarget, offset, data);
+        unbind();
+    }
+
+    public void setUniformBlockData(int offset, int[] data) {
+        bind();
+        GL33.glBufferSubData(bindingTarget, offset, data);
+        unbind();
+    }
+
     public void setUniformBlockData(int offset, float[] data) {
+        bind();
+        GL33.glBufferSubData(bindingTarget, offset, data);
+        unbind();
+    }
+
+    public void setUniformBlockData(int offset, DoubleBuffer data) {
+        bind();
+        GL33.glBufferSubData(bindingTarget, offset, data);
+        unbind();
+    }
+
+    public void setUniformBlockData(int offset, IntBuffer data) {
         bind();
         GL33.glBufferSubData(bindingTarget, offset, data);
         unbind();

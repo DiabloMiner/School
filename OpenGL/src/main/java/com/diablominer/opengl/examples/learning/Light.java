@@ -2,7 +2,7 @@ package com.diablominer.opengl.examples.learning;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.lwjgl.opengl.GL33;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,26 +12,26 @@ public interface Light {
 
     List<Light> allLights = new ArrayList<>();
 
-    List<Vector4f> getData();
-
     Vector3f getColor();
+
+    void setUniformData(ShaderProgram shaderProgram, int index);
+
+    void unbindShadowTextures();
 
     void initializeShadowRenderer(Renderable[] renderables);
 
     Renderer getShadowRenderer();
 
-    Matrix4f getLightSpaceMatrix();
+    Matrix4f[] getLightSpaceMatrices();
 
-    static Vector4f[] getDataOfAllLights() {
+    static void setUniformDataForAllLights() {
         sortAllLights();
 
-        List<Vector4f> dataList = new ArrayList<>();
-        for (Light light : allLights) {
-               dataList.addAll(light.getData());
+        for (ShaderProgram shaderProgram : ShaderProgram.shaderProgramsUsingShadows) {
+            for (int i = 0; i < allLights.size(); i++) {
+                allLights.get(i).setUniformData(shaderProgram, i);
+            }
         }
-        Vector4f[] dataArray = new Vector4f[dataList.size()];
-        dataList.toArray(dataArray);
-        return dataArray;
     }
 
     /**
@@ -58,15 +58,27 @@ public interface Light {
         });
     }
 
-    static void createShadowRenderers(Renderable[] renderables) {
+    static void unbindAllShadowTextures() {
         for (Light light : allLights) {
-            light.initializeShadowRenderer(renderables);
+            light.unbindShadowTextures();
+        }
+    }
+
+    static void createShadowRenderers() {
+        for (Light light : allLights) {
+            light.initializeShadowRenderer(Renderable.renderablesThrowingShadows.toArray(new Renderable[0]));
         }
     }
 
     static void renderShadowMaps() {
         for (Light light : allLights) {
-            light.getShadowRenderer().render();
+            // TODO: Remove if omnidirectional light casting has been implemented
+            if (light instanceof DirectionalLight || light instanceof SpotLight) {
+                GL33.glCullFace(GL33.GL_FRONT);
+                light.getShadowRenderer().update();
+                light.getShadowRenderer().render();
+                GL33.glCullFace(GL33.GL_BACK);
+            }
         }
     }
 

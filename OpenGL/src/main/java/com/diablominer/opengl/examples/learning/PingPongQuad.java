@@ -8,7 +8,15 @@ public class PingPongQuad extends Model implements PingPongIterationObserver {
     private boolean firstIteration, horizontal;
 
     public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex) {
-        super(new ArrayList<>(), new ArrayList<>());
+        super(new ArrayList<>(), new ArrayList<>(), false);
+        quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
+        this.meshes.add(quadMesh);
+
+        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.PingPongIterationEvent, this);
+    }
+
+    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, boolean throwsShadow) {
+        super(new ArrayList<>(), new ArrayList<>(), throwsShadow);
         quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
         this.meshes.add(quadMesh);
 

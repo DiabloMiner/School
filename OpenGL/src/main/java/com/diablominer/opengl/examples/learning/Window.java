@@ -8,6 +8,7 @@ public class Window {
     private final long id;
     public int width, height;
     public int monitorWidth, monitorHeight;
+    public int previousWidth, previousHeight;
     private boolean fullscreen;
     private com.diablominer.opengl.examples.learning.Mouse mouse;
 
@@ -60,6 +61,7 @@ public class Window {
 
     public Window(int width, int height, String title, Camera camera) {
         setSize(width, height);
+        initializePreviousSize();
         this.fullscreen = false;
 
         id = GLFW.glfwCreateWindow(this.width, this.height, title, fullscreen ? GLFW.glfwGetPrimaryMonitor() : 0, 0);
@@ -98,6 +100,11 @@ public class Window {
         GLFW.glfwSwapBuffers(id);
     }
 
+    public void initializePreviousSize() {
+        previousWidth = width;
+        previousHeight = height;
+    }
+
     public void setSize(int width, int height) {
         this.width = width;
         this.height = height;
@@ -112,10 +119,16 @@ public class Window {
 
         GLFWVidMode videoMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
         if (fullscreen) {
-            GLFW.glfwSetWindowMonitor(id, GLFW.glfwGetPrimaryMonitor(), ((videoMode.width() - this.width) / 2), ((videoMode.height() - this.height) / 2), width, height, videoMode.refreshRate());
             monitorWidth = videoMode.width();
             monitorHeight = videoMode.height();
+            previousWidth = width;
+            previousHeight = height;
+            width = monitorWidth;
+            height = monitorHeight;
+            GLFW.glfwSetWindowMonitor(id, GLFW.glfwGetPrimaryMonitor(), ((videoMode.width() - this.width) / 2), ((videoMode.height() - this.height) / 2), width, height, videoMode.refreshRate());
         } else {
+            width = previousWidth;
+            height = previousHeight;
             GLFW.glfwSetWindowMonitor(id, 0, ((monitorWidth - this.width) / 2), ((monitorHeight - this.height) / 2), width, height, videoMode.refreshRate());
         }
     }

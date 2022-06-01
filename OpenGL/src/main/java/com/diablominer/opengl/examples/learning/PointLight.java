@@ -26,14 +26,17 @@ public class PointLight implements Light {
     }
 
     @Override
-    public List<Vector4f> getData() {
-        return new ArrayList<>(Arrays.asList(new Vector4f(position, 0.0f), new Vector4f(color, 0.0f)));
+    public void setUniformData(ShaderProgram shaderProgram, int index) {
+        int correctedIndex = index - DirectionalLight.allDirectionalLights.size();
+        shaderProgram.setUniformVec3F("pointLight" + correctedIndex + ".position", position);
+        shaderProgram.setUniformVec3F("pointLight" + correctedIndex + ".color", color);
     }
 
     @Override
-    public void initializeShadowRenderer(Renderable[] renderables) {
+    public void unbindShadowTextures() { }
 
-    }
+    @Override
+    public void initializeShadowRenderer(Renderable[] renderables) { }
 
     @Override
     public Renderer getShadowRenderer() {
@@ -41,7 +44,7 @@ public class PointLight implements Light {
     }
 
     @Override
-    public Matrix4f getLightSpaceMatrix() {
+    public Matrix4f[] getLightSpaceMatrices() {
         return null;
     }
 

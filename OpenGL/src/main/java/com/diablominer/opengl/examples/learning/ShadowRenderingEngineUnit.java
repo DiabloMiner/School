@@ -12,12 +12,16 @@ public class ShadowRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void update() {
-        shaderProgram.setUniformMat4F("lightSpaceMat", light.getLightSpaceMatrix());
+        for (int i = 0; i < light.getLightSpaceMatrices().length; i++) {
+            shaderProgram.setUniformMat4F("lightSpaceMat[" + i + "]", light.getLightSpaceMatrices()[i]);
+        }
     }
 
     @Override
     public void update(ShaderProgram shaderProgram) {
-        shaderProgram.setUniformMat4F("lightSpaceMat", light.getLightSpaceMatrix());
+        for (int i = 0; i < light.getLightSpaceMatrices().length; i++) {
+            shaderProgram.setUniformMat4F("lightSpaceMat[" + i + "]", light.getLightSpaceMatrices()[i]);
+        }
     }
 
     @Override

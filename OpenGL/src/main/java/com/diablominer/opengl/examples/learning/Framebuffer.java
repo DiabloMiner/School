@@ -11,6 +11,7 @@ public class Framebuffer {
 
     private final int id;
     public int width, height;
+    private int drawBuffers;
     private final List<FramebufferTexture2D> attached2DTextures;
     private final List<FramebufferCubeMap> attachedCubeMaps;
     private final List<FramebufferRenderbuffer> attachedRenderbuffers;
@@ -34,6 +35,7 @@ public class Framebuffer {
         attachedRenderbuffers = new ArrayList<>();
         this.width = -1;
         this.height = -1;
+        this.drawBuffers = 0;
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
@@ -49,6 +51,7 @@ public class Framebuffer {
         attachedRenderbuffers = new ArrayList<>();
         this.width = -1;
         this.height = -1;
+        this.drawBuffers = 0;
 
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
@@ -76,6 +79,7 @@ public class Framebuffer {
                 colorAttachments.add(texture.attachment);
             }
         }
+        this.drawBuffers = colorAttachments.size();
         setDrawBuffers(colorAttachments);
         unbind();
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -108,6 +112,7 @@ public class Framebuffer {
                 colorAttachments.add(texture.attachment);
             }
         }
+        this.drawBuffers = colorAttachments.size();
         setDrawBuffers(colorAttachments);
         unbind();
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -149,6 +154,7 @@ public class Framebuffer {
                 colorAttachments.add(renderbuffer.attachment);
             }
         }
+        this.drawBuffers = colorAttachments.size();
         setDrawBuffers(colorAttachments);
         unbind();
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -186,6 +192,7 @@ public class Framebuffer {
                 colorAttachments.add(renderbuffer.attachment);
             }
         }
+        this.drawBuffers = colorAttachments.size();
         setDrawBuffers(colorAttachments);
         unbind();
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
@@ -283,6 +290,10 @@ public class Framebuffer {
             width = renderbuffer.width;
             height = renderbuffer.height;
         }
+    }
+
+    public int getNumberOfDrawBuffers() {
+        return drawBuffers;
     }
 
     public static Framebuffer getStandardFramebuffer() {
