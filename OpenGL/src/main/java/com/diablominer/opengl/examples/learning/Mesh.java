@@ -89,7 +89,7 @@ public class Mesh {
             }
             if (number != 0) {
                 currentTexture2D.bind();
-                shaderProgram.setUniform1I("material." + name + number, currentTexture2D.index);
+                shaderProgram.setUniform1I("material." + name + number, currentTexture2D.getIndex());
             }
         }
 
@@ -131,7 +131,7 @@ public class Mesh {
             }
             if (number != 0) {
                 currentTexture2D.unbind();
-                shaderProgram.setUniform1I("material." + name + number, currentTexture2D.index);
+                shaderProgram.setUniform1I("material." + name + number, currentTexture2D.getIndex());
             }
         }
     }

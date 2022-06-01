@@ -6,7 +6,7 @@ in vec2 outTexCoords;
 uniform sampler2D blurringTex;
 
 uniform bool horizontal;
-uniform float weight[5] = float[5] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+float weight[5] = float[5] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 float linearWeights[3] = float[3] (weight[0], weight[1] + weight[2], weight[3] +  weight[4]);
 
 float calculateLinearOffset(float offset1, float offset2, float weight1, float weight2) {

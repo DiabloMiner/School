@@ -1,6 +1,9 @@
 package com.diablominer.opengl.examples.learning;
 
+import com.diablominer.opengl.utils.BufferUtil;
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33;
 
 import java.util.ArrayList;
@@ -10,6 +13,7 @@ import java.util.Collections;
 public class SingleFramebufferRenderer extends Renderer {
 
     public static Vector3f clearColor = new Vector3f(1.0f, 0.0f, 0.0f);
+    public static Vector3f otherClearColor = new Vector3f(0.0f, 0.0f, 0.0f);
 
     private final Framebuffer framebuffer;
 
@@ -52,8 +56,8 @@ public class SingleFramebufferRenderer extends Renderer {
 
     public void render() {
         framebuffer.bind();
-        GL33.glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
+        GL33.glViewport(0, 0, framebuffer.width, framebuffer.height);
+        clear();
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
             renderingEngineUnit.render();
         }
@@ -62,12 +66,23 @@ public class SingleFramebufferRenderer extends Renderer {
 
     public void render(ShaderProgram shaderProgram) {
         framebuffer.bind();
-        GL33.glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
+        GL33.glViewport(0, 0, framebuffer.width, framebuffer.height);
+        clear();
         for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
             renderingEngineUnit.render(shaderProgram);
         }
         Framebuffer.unbind();
+    }
+
+    public void clear() {
+        for (int i = 0; i < framebuffer.getNumberOfDrawBuffers(); i++) {
+            if (i == 0) {
+                GL33.glClearBufferfv(GL33.GL_COLOR, i, BufferUtil.createBuffer(new Vector4f(clearColor, 1.0f)));
+            } else {
+                GL33.glClearBufferfv(GL33.GL_COLOR, i, BufferUtil.createBuffer(new Vector4f(otherClearColor, 1.0f)));
+            }
+        }
+        GL33.glClear(GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
     }
 
     public void destroy() {

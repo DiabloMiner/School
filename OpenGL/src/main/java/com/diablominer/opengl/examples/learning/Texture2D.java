@@ -5,13 +5,14 @@ import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 public class Texture2D implements Texture {
 
     private int id;
     public int width, height;
-    public int index;
+    private int index;
     public String path;
     public String type;
     public int target;
@@ -79,6 +80,25 @@ public class Texture2D implements Texture {
         this.index = -1;
     }
 
+    public Texture2D(int width, int height, int internalFormat, int format, int type, FloatBuffer borderColor) {
+        this.id = GL33.glGenTextures();
+        this.target = GL33.GL_TEXTURE_2D;
+        this.width = width;
+        this.height = height;
+        bind();
+        GL33.glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
+        GL33.glTexParameteri(target, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_BORDER);
+        GL33.glTexParameteri(target, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_BORDER);
+        GL33.glTexParameterfv(GL33.GL_TEXTURE_2D, GL33.GL_TEXTURE_BORDER_COLOR, borderColor);
+        GL33.glTexParameteri(target, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(target, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        unbind();
+
+        this.type = "";
+        this.path = "";
+        this.index = -1;
+    }
+
     public Texture2D(int width, int height, int internalFormat, int samples) {
         this.id = GL33.glGenTextures();
         this.target = GL33.GL_TEXTURE_2D_MULTISAMPLE;
@@ -133,4 +153,13 @@ public class Texture2D implements Texture {
     public int getId() {
         return id;
     }
+
+    public boolean isBound() {
+        return index != -1;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
 }

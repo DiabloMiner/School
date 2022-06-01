@@ -14,11 +14,13 @@ import java.util.List;
 public class ShaderProgram {
 
     public static List<ShaderProgram> allShaderPrograms = new ArrayList<>();
+    public static List<ShaderProgram> shaderProgramsUsingShadows = new ArrayList<>();
 
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
     private int geometryShaderId;
+    private final boolean usesShadows;
 
     public ShaderProgram() throws Exception {
         programId = GL33.glCreateProgram();
@@ -26,8 +28,10 @@ public class ShaderProgram {
             throw new Exception("Could not create Shader");
         }
         geometryShaderId = 0;
+        usesShadows = true;
 
         allShaderPrograms.add(this);
+        shaderProgramsUsingShadows.add(this);
     }
 
     public ShaderProgram(String vertexShaderPath, String fragmentShaderPath) throws Exception {
@@ -36,11 +40,13 @@ public class ShaderProgram {
             throw new Exception("Could not create Shader");
         }
         geometryShaderId = 0;
+        usesShadows = true;
         createVertexShader(vertexShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
 
         allShaderPrograms.add(this);
+        shaderProgramsUsingShadows.add(this);
     }
 
     public ShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath) throws Exception {
@@ -48,12 +54,56 @@ public class ShaderProgram {
         if (programId == 0) {
             throw new Exception("Could not create Shader");
         }
+        usesShadows = true;
         createVertexShader(vertexShaderPath);
         createGeometryShader(geometryShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
 
         allShaderPrograms.add(this);
+        shaderProgramsUsingShadows.add(this);
+    }
+
+    public ShaderProgram(boolean usesShadows) throws Exception {
+        programId = GL33.glCreateProgram();
+        if (programId == 0) {
+            throw new Exception("Could not create Shader");
+        }
+        geometryShaderId = 0;
+        this.usesShadows = usesShadows;
+
+        allShaderPrograms.add(this);
+        if (usesShadows) { shaderProgramsUsingShadows.add(this); }
+    }
+
+    public ShaderProgram(String vertexShaderPath, String fragmentShaderPath, boolean usesShadows) throws Exception {
+        programId = GL33.glCreateProgram();
+        if (programId == 0) {
+            throw new Exception("Could not create Shader");
+        }
+        geometryShaderId = 0;
+        this.usesShadows = usesShadows;
+        createVertexShader(vertexShaderPath);
+        createFragmentShader(fragmentShaderPath);
+        link();
+
+        allShaderPrograms.add(this);
+        if (usesShadows) { shaderProgramsUsingShadows.add(this); }
+    }
+
+    public ShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath, boolean usesShadows) throws Exception {
+        programId = GL33.glCreateProgram();
+        if (programId == 0) {
+            throw new Exception("Could not create Shader");
+        }
+        this.usesShadows = usesShadows;
+        createVertexShader(vertexShaderPath);
+        createGeometryShader(geometryShaderPath);
+        createFragmentShader(fragmentShaderPath);
+        link();
+
+        allShaderPrograms.add(this);
+        if (usesShadows) { shaderProgramsUsingShadows.add(this); }
     }
 
     public void createVertexShader(String shaderFile) throws Exception {

@@ -5,6 +5,7 @@ import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.Buffer;
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -22,6 +23,18 @@ public class BufferUtil {
         return buffer;
     }
 
+    public static FloatBuffer createBuffer(float data) {
+        FloatBuffer buffer = MemoryUtil.memAllocFloat(1);
+        buffer.put(data).flip();
+        return buffer;
+    }
+
+    public static IntBuffer createBuffer(int data) {
+        IntBuffer buffer = MemoryUtil.memAllocInt(1);
+        buffer.put(data).flip();
+        return buffer;
+    }
+
     public static FloatBuffer createBuffer(Vector4f data) {
         FloatBuffer buffer = MemoryUtil.memAllocFloat(4);
         data.get(buffer);
@@ -30,11 +43,7 @@ public class BufferUtil {
 
     public static FloatBuffer createBuffer(Matrix4f data) {
         FloatBuffer buffer = MemoryUtil.memAllocFloat(4 * 4);
-        for (int i = 0; i < 4; i++) {
-            Vector4f vec = new Vector4f();
-            data.getColumn(0, vec);
-            vec.get(i * 4, buffer);
-        }
+        data.get(buffer);
         return buffer;
     }
 

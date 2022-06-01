@@ -2,44 +2,47 @@ package com.diablominer.opengl.examples.learning;
 
 import org.joml.Math;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 public class Camera implements KeyPressObserver {
 
     public static float firstFov = 45.0f, firstNear = 0.1f, firstFar = 100.0f;
+    public static Vector3d worldSpaceRight = new Vector3d(1.0, 0.0, 0.0);
+    public static Vector3d worldSpaceUp = new Vector3d(0.0, 1.0, 0.0);
 
     public Vector3f position, direction, right, up;
     public float yaw, pitch, fov, near, far;
 
     public Camera(Vector3f position, Vector3f direction) {
-        yaw = -90.0f;
-        pitch = 0.0f;
-        fov = firstFov;
-        near = firstNear;
-        far = firstFar;
-
         this.position = new Vector3f(position);
         this.direction = new Vector3f(direction);
         Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
         right = new Vector3f(tempUp).cross(direction).normalize();
         this.up = new Vector3f(direction).cross(right);
+
+        yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
+        pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));
+        fov = firstFov;
+        near = firstNear;
+        far = firstFar;
 
         Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.KeyPressEvent, this);
     }
 
     public Camera(Vector3f position, Vector3f direction, float near, float far) {
-        yaw = -90.0f;
-        pitch = 0.0f;
-        fov = firstFov;
-        this.near = near;
-        this.far = far;
-
         this.position = new Vector3f(position);
         this.direction = new Vector3f(direction);
         Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
         right = new Vector3f(tempUp).cross(direction).normalize();
         this.up = new Vector3f(direction).cross(right);
+
+        yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
+        pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));
+        fov = firstFov;
+        this.near = near;
+        this.far = far;
 
         Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.KeyPressEvent, this);
     }

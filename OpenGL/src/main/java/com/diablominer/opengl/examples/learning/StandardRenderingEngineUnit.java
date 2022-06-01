@@ -15,9 +15,13 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
     @Override
     public void update() {
         update(this.shaderProgram);
-        // TODO: Add dynamic yaw and pitch calculation
-        // TODO: Introduce method for getting a Engine reference and make RenderingEngine non static
-        // TODO: Make IBL, Shadowcasting available ; Review assimp code ; (Improve old texture code with new code)
+        // TODO: Implement omnidirectional shadow casting ; Investigate strange cube rendered in shadow maps
+        // TODO: Maybe introduce engine singleton ; Introduce I/O Engine or something equivalent ; Replace clear function in SingleFramebufferRenderer with CubeMap ; Introduce array with a maxsize in shaders so dynamic arrays are possible
+        // TODO: Abstract things that are currently solved with public static lists into managers so multiple can be had
+        // TODO: Make IBL, Shadowcasting, Normal mapping available ; Review assimp code ; (Improve old texture code with new code)
+        // TODO: Create new textures explicitly used for assimp, multisampling ; Maybe also an enum for tex parameters
+        // Added functionality:
+        // Implemented directional shadow casting for directional lights and spot lights ; Added dynamic yaw and pitch calculation ;
     }
 
     @Override

@@ -8,7 +8,13 @@ public class Quad extends Model {
     private final QuadMesh quadMesh;
 
     public Quad(Collection<Texture2D> textures) {
-        super(new ArrayList<>(), new ArrayList<>());
+        super(new ArrayList<>(), new ArrayList<>(), false);
+        quadMesh = new QuadMesh(textures);
+        this.meshes.add(quadMesh);
+    }
+
+    public Quad(Collection<Texture2D> textures, boolean throwsShadow) {
+        super(new ArrayList<>(), new ArrayList<>(), throwsShadow);
         quadMesh = new QuadMesh(textures);
         this.meshes.add(quadMesh);
     }

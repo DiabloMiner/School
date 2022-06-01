@@ -43,10 +43,10 @@ public class PingPongQuadMesh extends Mesh {
     public void draw(ShaderProgram shaderProgram, boolean firstIteration, boolean horizontal) {
         if (firstIteration) {
             texture2DS.get(inputTexIndex).bind();
-            shaderProgram.setUniform1I("blurringTex", texture2DS.get(inputTexIndex).index);
+            shaderProgram.setUniform1I("blurringTex", texture2DS.get(inputTexIndex).getIndex());
         } else {
             texture2DS.get(horizontal ? verticalTexIndex : horizontalTexIndex).bind();
-            shaderProgram.setUniform1I("blurringTex", texture2DS.get(horizontal ? verticalTexIndex : horizontalTexIndex).index);
+            shaderProgram.setUniform1I("blurringTex", texture2DS.get(horizontal ? verticalTexIndex : horizontalTexIndex).getIndex());
         }
         shaderProgram.setUniform1I("horizontal", horizontal ? 1 : 0);
 
@@ -56,10 +56,10 @@ public class PingPongQuadMesh extends Mesh {
 
         if (firstIteration) {
             texture2DS.get(inputTexIndex).unbind();
-            shaderProgram.setUniform1I("blurringTex", texture2DS.get(inputTexIndex).index);
+            shaderProgram.setUniform1I("blurringTex", texture2DS.get(inputTexIndex).getIndex());
         } else {
             texture2DS.get(horizontal ? verticalTexIndex : horizontalTexIndex).unbind();
-            shaderProgram.setUniform1I("blurringTex", texture2DS.get(horizontal ? verticalTexIndex : horizontalTexIndex).index);
+            shaderProgram.setUniform1I("blurringTex", texture2DS.get(horizontal ? verticalTexIndex : horizontalTexIndex).getIndex());
         }
     }
 

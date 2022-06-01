@@ -4,8 +4,8 @@ import org.joml.Vector3f;
 
 public class CameraUpdatedSpotLight extends SpotLight implements CameraPositionObserver, CameraDirectionObserver {
 
-    public CameraUpdatedSpotLight(Vector3f position, Vector3f direction, Vector3f color) {
-        super(position, direction, color);
+    public CameraUpdatedSpotLight(Vector3f position, Vector3f direction, Vector3f color, int shadowSize) {
+        super(position, direction, color, shadowSize);
         Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.CameraPositionUpdate, this);
         Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.CameraDirectionUpdate, this);
     }

@@ -49,7 +49,7 @@ public class QuadMesh extends Mesh {
     public void draw(ShaderProgram shaderProgram) {
         for (int i = 0; i < texture2DS.size(); i++) {
             texture2DS.get(i).bind();
-            shaderProgram.setUniform1I("texture" + i, texture2DS.get(i).index);
+            shaderProgram.setUniform1I("texture" + i, texture2DS.get(i).getIndex());
         }
 
         shaderProgram.bind();
@@ -58,7 +58,7 @@ public class QuadMesh extends Mesh {
 
         for (int i = 0; i < texture2DS.size(); i++) {
             texture2DS.get(i).unbind();
-            shaderProgram.setUniform1I("texture" + i, texture2DS.get(i).index);
+            shaderProgram.setUniform1I("texture" + i, texture2DS.get(i).getIndex());
         }
     }
 

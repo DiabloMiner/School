@@ -8,10 +8,21 @@ import java.util.Arrays;
 
 public class BlurRenderer extends Renderer {
 
+    public static ShaderProgram blurShaderProgram;
+    static { try { blurShaderProgram = new ShaderProgram("L6SVS", "L6_GaussianBlur", false); } catch (Exception e) { e.printStackTrace(); } }
+
     public static Vector3f clearColor = new Vector3f(0.0f, 0.0f, 0.0f);
 
     private final int iterations;
-    private PingPongRenderingEngineUnit renderingEngineUnit;
+    private final PingPongRenderingEngineUnit renderingEngineUnit;
+
+    public BlurRenderer(int width, int height, int internalFormat, int format, int type, int iterations, Texture2D inputTex) {
+        super();
+        framebuffers.addAll(new ArrayList<>(Arrays.asList(new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0)), new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0)))));
+        renderingEngineUnit = new PingPongRenderingEngineUnit(blurShaderProgram, this.framebuffers.get(0).getAttached2DTextures().get(0), this.framebuffers.get(1).getAttached2DTextures().get(0), inputTex);
+        this.renderingEngineUnits.add(renderingEngineUnit);
+        this.iterations = iterations;
+    }
 
     public BlurRenderer(int width, int height, int internalFormat, int format, int type, ShaderProgram shaderProgram, int iterations, Texture2D inputTex) {
         super();

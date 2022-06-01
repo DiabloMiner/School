@@ -5,7 +5,10 @@ import org.joml.*;
 import org.joml.Math;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Transforms {
 
@@ -292,6 +295,12 @@ public class Transforms {
                 vec.setComponent(i, 0.0f);
             }
         }
+    }
+
+    public static ArrayList<Integer> createPrefilledList(int numberOfElements, int value) {
+        int[] array = new int[numberOfElements];
+        Arrays.fill(array, value);
+        return Arrays.stream(array).boxed().collect(Collectors.toCollection(ArrayList::new));
     }
 
 }
