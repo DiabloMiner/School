@@ -82,6 +82,26 @@ public class CubeMap implements Texture {
         allTextures.add(this);
     }
 
+    public CubeMap(int width, int height, int internalFormat, int format, int type) {
+        this.id = GL33.glGenTextures();
+        this.index = -1;
+        this.width = width;
+        this.height = height;
+        bind();
+        for (int i = 0; i < 6; i++) {
+            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
+        }
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_S, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_T, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_WRAP_R, GL33.GL_CLAMP_TO_EDGE);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MIN_FILTER, GL33.GL_LINEAR);
+        GL33.glTexParameteri(GL33.GL_TEXTURE_CUBE_MAP, GL33.GL_TEXTURE_MAG_FILTER, GL33.GL_LINEAR);
+        GL33.glGenerateMipmap(GL33.GL_TEXTURE_CUBE_MAP);
+        unbind();
+
+        allTextures.add(this);
+    }
+
     public void bind() {
         if (!alreadyBound.contains(this)) {
             this.index = alreadyBound.size();
