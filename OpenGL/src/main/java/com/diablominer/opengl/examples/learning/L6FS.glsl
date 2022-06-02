@@ -20,6 +20,8 @@ struct PointLight {
     vec3 position;
 
     vec3 color;
+
+    samplerCube shadowMap;
 };
 
 struct SpotLight {

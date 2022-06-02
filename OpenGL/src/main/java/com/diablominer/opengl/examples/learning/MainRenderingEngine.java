@@ -25,7 +25,7 @@ public class MainRenderingEngine extends RenderingEngine {
         ShaderProgram simpleShaderProgram = new ShaderProgram("L6SVS", "L6SFS", false);
 
         DirectionalLight dirLight = new DirectionalLight(new Vector3f(-0.7f, 1.0f, 2.9f), new Vector3f(0.0f, 0.0f, 0.2f), 1024);
-        RenderablePointLight pointLight = new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f));
+        RenderablePointLight pointLight = new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024);
         SpotLight spotLight = new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024);
 
         Model helloWorld = new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f)));

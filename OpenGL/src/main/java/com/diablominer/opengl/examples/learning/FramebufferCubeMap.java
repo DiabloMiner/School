@@ -17,6 +17,14 @@ public class FramebufferCubeMap extends CubeMap implements FramebufferObject {
         this.type = type;
     }
 
+    public FramebufferCubeMap(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
+        super(width, height, internalFormat, format, type);
+        this.attachment = attachment;
+        this.internalFormat = internalFormat;
+        this.format = format;
+        this.type = type;
+    }
+
     public void resize(int width, int height) {
         bind();
         for (int i = 0; i < 6; i++) {
