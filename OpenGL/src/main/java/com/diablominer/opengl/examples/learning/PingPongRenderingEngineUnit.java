@@ -6,9 +6,9 @@ public class PingPongRenderingEngineUnit extends RenderingEngineUnit {
 
     private final PingPongQuad quad;
 
-    public PingPongRenderingEngineUnit(ShaderProgram shaderProgram, Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex) {
+    public PingPongRenderingEngineUnit(ShaderProgram shaderProgram, Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, RenderableManager renderableManager) {
         super(shaderProgram);
-        quad = new PingPongQuad(verticalTex, horizontalTex, inputTex);
+        quad = new PingPongQuad(verticalTex, horizontalTex, inputTex, renderableManager);
         renderables.add(quad);
     }
 
@@ -40,6 +40,10 @@ public class PingPongRenderingEngineUnit extends RenderingEngineUnit {
     public void destroy() {
         destroyAllRenderables();
         destroyShaderProgram();
+    }
+
+    public PingPongQuad getQuad() {
+        return quad;
     }
 
 }

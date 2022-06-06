@@ -10,52 +10,37 @@ import java.util.Set;
 
 public abstract class Renderable {
 
-    public static List<Renderable> allRenderables = new ArrayList<>();
-    public static Set<Renderable> renderablesThrowingShadows = new HashSet<>();
-
     private Matrix4f modelMatrix;
     private final boolean throwsShadow;
 
     public Renderable() {
         modelMatrix = new Matrix4f().identity();
         throwsShadow = true;
-        allRenderables.add(this);
-        renderablesThrowingShadows.add(this);
     }
 
     public Renderable(Vector3f position) {
         modelMatrix = new Matrix4f().identity().translate(position);
         throwsShadow = true;
-        allRenderables.add(this);
-        renderablesThrowingShadows.add(this);
     }
 
     public Renderable(Matrix4f model) {
         modelMatrix = new Matrix4f().identity().set(model);
         throwsShadow = true;
-        allRenderables.add(this);
-        renderablesThrowingShadows.add(this);
     }
 
     public Renderable(boolean throwsShadow) {
         modelMatrix = new Matrix4f().identity();
         this.throwsShadow = throwsShadow;
-        allRenderables.add(this);
-        if (throwsShadow) { renderablesThrowingShadows.add(this); }
     }
 
     public Renderable(Vector3f position, boolean throwsShadow) {
         modelMatrix = new Matrix4f().identity().translate(position);
         this.throwsShadow = throwsShadow;
-        allRenderables.add(this);
-        if (throwsShadow) { renderablesThrowingShadows.add(this); }
     }
 
     public Renderable(Matrix4f model, boolean throwsShadow) {
         modelMatrix = new Matrix4f().identity().set(model);
         this.throwsShadow = throwsShadow;
-        allRenderables.add(this);
-        if (throwsShadow) { renderablesThrowingShadows.add(this); }
     }
 
     public void setModelMatrixUniform(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram) {
@@ -88,9 +73,4 @@ public abstract class Renderable {
         return throwsShadow;
     }
 
-    public static void destroyAll() {
-        for (Renderable renderable : allRenderables) {
-            renderable.destroy();
-        }
-    }
 }

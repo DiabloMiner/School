@@ -8,9 +8,9 @@ public class QuadRenderingEngineUnit extends RenderingEngineUnit {
 
     private final Quad quad;
 
-    public QuadRenderingEngineUnit(ShaderProgram shaderProgram, Collection<Texture2D> textures) {
+    public QuadRenderingEngineUnit(ShaderProgram shaderProgram, Collection<Texture2D> textures, RenderableManager renderableManager) {
         super(shaderProgram);
-        quad = new Quad(textures);
+        quad = new Quad(textures, renderableManager);
         renderables.add(quad);
     }
 

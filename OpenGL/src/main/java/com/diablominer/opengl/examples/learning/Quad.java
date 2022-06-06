@@ -7,16 +7,18 @@ public class Quad extends Model {
 
     private final QuadMesh quadMesh;
 
-    public Quad(Collection<Texture2D> textures) {
+    public Quad(Collection<Texture2D> textures, RenderableManager renderableManager) {
         super(new ArrayList<>(), new ArrayList<>(), false);
         quadMesh = new QuadMesh(textures);
         this.meshes.add(quadMesh);
+        renderableManager.addRenderable(this);
     }
 
-    public Quad(Collection<Texture2D> textures, boolean throwsShadow) {
+    public Quad(Collection<Texture2D> textures, RenderableManager renderableManager, boolean throwsShadow) {
         super(new ArrayList<>(), new ArrayList<>(), throwsShadow);
         quadMesh = new QuadMesh(textures);
         this.meshes.add(quadMesh);
+        renderableManager.addRenderable(this);
     }
 
     @Override

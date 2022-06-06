@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.system.MemoryUtil;
 
-public class Learning6 {
+public class Learning6 implements Engine {
 
     public static Learning6 engineInstance;
 
@@ -22,6 +22,7 @@ public class Learning6 {
         engineInstance = new Learning6();
         engineInstance.init();
         engineInstance.mainLoop();
+        engineInstance.close();
     }
 
     public Learning6() {}
@@ -136,7 +137,6 @@ public class Learning6 {
 
             GLFW.glfwPollEvents();
         }
-        close();
     }
 
     public void processInput() {
@@ -193,8 +193,6 @@ public class Learning6 {
 
         RenderingEngine.destroyAllRenderingEngines();
         Renderer.destroyAllRenderers();
-        ShaderProgram.destroyAll();
-        Renderable.destroyAll();
         Framebuffer.destroyAll();
         Buffer.destroyAll();
         VAO.destroyAll();
