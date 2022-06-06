@@ -5,20 +5,20 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class PointLight implements Light {
 
     private static final ShaderProgram shadowShader;
     static {try {shadowShader = new ShaderProgram("L6_OmniDirShadowVS", "L6_OmniDirShadowGS", "L6_OmniDirShadowFS");} catch (Exception e) {throw new RuntimeException(e);}}
-    public static float near = 0.0001f, far = 30.0f;
+    public static float near = 0.001f, far = 30.0f;
     public static final int sortingIndex = 1;
     public static List<PointLight> allPointLights = new ArrayList<>();
 
     public Vector3f position, color;
     private Renderer shadowRenderer;
     private final Framebuffer shadowFramebuffer;
-    private float aspect;
+    private final float aspect;
+    private final FramebufferCubeMap shadowTexture;
 
     public PointLight(Vector3f position, Vector3f color, int shadowSize) {
         this.position = position;
@@ -27,7 +27,8 @@ public class PointLight implements Light {
         allPointLights.add(this);
         allLights.add(this);
 
-        shadowFramebuffer = new Framebuffer(new FramebufferCubeMap(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, FramebufferAttachment.DEPTH_ATTACHMENT));
+        shadowTexture = new FramebufferCubeMap(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, FramebufferAttachment.DEPTH_ATTACHMENT);
+        shadowFramebuffer = new Framebuffer(shadowTexture);
     }
 
     @Override
@@ -40,11 +41,15 @@ public class PointLight implements Light {
         int correctedIndex = index - DirectionalLight.allDirectionalLights.size();
         shaderProgram.setUniformVec3F("pointLight" + correctedIndex + ".position", position);
         shaderProgram.setUniformVec3F("pointLight" + correctedIndex + ".color", color);
+
+        shadowTexture.bind();
+        shaderProgram.setUniform1I("pointLight" + correctedIndex + ".shadowMap", shadowTexture.getIndex());
+        shaderProgram.setUniform1F("pointLight" + correctedIndex + ".far", far);
     }
 
     @Override
     public void unbindShadowTextures() {
-        shadowFramebuffer.getAttached2DTextures().get(0).unbind();
+        shadowTexture.unbind();
     }
 
     @Override
@@ -63,8 +68,8 @@ public class PointLight implements Light {
         Matrix4f[] viewMatrices = {
                 new Matrix4f().identity().lookAt(position, new Vector3f(position).add(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f)),
                 new Matrix4f().identity().lookAt(position, new Vector3f(position).add(-1.0f, 0.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f)),
-                new Matrix4f().identity().lookAt(position, new Vector3f(position).add(0.0f, 1.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f)),
-                new Matrix4f().identity().lookAt(position, new Vector3f(position).add(0.0f, -1.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f)),
+                new Matrix4f().identity().lookAt(position, new Vector3f(position).add(0.0f, 1.0f, 0.0f), new Vector3f(0.0f, 0.0f, 1.0f)),
+                new Matrix4f().identity().lookAt(position, new Vector3f(position).add(0.0f, -1.0f, 0.0f), new Vector3f(0.0f, .0f, -1.0f)),
                 new Matrix4f().identity().lookAt(position, new Vector3f(position).add(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, -1.0f, 0.0f)),
                 new Matrix4f().identity().lookAt(position, new Vector3f(position).add(0.0f, 0.0f, -1.0f), new Vector3f(0.0f, -1.0f, 0.0f))
         };

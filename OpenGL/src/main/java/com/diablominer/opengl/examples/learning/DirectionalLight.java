@@ -12,7 +12,7 @@ import java.util.*;
 public class DirectionalLight implements Light {
 
     private static final ShaderProgram shadowShader;
-    static {try {shadowShader = new ShaderProgram("L6_ShadowVS", "L6_DirShadowFS");} catch (Exception e) {throw new RuntimeException(e);}}
+    static {try {shadowShader = new ShaderProgram("L6_DirShadowVS", "L6_DirShadowFS");} catch (Exception e) {throw new RuntimeException(e);}}
     public static float near = 0.0001f, far = 30.0f;
     public static final int sortingIndex = 0;
     public static List<DirectionalLight> allDirectionalLights = new ArrayList<>();
@@ -20,6 +20,7 @@ public class DirectionalLight implements Light {
     public Vector3f direction, color;
     private Renderer shadowRenderer;
     private final Framebuffer shadowFramebuffer;
+    private final FramebufferTexture2D shadowTexture;
 
     public DirectionalLight(Vector3f direction, Vector3f color, int shadowSize) {
         this.direction = direction;
@@ -27,7 +28,8 @@ public class DirectionalLight implements Light {
         allDirectionalLights.add(this);
         allLights.add(this);
 
-        shadowFramebuffer = new Framebuffer(new FramebufferTexture2D(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT));
+        shadowTexture = new FramebufferTexture2D(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT);
+        shadowFramebuffer = new Framebuffer(shadowTexture);
     }
 
     @Override
@@ -41,13 +43,13 @@ public class DirectionalLight implements Light {
         shaderProgram.setUniformVec3F("dirLight" + index + ".color", color);
         shaderProgram.setUniformMat4F("dirLight" + index + "Matrix", getLightSpaceMatrices()[0]);
 
-        shadowFramebuffer.getAttached2DTextures().get(0).bind();
-        shaderProgram.setUniform1I("dirLight" + index + ".shadowMap", shadowFramebuffer.getAttached2DTextures().get(0).getIndex());
+        shadowTexture.bind();
+        shaderProgram.setUniform1I("dirLight" + index + ".shadowMap", shadowTexture.getIndex());
     }
 
     @Override
     public void unbindShadowTextures() {
-        shadowFramebuffer.getAttached2DTextures().get(0).unbind();
+        shadowTexture.unbind();
     }
 
     @Override

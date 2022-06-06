@@ -22,6 +22,7 @@ struct PointLight {
     vec3 color;
 
     samplerCube shadowMap;
+    float far;
 };
 
 struct SpotLight {
@@ -117,6 +118,35 @@ float directionalShadowCalculation(sampler2D shadowMap, vec3 direction, vec3 nor
     return shadow;
 }
 
+float omnidirectionalShadowCalculation(vec3 fragPos, vec3 lightPos, vec3 normal, samplerCube shadowMap, float farPlane) {
+    vec3 sampleOffsetDirections[20] = vec3[] (
+    vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
+    vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+    vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+    vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+    vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1));
+
+    vec3 fragToLight = fragPos - lightPos;
+    float currentDepth = length(fragToLight);
+
+    float bias = 0.015f;
+    float shadow = 0.0f;
+    int samples = 20;
+    float viewDistance = length(inViewPos.xyz - fragPos);
+    float diskRadius = (1.0f + (viewDistance / farPlane)) / 25.0f;
+
+    for(int i = 0; i < samples; ++i) {
+        float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+        closestDepth *= farPlane;
+        if(currentDepth - bias > closestDepth) {
+            shadow += 1.0f;
+        }
+    }
+    shadow /= float(samples);
+
+    return shadow;
+}
+
 vec3 calcDirLight(DirectionalLight dirLight, vec4 dirLightFragPos, vec3 normal, vec3 viewDir, vec2 texCoords, float roughness, float metallic, vec3 F0) {
     vec3 lightDir = normalize(-dirLight.direction);
     vec3 halfwayDir = normalize(viewDir + lightDir);
@@ -159,12 +189,16 @@ vec3 calcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
     vec3 kD = vec3(1.0f) - kS;
     kD *= (1.0f - metallic);
 
+    float shadow = omnidirectionalShadowCalculation(fragPos, pointLight.position, normal, pointLight.shadowMap, pointLight.far);
+
     vec3 nominator = NDF * G * F;
     float denominatior = 4.0f * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
     vec3 specular = nominator / max(denominatior, 0.001f);
 
     float NdotL = max(dot(normal, lightDir), 0.0f);
     vec3 albedo = texture(material.texture_color1, texCoords).rgb;
+    albedo *= (1.0f - shadow);
+    specular *= (1.0f - shadow);
     vec3 Lo = ((kD * (albedo / pi)) + specular) * radiance * NdotL;
     return Lo;
 }
