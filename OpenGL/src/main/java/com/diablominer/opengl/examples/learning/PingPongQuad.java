@@ -7,18 +7,20 @@ public class PingPongQuad extends Model implements PingPongIterationObserver {
     private final PingPongQuadMesh quadMesh;
     private boolean firstIteration, horizontal;
 
-    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex) {
+    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, RenderableManager renderableManager) {
         super(new ArrayList<>(), new ArrayList<>(), false);
         quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
         this.meshes.add(quadMesh);
+        renderableManager.addRenderable(this);
 
         Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.PingPongIterationEvent, this);
     }
 
-    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, boolean throwsShadow) {
+    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, RenderableManager renderableManager, boolean throwsShadow) {
         super(new ArrayList<>(), new ArrayList<>(), throwsShadow);
         quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
         this.meshes.add(quadMesh);
+        renderableManager.addRenderable(this);
 
         Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.PingPongIterationEvent, this);
     }

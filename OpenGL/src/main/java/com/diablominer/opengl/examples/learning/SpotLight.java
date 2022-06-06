@@ -10,11 +10,8 @@ import java.util.*;
 
 public class SpotLight implements Light {
 
-    private static final ShaderProgram shadowShader;
-    static {try {shadowShader = new ShaderProgram("L6_DirShadowVS", "L6_DirShadowFS");} catch (Exception e) {throw new RuntimeException(e);}}
+    private static ShaderProgram shadowShader;
     public static float near = 0.0001f, far = 30.0f;
-    public static final int sortingIndex = 2;
-    public static List<SpotLight> allSpotLights = new ArrayList<>();
 
     public Vector3f position, direction, color;
     private Renderer shadowRenderer;
@@ -25,8 +22,6 @@ public class SpotLight implements Light {
         this.position = position;
         this.direction = direction;
         this.color = color;
-        allSpotLights.add(this);
-        allLights.add(this);
 
         shadowTexture = new FramebufferTexture2D(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT);
         shadowFramebuffer = new Framebuffer(shadowTexture);
@@ -39,14 +34,13 @@ public class SpotLight implements Light {
 
     @Override
     public void setUniformData(ShaderProgram shaderProgram, int index) {
-        int correctedIndex = index - (DirectionalLight.allDirectionalLights.size() + PointLight.allPointLights.size());
-        shaderProgram.setUniformVec3F("spotLight" + correctedIndex + ".position", position);
-        shaderProgram.setUniformVec3F("spotLight" + correctedIndex + ".direction", direction);
-        shaderProgram.setUniformVec3F("spotLight" + correctedIndex + ".color", color);
-        shaderProgram.setUniformMat4F("spotLight" + correctedIndex + "Matrix", getLightSpaceMatrices()[0]);
+        shaderProgram.setUniformVec3F("spotLight" + index + ".position", position);
+        shaderProgram.setUniformVec3F("spotLight" + index + ".direction", direction);
+        shaderProgram.setUniformVec3F("spotLight" + index + ".color", color);
+        shaderProgram.setUniformMat4F("spotLight" + index + "Matrix", getLightSpaceMatrices()[0]);
 
         shadowTexture.bind();
-        shaderProgram.setUniform1I("spotLight" + correctedIndex + ".shadowMap", shadowTexture.getIndex());
+        shaderProgram.setUniform1I("spotLight" + index + ".shadowMap", shadowTexture.getIndex());
     }
 
     @Override
@@ -56,7 +50,7 @@ public class SpotLight implements Light {
 
     @Override
     public void initializeShadowRenderer(Renderable[] renderables) {
-        shadowRenderer = new SingleFramebufferRenderer(shadowFramebuffer, new RenderingEngineUnit[] {new ShadowRenderingEngineUnit(shadowShader, renderables, this)});
+        shadowRenderer = new SingleFramebufferRenderer(shadowFramebuffer, new RenderingEngineUnit[] {new ShadowRenderingEngineUnit(getShadowShader(), renderables, this)});
     }
 
     @Override
@@ -69,6 +63,19 @@ public class SpotLight implements Light {
         Matrix4f projection = new Matrix4f().identity().ortho(-15.0f, 15.0f, -15.0f, 15.0f, near, far);
         Matrix4f view = new Matrix4f().identity().lookAt(new Vector3f(position), new Vector3f(position).add(direction), new Vector3f(0.0f, 1.0f, 0.0f));
         return new Matrix4f[] {new Matrix4f(projection).mul(view)};
+    }
+
+    public static ShaderProgram getShadowShader() {
+        if (shadowShader == null) {
+            try {
+                shadowShader = new ShaderProgram("L6_DirShadowVS", "L6_DirShadowFS");
+                return shadowShader;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            return shadowShader;
+        }
     }
 
 }

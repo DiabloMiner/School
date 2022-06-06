@@ -18,43 +18,46 @@ public class MainRenderingEngine extends RenderingEngine {
     private final QuadRenderingEngineUnit quadRenderingEngineUnit;
 
     public MainRenderingEngine(Window window, Camera camera) throws Exception {
+        super();
         this.camera = camera;
 
         ShaderProgram shaderProgram = new ShaderProgram("L6VS", "L6FS");
         ShaderProgram lsShaderProgram = new ShaderProgram("L6VS", "L6FS_LS", false);
         ShaderProgram simpleShaderProgram = new ShaderProgram("L6SVS", "L6SFS", false);
+        shaderProgramManager.addShaderPrograms(new ArrayList<>(Arrays.asList(shaderProgram, lsShaderProgram, simpleShaderProgram)));
 
-        DirectionalLight dirLight = new DirectionalLight(new Vector3f(-0.7f, 1.0f, 2.9f), new Vector3f(0.0f, 0.0f, 0.2f), 1024);
-        RenderablePointLight pointLight = new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024);
-        SpotLight spotLight = new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024);
+        lightManager.addDirectionalLight(new DirectionalLight(new Vector3f(-0.7f, 1.0f, 2.9f), new Vector3f(0.0f, 0.0f, 0.2f), 1024));
+        lightManager.addRenderableLight(new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024));
+        lightManager.addSpotLight(new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024));
 
         Model helloWorld = new Model("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f)));
         Model cube = new Model("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -2.0f, -5.8f)));
+        renderableManager.addRenderables(new ArrayList<>(Arrays.asList(helloWorld, cube)));
 
         RenderingEngineUnit standardRenderingEngineUnit = new StandardRenderingEngineUnit(shaderProgram, new Renderable[] {helloWorld, cube});
         mainRenderer = new SingleFramebufferRenderer(new FramebufferTexture2D[] {new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT1)},
                 new FramebufferRenderbuffer[] {new FramebufferRenderbuffer(GL33.GL_DEPTH24_STENCIL8, window.width, window.height, 4, FramebufferAttachment.DEPTH_AND_STENCIL_ATTACHMENT)},
-                new RenderingEngineUnit[] {standardRenderingEngineUnit, new LightRenderingEngineUnit(lsShaderProgram)});
+                new RenderingEngineUnit[] {standardRenderingEngineUnit, new LightRenderingEngineUnit(lsShaderProgram, lightManager.allRenderableLights)});
         intermediateFb = new Framebuffer(new FramebufferTexture2D[] {new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferTexture2D(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, FramebufferAttachment.COLOR_ATTACHMENT1)},
                 new FramebufferRenderbuffer[] {new FramebufferRenderbuffer(GL33.GL_DEPTH24_STENCIL8, window.width, window.height, FramebufferAttachment.DEPTH_AND_STENCIL_ATTACHMENT)});
-        blurRenderer = new BlurRenderer(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, 10, intermediateFb.getAttached2DTextures().get(1));
-        quadRenderingEngineUnit = new QuadRenderingEngineUnit(simpleShaderProgram, new ArrayList<>(Arrays.asList(intermediateFb.getAttached2DTextures().get(0), blurRenderer.getFinalFramebuffer().getAttached2DTextures().get(0))));
+        blurRenderer = new BlurRenderer(window.width, window.height, GL33.GL_RGBA16F, GL33.GL_RGBA, GL33.GL_FLOAT, 10, intermediateFb.getAttached2DTextures().get(1), renderableManager);
+        quadRenderingEngineUnit = new QuadRenderingEngineUnit(simpleShaderProgram, new ArrayList<>(Arrays.asList(intermediateFb.getAttached2DTextures().get(0), blurRenderer.getFinalFramebuffer().getAttached2DTextures().get(0))), renderableManager);
         renderers = new ArrayList<>(Arrays.asList(mainRenderer, blurRenderer));
 
         matricesUniforms = new VecMatUniformBufferBlock(1, 2, GL33.GL_DYNAMIC_DRAW, "Matrices");
         shaderProgram.setUniformBlockBindings(new UniformBufferBlock[]{matricesUniforms});
         lsShaderProgram.setUniformBlockBindings(new UniformBufferBlock[]{matricesUniforms});
 
-        Light.createShadowRenderers();
+        lightManager.createShadowRenderers(renderableManager.allRenderablesThrowingShadows.toArray(new Renderable[0]));
     }
 
     @Override
     public void render() {
-        Light.renderShadowMaps();
+        lightManager.renderShadowMaps();
 
         mainRenderer.render();
 
-        Light.unbindAllShadowTextures();
+        lightManager.unbindAllShadowTextures();
         Framebuffer.blitFrameBuffers(mainRenderer.getFramebuffer(), intermediateFb);
 
         blurRenderer.render();
@@ -77,11 +80,12 @@ public class MainRenderingEngine extends RenderingEngine {
 
         matricesUniforms.setElements(new ArrayList<>(Arrays.asList(new Vector4FElement(camera.position), new Matrix4FElement(camera.getViewMatrix()), new Matrix4FElement(projection))));
         matricesUniforms.setUniformBlockData();
-        Light.setUniformDataForAllLights();
+        lightManager.setUniformDataForAllLights(shaderProgramManager.allShaderProgramsUsingShadows);
     }
 
     @Override
     public void destroy() {
+        destroyAllManagers();
         matricesUniforms.destroy();
         mainRenderer.destroy();
         blurRenderer.destroy();
@@ -91,6 +95,10 @@ public class MainRenderingEngine extends RenderingEngine {
 
     public Camera getCamera() {
         return camera;
+    }
+
+    public LightManager getLightManager() {
+        return lightManager;
     }
 
 }

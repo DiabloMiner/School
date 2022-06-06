@@ -2,13 +2,15 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
+import java.util.Set;
+
 public class LightRenderingEngineUnit extends StandardRenderingEngineUnit {
 
     public static String shaderColorVariableName = "lightColor";
 
-    public LightRenderingEngineUnit(ShaderProgram shaderProgram) {
+    public LightRenderingEngineUnit(ShaderProgram shaderProgram, Set<RenderableLight> allRenderableLights) {
         super(shaderProgram);
-        renderables.addAll(RenderableLight.allRenderableLights);
+        renderables.addAll(allRenderableLights);
     }
 
     private void renderAllLights() {

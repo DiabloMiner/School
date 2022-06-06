@@ -13,9 +13,6 @@ import java.util.List;
 
 public class ShaderProgram {
 
-    public static List<ShaderProgram> allShaderPrograms = new ArrayList<>();
-    public static List<ShaderProgram> shaderProgramsUsingShadows = new ArrayList<>();
-
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
@@ -29,9 +26,6 @@ public class ShaderProgram {
         }
         geometryShaderId = 0;
         usesShadows = true;
-
-        allShaderPrograms.add(this);
-        shaderProgramsUsingShadows.add(this);
     }
 
     public ShaderProgram(String vertexShaderPath, String fragmentShaderPath) throws Exception {
@@ -44,9 +38,6 @@ public class ShaderProgram {
         createVertexShader(vertexShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
-
-        allShaderPrograms.add(this);
-        shaderProgramsUsingShadows.add(this);
     }
 
     public ShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath) throws Exception {
@@ -59,9 +50,6 @@ public class ShaderProgram {
         createGeometryShader(geometryShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
-
-        allShaderPrograms.add(this);
-        shaderProgramsUsingShadows.add(this);
     }
 
     public ShaderProgram(boolean usesShadows) throws Exception {
@@ -71,9 +59,6 @@ public class ShaderProgram {
         }
         geometryShaderId = 0;
         this.usesShadows = usesShadows;
-
-        allShaderPrograms.add(this);
-        if (usesShadows) { shaderProgramsUsingShadows.add(this); }
     }
 
     public ShaderProgram(String vertexShaderPath, String fragmentShaderPath, boolean usesShadows) throws Exception {
@@ -86,9 +71,6 @@ public class ShaderProgram {
         createVertexShader(vertexShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
-
-        allShaderPrograms.add(this);
-        if (usesShadows) { shaderProgramsUsingShadows.add(this); }
     }
 
     public ShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath, boolean usesShadows) throws Exception {
@@ -101,9 +83,6 @@ public class ShaderProgram {
         createGeometryShader(geometryShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
-
-        allShaderPrograms.add(this);
-        if (usesShadows) { shaderProgramsUsingShadows.add(this); }
     }
 
     public void createVertexShader(String shaderFile) throws Exception {
@@ -246,14 +225,12 @@ public class ShaderProgram {
         buffer.bindToUniformBlockBinding();
     }
 
-    public static void unbind() {
-        GL33.glUseProgram(0);
+    public boolean usesShadows() {
+        return usesShadows;
     }
 
-    public static void destroyAll() {
-        for (ShaderProgram shaderProgram : allShaderPrograms) {
-            shaderProgram.destroy();
-        }
+    public static void unbind() {
+        GL33.glUseProgram(0);
     }
 
 }

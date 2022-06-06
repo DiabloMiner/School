@@ -39,8 +39,24 @@ public class Model extends Renderable {
         loadModel(path);
     }
 
+    public Model(String path, Vector3f position, boolean throwsShadow) {
+        super(position, throwsShadow);
+        meshes = new ArrayList<>();
+        loadedTexture2DS = new ArrayList<>();
+        this.path = path;
+        loadModel(path);
+    }
+
     public Model(String path, Matrix4f model) {
         super(model);
+        meshes = new ArrayList<>();
+        loadedTexture2DS = new ArrayList<>();
+        this.path = path;
+        loadModel(path);
+    }
+
+    public Model(String path, Matrix4f model, boolean throwsShadow) {
+        super(model, throwsShadow);
         meshes = new ArrayList<>();
         loadedTexture2DS = new ArrayList<>();
         this.path = path;
