@@ -72,13 +72,10 @@ public interface Light {
 
     static void renderShadowMaps() {
         for (Light light : allLights) {
-            // TODO: Remove if omnidirectional light casting has been implemented
-            if (light instanceof DirectionalLight || light instanceof SpotLight) {
-                GL33.glCullFace(GL33.GL_FRONT);
-                light.getShadowRenderer().update();
-                light.getShadowRenderer().render();
-                GL33.glCullFace(GL33.GL_BACK);
-            }
+            GL33.glCullFace(GL33.GL_FRONT);
+            light.getShadowRenderer().update();
+            light.getShadowRenderer().render();
+            GL33.glCullFace(GL33.GL_BACK);
         }
     }
 

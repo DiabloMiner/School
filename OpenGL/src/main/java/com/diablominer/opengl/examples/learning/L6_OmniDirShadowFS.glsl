@@ -6,16 +6,16 @@ struct PointLight {
     vec3 color;
 
     samplerCube shadowMap;
+    float far;
 };
 
 in vec4 fragPos;
 in vec2 outTexCoords;
 
 uniform PointLight pointLight0;
-uniform float farPlane;
 
 void main() {
-    float lightDistance = length(fragPos.xyz - pointLight.position);
-    lightDistance = lightDistance / farPlane;
+    float lightDistance = length(fragPos.xyz - pointLight0.position);
+    lightDistance = lightDistance / pointLight0.far;
     gl_FragDepth = lightDistance;
 }

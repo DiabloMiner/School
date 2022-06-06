@@ -12,7 +12,7 @@ public class CubeMap implements Texture {
 
     private int id;
     public int width, height;
-    public int index;
+    private int index;
 
     public CubeMap(String directory, String fileType, boolean flipImage) {
         String[] files = {directory + File.separator + "right" + fileType, directory + File.separator + "left" + fileType, directory + File.separator + "top" + fileType,
@@ -144,4 +144,13 @@ public class CubeMap implements Texture {
     public int getId() {
         return id;
     }
+
+    public boolean isBound() {
+        return index != -1;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
 }

@@ -11,7 +11,7 @@ import java.util.*;
 public class SpotLight implements Light {
 
     private static final ShaderProgram shadowShader;
-    static {try {shadowShader = new ShaderProgram("L6_ShadowVS", "L6_DirShadowFS");} catch (Exception e) {throw new RuntimeException(e);}}
+    static {try {shadowShader = new ShaderProgram("L6_DirShadowVS", "L6_DirShadowFS");} catch (Exception e) {throw new RuntimeException(e);}}
     public static float near = 0.0001f, far = 30.0f;
     public static final int sortingIndex = 2;
     public static List<SpotLight> allSpotLights = new ArrayList<>();
@@ -19,6 +19,7 @@ public class SpotLight implements Light {
     public Vector3f position, direction, color;
     private Renderer shadowRenderer;
     private final Framebuffer shadowFramebuffer;
+    private final FramebufferTexture2D shadowTexture;
 
     public SpotLight(Vector3f position, Vector3f direction, Vector3f color, int shadowSize) {
         this.position = position;
@@ -27,7 +28,8 @@ public class SpotLight implements Light {
         allSpotLights.add(this);
         allLights.add(this);
 
-        shadowFramebuffer = new Framebuffer(new FramebufferTexture2D(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT));
+        shadowTexture = new FramebufferTexture2D(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT);
+        shadowFramebuffer = new Framebuffer(shadowTexture);
     }
 
     @Override
@@ -43,13 +45,13 @@ public class SpotLight implements Light {
         shaderProgram.setUniformVec3F("spotLight" + correctedIndex + ".color", color);
         shaderProgram.setUniformMat4F("spotLight" + correctedIndex + "Matrix", getLightSpaceMatrices()[0]);
 
-        shadowFramebuffer.getAttached2DTextures().get(0).bind();
-        shaderProgram.setUniform1I("spotLight" + correctedIndex + ".shadowMap", shadowFramebuffer.getAttached2DTextures().get(0).getIndex());
+        shadowTexture.bind();
+        shaderProgram.setUniform1I("spotLight" + correctedIndex + ".shadowMap", shadowTexture.getIndex());
     }
 
     @Override
     public void unbindShadowTextures() {
-        shadowFramebuffer.getAttached2DTextures().get(0).unbind();
+        shadowTexture.unbind();
     }
 
     @Override
