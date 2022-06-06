@@ -10,7 +10,6 @@ struct PointLight {
 };
 
 in vec4 fragPos;
-in vec2 outTexCoords;
 
 uniform PointLight pointLight0;
 
