@@ -17,7 +17,6 @@ public class ShaderProgram {
     private int vertexShaderId;
     private int fragmentShaderId;
     private int geometryShaderId;
-    private final boolean usesShadows;
 
     public ShaderProgram() throws Exception {
         programId = GL33.glCreateProgram();
@@ -25,7 +24,6 @@ public class ShaderProgram {
             throw new Exception("Could not create Shader");
         }
         geometryShaderId = 0;
-        usesShadows = true;
     }
 
     public ShaderProgram(String vertexShaderPath, String fragmentShaderPath) throws Exception {
@@ -34,7 +32,6 @@ public class ShaderProgram {
             throw new Exception("Could not create Shader");
         }
         geometryShaderId = 0;
-        usesShadows = true;
         createVertexShader(vertexShaderPath);
         createFragmentShader(fragmentShaderPath);
         link();
@@ -45,40 +42,6 @@ public class ShaderProgram {
         if (programId == 0) {
             throw new Exception("Could not create Shader");
         }
-        usesShadows = true;
-        createVertexShader(vertexShaderPath);
-        createGeometryShader(geometryShaderPath);
-        createFragmentShader(fragmentShaderPath);
-        link();
-    }
-
-    public ShaderProgram(boolean usesShadows) throws Exception {
-        programId = GL33.glCreateProgram();
-        if (programId == 0) {
-            throw new Exception("Could not create Shader");
-        }
-        geometryShaderId = 0;
-        this.usesShadows = usesShadows;
-    }
-
-    public ShaderProgram(String vertexShaderPath, String fragmentShaderPath, boolean usesShadows) throws Exception {
-        programId = GL33.glCreateProgram();
-        if (programId == 0) {
-            throw new Exception("Could not create Shader");
-        }
-        geometryShaderId = 0;
-        this.usesShadows = usesShadows;
-        createVertexShader(vertexShaderPath);
-        createFragmentShader(fragmentShaderPath);
-        link();
-    }
-
-    public ShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath, boolean usesShadows) throws Exception {
-        programId = GL33.glCreateProgram();
-        if (programId == 0) {
-            throw new Exception("Could not create Shader");
-        }
-        this.usesShadows = usesShadows;
         createVertexShader(vertexShaderPath);
         createGeometryShader(geometryShaderPath);
         createFragmentShader(fragmentShaderPath);
@@ -223,10 +186,6 @@ public class ShaderProgram {
         GL33.glUniformBlockBinding(programId, GL33.glGetUniformBlockIndex(programId, buffer.name), buffer.bindingPoint);
         unbind();
         buffer.bindToUniformBlockBinding();
-    }
-
-    public boolean usesShadows() {
-        return usesShadows;
     }
 
     public static void unbind() {

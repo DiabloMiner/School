@@ -4,8 +4,11 @@ layout (location = 1) out vec4 brightColor;
 
 struct Material {
     sampler2D texture_color1;
+    sampler2D texture_normal1;
+    sampler2D texture_displacement1;
     sampler2D texture_metallic1;
     sampler2D texture_roughness1;
+    sampler2D texture_ao1;
 };
 
 struct DirectionalLight {
@@ -34,7 +37,7 @@ struct SpotLight {
     sampler2D shadowMap;
 };
 
-const float pi = 3.14159265359;
+const float pi = 3.14159265359f;
 
 layout (std140) uniform Matrices {
     vec4 inViewPos;
@@ -46,6 +49,9 @@ uniform Material material;
 uniform DirectionalLight dirLight0;
 uniform PointLight pointLight0;
 uniform SpotLight spotLight0;
+uniform samplerCube irradianceMap0;
+uniform samplerCube prefilteredMap0;
+uniform sampler2D brdfLUT0;
 
 in vec3 outNormal;
 in vec2 outTexCoords;
@@ -236,23 +242,44 @@ vec3 calcSpotLight(SpotLight spotLight, vec4 spotLightFragPos, vec3 normal, vec3
     return Lo;
 }
 
+vec3 calcAmbientLight(vec3 albedo, float metallic, float roughness, float ao, vec3 norm, vec3 viewDir, vec3 F0, samplerCube irradianceMap, samplerCube prefilteredMap, sampler2D brdfLUT) {
+    const float MAX_REFLECTION_LOD = 4.0f;
+
+    vec3 F = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0f), F0, roughness);
+    vec3 kS = F;
+    vec3 kD = (1.0f - kS) * (1.0f - metallic);
+    vec3 irradiance = texture(irradianceMap, norm).rgb;
+    vec3 diffuse = irradiance * albedo;
+
+    vec3 reflectionVector = reflect(-viewDir, norm);
+    vec3 prefilteredColor = textureLod(prefilteredMap, reflectionVector, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(norm, viewDir), 0.0f), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+    vec3 ambient = (kD * diffuse + specular) * ao;
+    return ambient;
+}
+
 void main() {
     // Normal rendering
-    vec3 norm = normalize(outNormal);
-    vec3 viewDir = normalize(inViewPos.xyz - fragPos);
-
+    vec3 albedo = texture(material.texture_color1, outTexCoords).rgb;
     float metallic = texture(material.texture_metallic1, outTexCoords).r;
     float roughness = texture(material.texture_roughness1, outTexCoords).r;
+    float ao = texture(material.texture_ao1, outTexCoords).r;
 
+    vec3 norm = normalize(outNormal);
+    vec3 viewDir = normalize(inViewPos.xyz - fragPos);
     vec3 F0 = vec3(0.04f);
-    F0 = mix(F0, texture(material.texture_color1, outTexCoords).rgb, metallic);
+    F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0f);
     Lo += calcDirLight(dirLight0, dirLight0FragPos, norm, viewDir, outTexCoords, roughness, metallic, F0);
     Lo += calcPointLight(pointLight0, norm, fragPos, viewDir, outTexCoords, roughness, metallic, F0);
     Lo += calcSpotLight(spotLight0, spotLight0FragPos, norm, fragPos, viewDir, outTexCoords, roughness, metallic, F0);
+    Lo += calcAmbientLight(albedo, metallic, roughness, ao, norm, viewDir, F0, irradianceMap0, prefilteredMap0, brdfLUT0);
 
     fragmentColor = vec4(Lo, texture(material.texture_color1, outTexCoords).w);
+
 
     // Brightness color is determined
     float brightness = dot(fragmentColor.rgb, vec3(0.2126f, 0.7152f, 0.0722f));

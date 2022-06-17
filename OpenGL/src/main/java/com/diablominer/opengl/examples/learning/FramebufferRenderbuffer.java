@@ -2,37 +2,27 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
-public class FramebufferRenderbuffer extends Renderbuffer implements FramebufferObject {
+public class FramebufferRenderbuffer implements FramebufferObject {
 
     public FramebufferAttachment attachment;
-    private int format, samples;
+    public Renderbuffer storedRenderbuffer;
 
     public FramebufferRenderbuffer(FramebufferAttachment attachment) {
         this.attachment = attachment;
-        this.samples = -1;
     }
 
-    public FramebufferRenderbuffer(int format, int width, int height, FramebufferAttachment attachment) {
-        super(format, width, height);
+    public FramebufferRenderbuffer(int width, int height, int format, FramebufferAttachment attachment) {
+        storedRenderbuffer = new Renderbuffer(width, height, format);
         this.attachment = attachment;
-        this.format = format;
-        this.samples = -1;
     }
 
-    public FramebufferRenderbuffer(int format, int width, int height, int samples, FramebufferAttachment attachment) {
-        super(format, width, height, samples);
-        this.attachment = attachment;
-        this.format = format;
-        this.samples = samples;
+    public void bind() {
+        storedRenderbuffer.bind();
     }
 
     public void resize(int width, int height) {
-        bind();
-        if (samples == -1) {
-            GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, format, width, height);
-        } else {
-            GL33.glRenderbufferStorageMultisample(GL33.GL_RENDERBUFFER, samples, format, width, height);
-        }
+        storedRenderbuffer.bind();
+        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, storedRenderbuffer.format, width, height);
         Renderbuffer.unbind();
     }
 
@@ -40,4 +30,13 @@ public class FramebufferRenderbuffer extends Renderbuffer implements Framebuffer
     public FramebufferAttachment getFramebufferAttachment() {
         return attachment;
     }
+
+    public void destroy() {
+        storedRenderbuffer.destroy();
+    }
+
+    public static void unbind() {
+        Renderbuffer.unbind();
+    }
+
 }

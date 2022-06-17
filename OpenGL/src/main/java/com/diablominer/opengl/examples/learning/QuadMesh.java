@@ -8,6 +8,9 @@ import java.util.Collection;
 
 public class QuadMesh extends Mesh {
 
+    public static final int vertexSize = 2;
+    public static final int texCoordSize = 2;
+
     public static final float[] vertices = {
             -1.0f,  1.0f,
             -1.0f, -1.0f,
@@ -16,6 +19,7 @@ public class QuadMesh extends Mesh {
              1.0f, -1.0f,
              1.0f,  1.0f,
     };
+
     public static final float[] texCoords = {
              0.0f, 1.0f,
              0.0f, 0.0f,
@@ -26,24 +30,22 @@ public class QuadMesh extends Mesh {
     };
 
     public QuadMesh() {
-        super();
+        super(Arrays.asList(vertices, texCoords), Arrays.asList(vertexSize, texCoordSize), new ArrayList<>());
+        setUpMesh();
+    }
+
+    public QuadMesh(float[] vertices, float[] texCoords, int vertexSize, int texCoordSize) {
+        super(Arrays.asList(vertices, texCoords), Arrays.asList(vertexSize, texCoordSize), new ArrayList<>());
         setUpMesh();
     }
 
     public QuadMesh(Collection<Texture2D> textures) {
-        super();
-        setUpMesh(textures);
+        super(Arrays.asList(vertices, texCoords), Arrays.asList(vertexSize, texCoordSize), new ArrayList<>(textures));
+        setUpMesh();
     }
 
-    private void setUpMesh() {
-        vertexAttributeSizes.addAll(Arrays.asList(2, 2));
-        vao = new SimpleVAO(new ArrayList<>(Arrays.asList(vertices, texCoords)), vertexAttributeSizes, GL33.GL_STATIC_DRAW);
-    }
-
-    private void setUpMesh(Collection<Texture2D> textures) {
-        vertexAttributeSizes.addAll(Arrays.asList(2, 2));
-        texture2DS.addAll(textures);
-        vao = new SimpleVAO(new ArrayList<>(Arrays.asList(vertices, texCoords)), vertexAttributeSizes, GL33.GL_STATIC_DRAW);
+    void setUpMesh() {
+        vao = new SimpleVAO(floatData, vertexAttributeSizes, GL33.GL_STATIC_DRAW);
     }
 
     public void draw(ShaderProgram shaderProgram) {

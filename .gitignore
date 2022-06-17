@@ -5,6 +5,7 @@ OpenGL/.idea/
 OpenGL/target/
 OpenGL/out/
 OpenGL/src/main/java/META-INF
+OpenGL/src/main/resources/META-INF
 OpenGL/OpenGL.jar
 OpenGL/OpenGL.bat
 *.class

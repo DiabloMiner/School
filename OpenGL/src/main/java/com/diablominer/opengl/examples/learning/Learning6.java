@@ -119,6 +119,7 @@ public class Learning6 implements Engine {
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_MULTISAMPLE);
         GL33.glEnable(GL33.GL_CULL_FACE);
+        GL33.glEnable(GL33.GL_TEXTURE_CUBE_MAP_SEAMLESS);
         GL33.glCullFace(GL33.GL_BACK);
 
         mainRenderingEngine = new MainRenderingEngine(window, camera);
@@ -130,6 +131,7 @@ public class Learning6 implements Engine {
             deltaTime = currentTime - lastFrame;
             lastFrame = currentTime;
 
+            resize();
             processInput();
 
             update();
@@ -163,27 +165,20 @@ public class Learning6 implements Engine {
     }
 
     public void update() {
-        if (resize) {
-            resize();
-            resize = false;
-        }
-
         getEventManager().executeEvents();
 
         mainRenderingEngine.update();
     }
 
-    public void resize() {
-        for (Framebuffer framebuffer : Framebuffer.allFramebuffers) {
-            framebuffer.resize(window.width, window.height);
-            framebuffer.bind();
-            GL33.glViewport(0, 0, window.width, window.height);
-        }
-        Framebuffer.unbind();
-    }
-
     public void render() {
         mainRenderingEngine.render();
+    }
+
+    public void resize() {
+        if (resize) {
+            mainRenderingEngine.resize();
+            resize = false;
+        }
     }
 
     public void close() {
@@ -191,6 +186,7 @@ public class Learning6 implements Engine {
         window.destroy();
         mainRenderingEngine.destroy();
 
+        ShaderProgramManager.destroyAllStaticShaderPrograms();
         RenderingEngine.destroyAllRenderingEngines();
         Renderer.destroyAllRenderers();
         Framebuffer.destroyAll();
@@ -206,14 +202,6 @@ public class Learning6 implements Engine {
             eventManager = new EventManager();
         }
         return eventManager;
-    }
-
-    public Window getWindow() {
-        return this.window;
-    }
-
-    public MainRenderingEngine getMainRenderingEngine() {
-        return mainRenderingEngine;
     }
 
 }

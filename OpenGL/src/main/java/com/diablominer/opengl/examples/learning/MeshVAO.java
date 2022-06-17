@@ -10,20 +10,20 @@ import java.util.List;
 
 public class MeshVAO extends VAO {
 
-    private List<VertexBufferObject> attachedVertexBuffers = new ArrayList<>();
+    private List<VertexBufferObject> attachedVertexBuffers;
     private ElementBufferObject attachedElementBuffer;
 
     public MeshVAO(List<float[]> floatData, List<Integer> sizeData, int[] intData, int usage) {
         super();
+        attachedVertexBuffers = new ArrayList<>();
 
         bind();
         for (int i = 0; i < floatData.size(); i++) {
             createAttachedBuffer(floatData.get(i), usage, i, sizeData.get(i));
         }
         VertexBufferObject.unbind();
-
         createAttachedBuffer(intData, usage);
-        ElementBufferObject.unbind();
+
         unbind();
     }
 

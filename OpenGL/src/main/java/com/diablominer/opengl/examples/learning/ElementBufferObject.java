@@ -28,6 +28,7 @@ public class ElementBufferObject extends Buffer {
 
         bind();
         GL33.glBufferData(bindingTarget, buffer, usage);
+        ElementBufferObject.unbind();
     }
 
     public static void unbind() {

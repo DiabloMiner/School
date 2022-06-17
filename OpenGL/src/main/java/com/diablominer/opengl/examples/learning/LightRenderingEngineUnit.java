@@ -1,7 +1,5 @@
 package com.diablominer.opengl.examples.learning;
 
-import org.lwjgl.opengl.GL33;
-
 import java.util.Set;
 
 public class LightRenderingEngineUnit extends StandardRenderingEngineUnit {
@@ -36,12 +34,6 @@ public class LightRenderingEngineUnit extends StandardRenderingEngineUnit {
 
     @Override
     public void render(ShaderProgram shaderProgram) {
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
-
         renderAllLights(shaderProgram);
-
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
     }
 }

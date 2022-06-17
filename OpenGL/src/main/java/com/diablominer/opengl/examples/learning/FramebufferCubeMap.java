@@ -4,37 +4,44 @@ import org.lwjgl.opengl.GL33;
 
 import java.nio.ByteBuffer;
 
-public class FramebufferCubeMap extends CubeMap implements FramebufferObject {
+public class FramebufferCubeMap implements FramebufferObject {
 
     public FramebufferAttachment attachment;
-    int internalFormat, format, type;
+    public CubeMap storedTexture;
 
-    public FramebufferCubeMap(int width, int height, int internalFormat, int format, int type, int minFilter, FramebufferAttachment attachment) {
-        super(width, height, internalFormat, format, type, minFilter);
+    public FramebufferCubeMap(int width, int height, int internalFormat, int format, int type, int minFilter, int magFilter, FramebufferAttachment attachment) {
+        storedTexture = new CubeMap(width, height, internalFormat, format, type, minFilter, magFilter);
         this.attachment = attachment;
-        this.internalFormat = internalFormat;
-        this.format = format;
-        this.type = type;
     }
 
     public FramebufferCubeMap(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
-        super(width, height, internalFormat, format, type);
+        storedTexture = new CubeMap(width, height, internalFormat, format, type);
         this.attachment = attachment;
-        this.internalFormat = internalFormat;
-        this.format = format;
-        this.type = type;
+    }
+
+    public void bind() {
+        storedTexture.bind();
+    }
+
+    public void unbind() {
+        storedTexture.unbind();
     }
 
     public void resize(int width, int height) {
-        bind();
+        storedTexture.bind();
         for (int i = 0; i < 6; i++) {
-            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, (ByteBuffer) null);
+            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storedTexture.internalFormat, width, height, 0, storedTexture.format, storedTexture.type, (ByteBuffer) null);
         }
-        unbind();
+        storedTexture.unbind();
     }
 
     @Override
     public FramebufferAttachment getFramebufferAttachment() {
         return attachment;
     }
+
+    public void destroy() {
+        storedTexture.destroy();
+    }
+
 }

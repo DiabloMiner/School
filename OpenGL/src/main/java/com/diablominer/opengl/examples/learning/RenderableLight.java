@@ -9,6 +9,4 @@ public abstract class RenderableLight extends Renderable {
         this.light = light;
     }
 
-    abstract void addToSpecificLight(LightManager lightManager);
-
 }

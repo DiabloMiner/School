@@ -1,7 +1,5 @@
 package com.diablominer.opengl.examples.learning;
 
-import org.lwjgl.opengl.GL33;
-
 public class StandardRenderingEngineUnit extends RenderingEngineUnit {
 
     public StandardRenderingEngineUnit(ShaderProgram shaderProgram) {
@@ -15,12 +13,17 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
     @Override
     public void update() {
         update(this.shaderProgram);
-        // TODO: Introduce I/O Engine or something equivalent ; Replace clear function in SingleFramebufferRenderer with CubeMap ; Introduce array with a maxsize in shaders so dynamic arrays are possible
-        // TODO: Make IBL, Shadowcasting, Normal mapping available ; Review assimp code ; (Improve old texture code with new code)
-        // TODO: Create new textures explicitly used for assimp, multisampling ; Maybe also an enum for tex parameters
+        // TODO: Remove public static sets (also Texture lists) ; Rethink way EventSystem is handled (PingPongIterationEvents necessitate a RenderingEngine specific approach(Maybe compare eventthrower index))
+        // TODO: Introduce I/O Engine or something equivalent ; See if specular highlights on cube are correct (Check texts for this problem)
+        // TODO: Make Normal mapping available ; Review assimp code ;
+        // TODO: (Maybe define texture index in another way) ; Maybe also an enum for tex parameters (Create ones for every OpenGL purpose
+        // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible
         // Added functionality:
         // Implemented directional shadow casting for directional lights and spot lights ; Added dynamic yaw and pitch calculation ; Implemented omnidirectional shadow casting ;
         // Removed standard point light cube from shadow maps ; Introduced abstract Engine class ; Abstract things that are currently solved with public static lists into managers so multiple can be had
+        // Made it possible to add skyboxes ; Replaced clear function in SingleFramebufferRenderer with CubeMap ; Wrote a skybox class ; Created textures only used for models ; Created a mesh and model super class
+        // Implemented a list for static shaderprograms ; Implemented skybox manager ; Camera controls at beginning are right way around now ; Replaced the generic renderable light in LightManager with specific functions
+        // Created new textures explicitly used for multisampling ; Rethought FramebufferTextures: Textures are now a filed of FramebufferTextures ; Shadows are now not distorted by resizing
     }
 
     @Override
@@ -33,13 +36,7 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
 
     @Override
     public void render(ShaderProgram shaderProgram) {
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
-
         renderAllRenderables(shaderProgram);
-
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
     }
 
     @Override

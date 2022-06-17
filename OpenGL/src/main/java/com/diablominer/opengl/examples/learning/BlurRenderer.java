@@ -9,25 +9,33 @@ import java.util.Arrays;
 public class BlurRenderer extends Renderer {
 
     public static ShaderProgram blurShaderProgram;
-    static { try { blurShaderProgram = new ShaderProgram("L6SVS", "L6_GaussianBlur", false); } catch (Exception e) { e.printStackTrace(); } }
+    static { try { blurShaderProgram = new ShaderProgram("L6SVS", "L6_GaussianBlur"); } catch (Exception e) { e.printStackTrace(); } }
 
     public static Vector3f clearColor = new Vector3f(0.0f, 0.0f, 0.0f);
 
     private final int iterations;
     private final PingPongRenderingEngineUnit renderingEngineUnit;
 
-    public BlurRenderer(int width, int height, int internalFormat, int format, int type, int iterations, Texture2D inputTex, RenderableManager renderableManager) {
+    public BlurRenderer(int width, int height, int internalFormat, int format, int type, int iterations, Texture2D inputTex, RenderableManager renderableManager, FramebufferManager framebufferManager) {
         super();
-        framebuffers.addAll(new ArrayList<>(Arrays.asList(new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0)), new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0)))));
-        renderingEngineUnit = new PingPongRenderingEngineUnit(blurShaderProgram, this.framebuffers.get(0).getAttached2DTextures().get(0), this.framebuffers.get(1).getAttached2DTextures().get(0), inputTex, renderableManager);
+        Framebuffer framebuffer1 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
+        Framebuffer framebuffer2 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
+        framebufferManager.addFramebuffers(Arrays.asList(framebuffer1, framebuffer2));
+
+        framebuffers.addAll(Arrays.asList(framebuffer1, framebuffer2));
+        renderingEngineUnit = new PingPongRenderingEngineUnit(blurShaderProgram, framebuffer1.getAttached2DTextures().get(0).storedTexture, framebuffer2.getAttached2DTextures().get(0).storedTexture, inputTex, renderableManager);
         this.renderingEngineUnits.add(renderingEngineUnit);
         this.iterations = iterations;
     }
 
-    public BlurRenderer(int width, int height, int internalFormat, int format, int type, ShaderProgram shaderProgram, int iterations, Texture2D inputTex, RenderableManager renderableManager) {
+    public BlurRenderer(int width, int height, int internalFormat, int format, int type, ShaderProgram shaderProgram, int iterations, Texture2D inputTex, RenderableManager renderableManager, FramebufferManager framebufferManager) {
         super();
-        framebuffers.addAll(new ArrayList<>(Arrays.asList(new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0)), new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0)))));
-        renderingEngineUnit = new PingPongRenderingEngineUnit(shaderProgram, this.framebuffers.get(0).getAttached2DTextures().get(0), this.framebuffers.get(1).getAttached2DTextures().get(0), inputTex, renderableManager);
+        Framebuffer framebuffer1 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
+        Framebuffer framebuffer2 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
+        framebufferManager.addFramebuffers(Arrays.asList(framebuffer1, framebuffer2));
+
+        framebuffers.addAll(Arrays.asList(framebuffer1, framebuffer2));
+        renderingEngineUnit = new PingPongRenderingEngineUnit(shaderProgram, framebuffer1.getAttached2DTextures().get(0).storedTexture, framebuffer2.getAttached2DTextures().get(0).storedTexture, inputTex, renderableManager);
         this.renderingEngineUnits.add(renderingEngineUnit);
         this.iterations = iterations;
     }
@@ -78,7 +86,7 @@ public class BlurRenderer extends Renderer {
 
     public static ShaderProgram getBlurShaderProgram() throws Exception {
         if (blurShaderProgram == null) {
-            blurShaderProgram = new ShaderProgram("L6SVS", "L6_GaussianBlur", false);
+            blurShaderProgram = new ShaderProgram("L6SVS", "L6_GaussianBlur");
         }
         return blurShaderProgram;
     }

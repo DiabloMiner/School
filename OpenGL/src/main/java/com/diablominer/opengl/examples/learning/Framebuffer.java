@@ -12,9 +12,9 @@ public class Framebuffer {
     private final int id;
     public int width, height;
     private int drawBuffers;
-    private final List<FramebufferTexture2D> attached2DTextures;
-    private final List<FramebufferCubeMap> attachedCubeMaps;
-    private final List<FramebufferRenderbuffer> attachedRenderbuffers;
+    private List<FramebufferTexture2D> attached2DTextures;
+    private List<FramebufferCubeMap> attachedCubeMaps;
+    private List<FramebufferRenderbuffer> attachedRenderbuffers;
 
     public enum FramebufferTarget {
         Framebuffer(GL33.GL_FRAMEBUFFER),
@@ -62,26 +62,10 @@ public class Framebuffer {
 
     public Framebuffer(FramebufferTexture2D[] textures) {
         id = GL33.glGenFramebuffers();
-        attached2DTextures = new ArrayList<>(Arrays.asList(textures));
-        attachedCubeMaps = new ArrayList<>();
-        attachedRenderbuffers = new ArrayList<>();
-        this.width = textures[0].width;
-        this.height = textures[0].height;
+        this.width = textures[0].storedTexture.width;
+        this.height = textures[0].storedTexture.height;
 
-        List<FramebufferAttachment> colorAttachments = new ArrayList<>();
-        bind();
-        for (FramebufferTexture2D texture : textures) {
-            texture.bind();
-            createAttached2DTexture(texture);
-            texture.unbind();
-
-            if (texture.attachment.isColorAttachment) {
-                colorAttachments.add(texture.attachment);
-            }
-        }
-        this.drawBuffers = colorAttachments.size();
-        setDrawBuffers(colorAttachments);
-        unbind();
+        attachTexturesAndRenderbuffers(Arrays.asList(textures), new ArrayList<>(), new ArrayList<>());
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
@@ -95,26 +79,10 @@ public class Framebuffer {
 
     public Framebuffer(FramebufferCubeMap[] textures) {
         id = GL33.glGenFramebuffers();
-        attached2DTextures = new ArrayList<>();
-        attachedCubeMaps = new ArrayList<>(Arrays.asList(textures));
-        attachedRenderbuffers = new ArrayList<>();
-        this.width = textures[0].width;
-        this.height = textures[0].height;
+        this.width = textures[0].storedTexture.width;
+        this.height = textures[0].storedTexture.height;
 
-        List<FramebufferAttachment> colorAttachments = new ArrayList<>();
-        bind();
-        for (FramebufferCubeMap texture : textures) {
-            texture.bind();
-            createAttachedCubeMap(texture);
-            texture.unbind();
-
-            if (texture.attachment.isColorAttachment) {
-                colorAttachments.add(texture.attachment);
-            }
-        }
-        this.drawBuffers = colorAttachments.size();
-        setDrawBuffers(colorAttachments);
-        unbind();
+        attachTexturesAndRenderbuffers(new ArrayList<>(), Arrays.asList(textures), new ArrayList<>());
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
@@ -128,35 +96,10 @@ public class Framebuffer {
 
     public Framebuffer(FramebufferTexture2D[] textures, FramebufferRenderbuffer[] renderbuffers) {
         id = GL33.glGenFramebuffers();
-        attached2DTextures = new ArrayList<>(Arrays.asList(textures));
-        attachedCubeMaps = new ArrayList<>();
-        attachedRenderbuffers = new ArrayList<>(Arrays.asList(renderbuffers));
-        this.width = textures[0].width;
-        this.height = textures[0].height;
+        this.width = textures[0].storedTexture.width;
+        this.height = textures[0].storedTexture.height;
 
-        List<FramebufferAttachment> colorAttachments = new ArrayList<>();
-        bind();
-        for (FramebufferTexture2D texture : textures) {
-            texture.bind();
-            createAttached2DTexture(texture);
-            texture.unbind();
-
-            if (texture.attachment.isColorAttachment) {
-                colorAttachments.add(texture.attachment);
-            }
-        }
-        for (FramebufferRenderbuffer renderbuffer : renderbuffers) {
-            renderbuffer.bind();
-            createAttachedRenderBuffer(renderbuffer);
-            Renderbuffer.unbind();
-
-            if (renderbuffer.attachment.isColorAttachment) {
-                colorAttachments.add(renderbuffer.attachment);
-            }
-        }
-        this.drawBuffers = colorAttachments.size();
-        setDrawBuffers(colorAttachments);
-        unbind();
+        attachTexturesAndRenderbuffers(Arrays.asList(textures), new ArrayList<>(), Arrays.asList(renderbuffers));
         if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
             System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
         }
@@ -166,27 +109,78 @@ public class Framebuffer {
 
     public Framebuffer(FramebufferCubeMap[] textures, FramebufferRenderbuffer[] renderbuffers) {
         id = GL33.glGenFramebuffers();
-        attached2DTextures = new ArrayList<>();
-        attachedCubeMaps = new ArrayList<>(Arrays.asList(textures));
-        attachedRenderbuffers = new ArrayList<>(Arrays.asList(renderbuffers));
-        this.width = textures[0].width;
-        this.height = textures[0].height;
+        this.width = textures[0].storedTexture.width;
+        this.height = textures[0].storedTexture.height;
+
+        attachTexturesAndRenderbuffers(new ArrayList<>(), Arrays.asList(textures), Arrays.asList(renderbuffers));
+        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
+            System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
+        }
+
+        allFramebuffers.add(this);
+    }
+
+    public void attachTexture2D(FramebufferTexture2D texture, int level) {
+        texture.bind();
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, texture.getFramebufferAttachment().glType, texture.storedTexture.target, texture.storedTexture.getId(), level);
+        texture.unbind();
+    }
+
+    public void attachCubeMap(FramebufferCubeMap texture, int level) {
+        texture.bind();
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, texture.getFramebufferAttachment().glType, texture.storedTexture.getId(), level);
+        texture.unbind();
+    }
+
+    public void attachTexture2D(FramebufferTexture2D texture) {
+        texture.bind();
+        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, texture.getFramebufferAttachment().glType, texture.storedTexture.target, texture.storedTexture.getId(), 0);
+        texture.unbind();
+    }
+
+    public void attachCubeMap(FramebufferCubeMap texture) {
+        texture.bind();
+        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, texture.getFramebufferAttachment().glType, texture.storedTexture.getId(), 0);
+        texture.unbind();
+    }
+
+    public void attachRenderBuffer(FramebufferRenderbuffer renderBuffer) {
+        renderBuffer.bind();
+        GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, renderBuffer.getFramebufferAttachment().glType, GL33.GL_RENDERBUFFER, renderBuffer.storedRenderbuffer.getId());
+        Renderbuffer.unbind();
+    }
+
+    public void setDrawBuffers(List<FramebufferAttachment> colorAttachments) {
+        int[] attachmentGlTypes = new int[colorAttachments.size()];
+        for (int i = 0; i < colorAttachments.size(); i++) {
+            attachmentGlTypes[i] = colorAttachments.get(i).glType;
+        }
+        GL33.glDrawBuffers(attachmentGlTypes);
+    }
+
+    public void attachTexturesAndRenderbuffers(List<FramebufferTexture2D> texture2Ds, List<FramebufferCubeMap> cubeMaps, List<FramebufferRenderbuffer> renderbuffers) {
+        attached2DTextures = new ArrayList<>(texture2Ds);
+        attachedCubeMaps = new ArrayList<>(cubeMaps);
+        attachedRenderbuffers = new ArrayList<>(renderbuffers);
 
         List<FramebufferAttachment> colorAttachments = new ArrayList<>();
         bind();
-        for (FramebufferCubeMap texture : textures) {
-            texture.bind();
-            createAttachedCubeMap(texture);
-            texture.unbind();
+        for (FramebufferTexture2D texture : texture2Ds) {
+            attachTexture2D(texture);
+
+            if (texture.attachment.isColorAttachment) {
+                colorAttachments.add(texture.attachment);
+            }
+        }
+        for (FramebufferCubeMap texture : cubeMaps) {
+            attachCubeMap(texture);
 
             if (texture.attachment.isColorAttachment) {
                 colorAttachments.add(texture.attachment);
             }
         }
         for (FramebufferRenderbuffer renderbuffer : renderbuffers) {
-            renderbuffer.bind();
-            createAttachedRenderBuffer(renderbuffer);
-            Renderbuffer.unbind();
+            attachRenderBuffer(renderbuffer);
 
             if (renderbuffer.attachment.isColorAttachment) {
                 colorAttachments.add(renderbuffer.attachment);
@@ -195,31 +189,6 @@ public class Framebuffer {
         this.drawBuffers = colorAttachments.size();
         setDrawBuffers(colorAttachments);
         unbind();
-        if (GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER) != GL33.GL_FRAMEBUFFER_COMPLETE) {
-            System.err.println("Framebuffer has not been completed. Framebuffer status: " + GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER));
-        }
-
-        allFramebuffers.add(this);
-    }
-
-    private void createAttached2DTexture(FramebufferTexture2D texture) {
-        GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, texture.getFramebufferAttachment().glType, texture.target, texture.getId(), 0);
-    }
-
-    private void createAttachedCubeMap(FramebufferCubeMap texture) {
-        GL33.glFramebufferTexture(GL33.GL_FRAMEBUFFER, texture.getFramebufferAttachment().glType, texture.getId(), 0);
-    }
-
-    private void createAttachedRenderBuffer(FramebufferRenderbuffer renderBuffer) {
-        GL33.glFramebufferRenderbuffer(GL33.GL_FRAMEBUFFER, renderBuffer.getFramebufferAttachment().glType, GL33.GL_RENDERBUFFER, renderBuffer.getId());
-    }
-
-    private void setDrawBuffers(List<FramebufferAttachment> colorAttachments) {
-        int[] attachmentGlTypes = new int[colorAttachments.size()];
-        for (int i = 0; i < colorAttachments.size(); i++) {
-            attachmentGlTypes[i] = colorAttachments.get(i).glType;
-        }
-        GL33.glDrawBuffers(attachmentGlTypes);
     }
 
     public void bind() {
@@ -240,20 +209,29 @@ public class Framebuffer {
         for (FramebufferRenderbuffer renderbuffer : attachedRenderbuffers) {
             renderbuffer.resize(width, height);
         }
+        adjustSize(width, height);
+    }
+
+    public void adjustSize(int width, int height) {
         this.width = width;
         this.height = height;
     }
 
     public void destroy() {
-        for (Texture2D texture2D : attached2DTextures) {
+        for (FramebufferTexture2D texture2D : attached2DTextures) {
             texture2D.destroy();
         }
-        for (CubeMap cubeMap : attachedCubeMaps) {
+        for (FramebufferCubeMap cubeMap : attachedCubeMaps) {
             cubeMap.destroy();
         }
-        for (Renderbuffer renderbuffer : attachedRenderbuffers) {
+        for (FramebufferRenderbuffer renderbuffer : attachedRenderbuffers) {
             renderbuffer.destroy();
         }
+        destroySelf();
+    }
+
+    public void destroySelf() {
+        GL33.glDeleteFramebuffers(id);
     }
 
     public List<FramebufferTexture2D> getAttached2DTextures() {
@@ -271,24 +249,24 @@ public class Framebuffer {
     public void addTexture2D(FramebufferTexture2D texture) {
         attached2DTextures.add(texture);
         if (width == -1 && height == -1) {
-            width = texture.width;
-            height = texture.height;
+            width = texture.storedTexture.width;
+            height = texture.storedTexture.height;
         }
     }
 
     public void addCubeMap(FramebufferCubeMap texture) {
         attachedCubeMaps.add(texture);
         if (width == -1 && height == -1) {
-            width = texture.width;
-            height = texture.height;
+            width = texture.storedTexture.width;
+            height = texture.storedTexture.height;
         }
     }
 
     public void addRenderbufffer(FramebufferRenderbuffer renderbuffer) {
         attachedRenderbuffers.add(renderbuffer);
         if (width == -1 && height == -1) {
-            width = renderbuffer.width;
-            height = renderbuffer.height;
+            width = renderbuffer.storedRenderbuffer.width;
+            height = renderbuffer.storedRenderbuffer.height;
         }
     }
 

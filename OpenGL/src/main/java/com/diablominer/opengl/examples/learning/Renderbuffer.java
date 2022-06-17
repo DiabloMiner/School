@@ -9,39 +9,31 @@ public class Renderbuffer {
 
     public static Set<Renderbuffer> allRenderbuffers = new HashSet<>();
 
-    private int id;
-    public int width, height;
+    public int width, height, format;
+    protected int id;
 
-    public Renderbuffer() {
+    public Renderbuffer(int format) {
         id = GL33.glGenRenderbuffers();
         this.width = -1;
         this.height = -1;
+        this.format = format;
     }
 
-    public Renderbuffer(int format, int width, int height) {
+    public Renderbuffer(int width, int height, int format) {
         id = GL33.glGenRenderbuffers();
         this.width = width;
         this.height = height;
-        defineStorage(format, width, height);
-    }
-
-    public Renderbuffer(int format, int width, int height, int samples) {
-        id = GL33.glGenRenderbuffers();
-        defineMultisampledStorage(format, width, height, samples);
+        this.format = format;
+        defineStorage(width, height, format);
     }
 
     public void bind() {
         GL33.glBindRenderbuffer(GL33.GL_RENDERBUFFER, id);
     }
 
-    public void defineStorage(int format, int width, int height) {
+    public void defineStorage(int width, int height, int format) {
         bind();
         GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, format, width, height);
-    }
-
-    public void defineMultisampledStorage(int format, int width, int height, int samples) {
-        bind();
-        GL33.glRenderbufferStorageMultisample(GL33.GL_RENDERBUFFER, samples, format, width, height);
     }
 
     public void destroy() {

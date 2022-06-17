@@ -40,7 +40,7 @@ public class SpotLight implements Light {
         shaderProgram.setUniformMat4F("spotLight" + index + "Matrix", getLightSpaceMatrices()[0]);
 
         shadowTexture.bind();
-        shaderProgram.setUniform1I("spotLight" + index + ".shadowMap", shadowTexture.getIndex());
+        shaderProgram.setUniform1I("spotLight" + index + ".shadowMap", shadowTexture.storedTexture.getIndex());
     }
 
     @Override

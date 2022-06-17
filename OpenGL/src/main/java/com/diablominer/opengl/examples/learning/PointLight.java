@@ -37,7 +37,7 @@ public class PointLight implements Light {
         shaderProgram.setUniformVec3F("pointLight" + index + ".color", color);
 
         shadowTexture.bind();
-        shaderProgram.setUniform1I("pointLight" + index + ".shadowMap", shadowTexture.getIndex());
+        shaderProgram.setUniform1I("pointLight" + index + ".shadowMap", shadowTexture.storedTexture.getIndex());
         shaderProgram.setUniform1F("pointLight" + index + ".far", far);
     }
 
@@ -52,7 +52,7 @@ public class PointLight implements Light {
     }
 
     @Override
-    public Renderer getShadowRenderer(){
+    public Renderer getShadowRenderer() {
         return shadowRenderer;
     }
 

@@ -21,6 +21,7 @@ public class Camera implements KeyPressObserver {
         Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
         right = new Vector3f(tempUp).cross(direction).normalize();
         this.up = new Vector3f(direction).cross(right);
+        right = new Vector3f(direction).cross(up);
 
         yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
         pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));
@@ -36,7 +37,8 @@ public class Camera implements KeyPressObserver {
         this.direction = new Vector3f(direction);
         Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
         right = new Vector3f(tempUp).cross(direction).normalize();
-        this.up = new Vector3f(direction).cross(right);
+        up = new Vector3f(direction).cross(right);
+        right = new Vector3f(direction).cross(up);
 
         yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
         pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));

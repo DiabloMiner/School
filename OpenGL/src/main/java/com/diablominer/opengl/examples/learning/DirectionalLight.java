@@ -39,7 +39,7 @@ public class DirectionalLight implements Light {
         shaderProgram.setUniformMat4F("dirLight" + index + "Matrix", getLightSpaceMatrices()[0]);
 
         shadowTexture.bind();
-        shaderProgram.setUniform1I("dirLight" + index + ".shadowMap", shadowTexture.getIndex());
+        shaderProgram.setUniform1I("dirLight" + index + ".shadowMap", shadowTexture.storedTexture.getIndex());
     }
 
     @Override

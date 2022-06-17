@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 
 public class RenderablePointLight extends RenderableLight {
 
-    public static Model pointLightModel = new Model("./src/main/java/com/diablominer/opengl/examples/models/cube/cube.obj", new Vector3f(0.0f), false);
+    public static AssimpModel model = new AssimpModel("./src/main/java/com/diablominer/opengl/examples/models/cube/cube.obj", new Vector3f(0.0f), false);
 
     public PointLight pointLight;
 
@@ -21,7 +21,7 @@ public class RenderablePointLight extends RenderableLight {
 
     @Override
     public void draw(ShaderProgram shaderProgram) {
-        pointLightModel.draw(shaderProgram, new Matrix4f().identity().translate(pointLight.position).scale(0.2f));
+        model.draw(shaderProgram, new Matrix4f().identity().translate(pointLight.position).scale(0.2f));
     }
 
     @Override
@@ -29,14 +29,9 @@ public class RenderablePointLight extends RenderableLight {
         RenderablePointLight.destroyModel();
     }
 
-    @Override
-    void addToSpecificLight(LightManager lightManager) {
-        lightManager.allPointLights.add(pointLight);
-    }
-
     public static void destroyModel() {
-        if (!(pointLightModel.meshes.isEmpty() && pointLightModel.loadedTexture2DS.isEmpty())) {
-            pointLightModel.destroy();
+        if (!(model.meshes.isEmpty() && model.loadedTexture2DS.isEmpty())) {
+            model.destroy();
         }
     }
 

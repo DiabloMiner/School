@@ -81,7 +81,7 @@ public class Window {
             monitorHeight = videoMode.height();
             GLFW.glfwShowWindow(id);
         }
-        GLFW.glfwSetInputMode(id, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+        GLFW.glfwSetInputMode(id, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_TRUE);
 
         mouse = new com.diablominer.opengl.examples.learning.Mouse(width, height);

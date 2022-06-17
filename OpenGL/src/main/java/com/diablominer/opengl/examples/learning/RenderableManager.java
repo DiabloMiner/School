@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class RenderableManager {
+public class RenderableManager implements Manager {
 
     public List<Renderable> allRenderables;
     public Set<Renderable> allRenderablesThrowingShadows;
@@ -13,6 +13,9 @@ public class RenderableManager {
     public RenderableManager() {
         allRenderables = new ArrayList<>();
         allRenderablesThrowingShadows = new HashSet<>();
+
+        addRenderable(RenderablePointLight.model);
+        addRenderable(Skybox.model);
     }
 
     public void addRenderable(Renderable renderable) {
@@ -30,7 +33,6 @@ public class RenderableManager {
         for (Renderable renderable : allRenderables) {
             renderable.destroy();
         }
-        RenderablePointLight.destroyModel();
     }
 
 }
