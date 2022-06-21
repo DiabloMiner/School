@@ -1,8 +1,7 @@
 package com.diablominer.opengl.examples.learning;
 
+import org.joml.*;
 import org.joml.Math;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33;
 
 import java.util.ArrayList;
@@ -32,10 +31,13 @@ public class MainRenderingEngine extends RenderingEngine {
         lightManager.addSpotLight(new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024));
 
         AssimpModel helloWorld = new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f)));
-        AssimpModel cube = new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -2.0f, -5.8f)));
-        renderableManager.addRenderables(new ArrayList<>(Arrays.asList(helloWorld, cube)));
+        AssimpModel cube = new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f)));
+        TestPhysicsCube physicsCube1 = new TestPhysicsCube("./src/main/resources/models/HelloWorld/cube2.obj", new Vector3d(10.0, 6, 0.0), new Vector3d(0.0, 0.0, 0.0), new Vector3d(0.0),  new Quaterniond().identity(), new Vector3d(0.0), new Vector3d(0.0), 10, 2);
+        TestPhysicsCube physicsCube2 = new TestPhysicsCube("./src/main/resources/models/HelloWorld/cube2.obj", new Vector3d(-10.0, 6, 0.0), new Vector3d(0.0, 0.0, 0.0), new Vector3d(0.0),  new Quaterniond().identity(), new Vector3d(0.0), new Vector3d(0.0), 10, 2);
+        Learning6.engineInstance.getMainPhysicsEngine().physicsObjects.addAll(Arrays.asList(physicsCube1, physicsCube2));
+        renderableManager.addRenderables(new ArrayList<>(Arrays.asList(helloWorld, cube, physicsCube1, physicsCube2)));
 
-        RenderingEngineUnit standardRenderingEngineUnit = new StandardRenderingEngineUnit(shaderProgram, new Renderable[] {helloWorld, cube});
+        RenderingEngineUnit standardRenderingEngineUnit = new StandardRenderingEngineUnit(shaderProgram, new Renderable[] {helloWorld, cube,  physicsCube1, physicsCube2});
         RenderingEngineUnit lightRenderingEngineUnit = new LightRenderingEngineUnit(lsShaderProgram, lightManager.allRenderableLights);
         RenderingEngineUnit skyboxRenderingEngineUnit = new SkyboxRenderingEngineUnit(skyboxManager.createSkybox("./src/main/resources/textures/skybox", ".jpg", false));
         mainRenderer = new SingleFramebufferRenderer(framebufferManager.addFramebuffer(new Framebuffer(new FramebufferTexture2D[] {new FramebufferMSAATexture2D(window.width, window.height, GL33.GL_RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferMSAATexture2D(window.width, window.height, GL33.GL_RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT1)},
@@ -54,7 +56,6 @@ public class MainRenderingEngine extends RenderingEngine {
         lightManager.createShadowRenderers(renderableManager.allRenderablesThrowingShadows.toArray(new Renderable[0]));
     }
 
-    @Override
     public void update() {
         Matrix4f projection = new Matrix4f().identity();
         projection.perspective(Math.toRadians(camera.fov), (float) window.width / (float) window.height, camera.near, camera.far);
@@ -95,7 +96,6 @@ public class MainRenderingEngine extends RenderingEngine {
         framebufferManager.resize(window.width, window.height);
     }
 
-    @Override
     public void destroy() {
         destroyAllManagers();
         matricesUniforms.destroy();

@@ -47,10 +47,19 @@ public abstract class RenderingEngine implements SubEngine {
         return shaderProgramManager;
     }
 
+    public SkyboxManager getSkyboxManager() {
+        return skyboxManager;
+    }
+
+    public FramebufferManager getFramebufferManager() {
+        return framebufferManager;
+    }
+
     public void destroyAllManagers() {
         renderableManager.destroyAllRenderables();
         shaderProgramManager.destroyAllShaderPrograms();
         skyboxManager.destroyAllSkyboxes();
+        framebufferManager.destroy();
     }
 
     public static void destroyAllRenderingEngines() {

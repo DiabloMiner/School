@@ -58,6 +58,7 @@ in vec2 outTexCoords;
 in vec3 fragPos;
 in vec4 dirLight0FragPos;
 in vec4 spotLight0FragPos;
+in mat3 TBN;
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
@@ -267,7 +268,8 @@ void main() {
     float roughness = texture(material.texture_roughness1, outTexCoords).r;
     float ao = texture(material.texture_ao1, outTexCoords).r;
 
-    vec3 norm = normalize(outNormal);
+    vec3 normal = texture(material.texture_normal1, outTexCoords).rgb * 2.0f - 1.0f;
+    vec3 norm = normalize(TBN * normal);
     vec3 viewDir = normalize(inViewPos.xyz - fragPos);
     vec3 F0 = vec3(0.04f);
     F0 = mix(F0, albedo, metallic);

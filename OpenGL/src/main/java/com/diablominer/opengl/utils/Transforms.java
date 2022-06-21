@@ -4,6 +4,8 @@ import com.diablominer.opengl.io.Camera;
 import org.joml.*;
 import org.joml.Math;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -93,6 +95,14 @@ public class Transforms {
     public static void multiplyListWithMatrix(List<Vector3f> list, Matrix4f mat) {
         for (Vector3f vec : list) {
             Vector4f tempResult = new Vector4f(vec, 1.0f);
+            tempResult.mul(mat);
+            vec.set(tempResult.x, tempResult.y, tempResult.z);
+        }
+    }
+
+    public static void multiplyListWithMatrix(List<Vector3d> list, Matrix4d mat) {
+        for (Vector3d vec : list) {
+            Vector4d tempResult = new Vector4d(vec, 1.0);
             tempResult.mul(mat);
             vec.set(tempResult.x, tempResult.y, tempResult.z);
         }

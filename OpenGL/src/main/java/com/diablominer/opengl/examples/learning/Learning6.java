@@ -11,12 +11,15 @@ import org.lwjgl.system.MemoryUtil;
 public class Learning6 implements Engine {
 
     public static Learning6 engineInstance;
+    public static final long millisecondsPerFrame = 17;
+    public static final long millisecondsPerSimulationStep = 10;
 
     public boolean continueEngineLoop = true, resize = false;
-    private float deltaTime = 0.0f, lastFrame = 0.0f;
+    private long deltaTime = 0, lastFrame = 0, accumulator = 0;
     private Window window;
     private EventManager eventManager;
     private MainRenderingEngine mainRenderingEngine;
+    private MainPhysicsEngine mainPhysicsEngine;
 
     public static void main(String[] args) throws Exception {
         engineInstance = new Learning6();
@@ -122,26 +125,35 @@ public class Learning6 implements Engine {
         GL33.glEnable(GL33.GL_TEXTURE_CUBE_MAP_SEAMLESS);
         GL33.glCullFace(GL33.GL_BACK);
 
+        mainPhysicsEngine = new MainPhysicsEngine();
         mainRenderingEngine = new MainRenderingEngine(window, camera);
+
+        lastFrame = System.currentTimeMillis();
     }
 
     public void mainLoop() {
         while (continueEngineLoop) {
-            float currentTime = (float) GLFW.glfwGetTime();
+            long currentTime = System.currentTimeMillis();
             deltaTime = currentTime - lastFrame;
             lastFrame = currentTime;
+            accumulator += deltaTime;
 
             resize();
-            processInput();
+            processInput(deltaTime / 1000.0f);
 
-            update();
-            render();
+            while (accumulator >= millisecondsPerSimulationStep) {
+                update(millisecondsPerSimulationStep / 1000.0);
+                accumulator -= millisecondsPerSimulationStep;
+            }
+            render(accumulator / 1000.0);
 
             GLFW.glfwPollEvents();
+
+            sleep(currentTime + millisecondsPerFrame - System.currentTimeMillis());
         }
     }
 
-    public void processInput() {
+    public void processInput(float deltaTime) {
         float factor = 4.0f * deltaTime;
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
             getEventManager().executeEvent(new KeyPressEvent(factor, GLFW.GLFW_KEY_W));
@@ -164,13 +176,17 @@ public class Learning6 implements Engine {
         }
     }
 
-    public void update() {
+    public void update(double deltaTime) {
+        mainPhysicsEngine.update(deltaTime);
+
         getEventManager().executeEvents();
 
         mainRenderingEngine.update();
     }
 
-    public void render() {
+    public void render(double leftOverTime) {
+        mainPhysicsEngine.predictTimeStep(leftOverTime);
+
         mainRenderingEngine.render();
     }
 
@@ -178,6 +194,16 @@ public class Learning6 implements Engine {
         if (resize) {
             mainRenderingEngine.resize();
             resize = false;
+        }
+    }
+
+    private void sleep(long time) {
+        if (time > 0) {
+            try {
+                Thread.sleep(time);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -202,6 +228,10 @@ public class Learning6 implements Engine {
             eventManager = new EventManager();
         }
         return eventManager;
+    }
+
+    public MainPhysicsEngine getMainPhysicsEngine() {
+        return mainPhysicsEngine;
     }
 
 }

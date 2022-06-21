@@ -13,11 +13,12 @@ public class StandardRenderingEngineUnit extends RenderingEngineUnit {
     @Override
     public void update() {
         update(this.shaderProgram);
-        // TODO: Remove public static sets (also Texture lists) ; Rethink way EventSystem is handled (PingPongIterationEvents necessitate a RenderingEngine specific approach(Maybe compare eventthrower index))
+        // TODO: Fix visual bug with gold cubes and determine why model matrix doesnt always correspond to the position
+        // TODO: Reconsider public static sets (also Texture lists) ; Rethink way EventSystem is handled (PingPongIterationEvents necessitate a RenderingEngine specific approach(Maybe compare eventthrower index))
         // TODO: Introduce I/O Engine or something equivalent ; See if specular highlights on cube are correct (Check texts for this problem)
-        // TODO: Make Normal mapping available ; Review assimp code ;
+        // TODO: Fully implement Normal mapping (more effective) ; Review assimp code
         // TODO: (Maybe define texture index in another way) ; Maybe also an enum for tex parameters (Create ones for every OpenGL purpose
-        // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible
+        // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible ; Maybe change from objects extending classes to objects having components
         // Added functionality:
         // Implemented directional shadow casting for directional lights and spot lights ; Added dynamic yaw and pitch calculation ; Implemented omnidirectional shadow casting ;
         // Removed standard point light cube from shadow maps ; Introduced abstract Engine class ; Abstract things that are currently solved with public static lists into managers so multiple can be had

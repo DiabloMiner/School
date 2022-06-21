@@ -1,12 +1,17 @@
 package com.diablominer.opengl.examples.learning;
 
+import com.diablominer.opengl.collisiondetection.Face;
 import com.diablominer.opengl.utils.ListUtil;
 import com.diablominer.opengl.utils.Transforms;
+import org.joml.Matrix4d;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
+import org.lwjgl.system.CallbackI;
 
 import java.io.File;
+import java.math.MathContext;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,10 +217,40 @@ public class AssimpModel extends Model {
         return result;
     }
 
+    public List<Vector3d> getAllVerticesD() {
+        List<Vector3d> points = new ArrayList<>();
+        List<Vector3d> result = new ArrayList<>();
+        for (AssimpMesh mesh : meshes) {
+            for (int i = 0; i < mesh.getVertices().length; i += 3) {
+                points.add(new Vector3d(mesh.getVertices()[i], mesh.getVertices()[i + 1], mesh.getVertices()[i + 2]));
+            }
+            for (int i = 0; i < mesh.getIndices().length; i++) {
+                result.add(new Vector3d(points.get(mesh.getIndices()[i])));
+            }
+        }
+        return result;
+    }
+
     public List<Vector3f> getAllVerticesInWorldCoordinates(Matrix4f worldMatrix) {
         List<Vector3f> result = getAllVertices();
         Transforms.multiplyListWithMatrix(result, worldMatrix);
         return result;
+    }
+
+    public List<Vector3d> getAllVerticesInWorldCoordinates(Matrix4d worldMatrix) {
+        List<Vector3d> result = getAllVerticesD();
+        Transforms.multiplyListWithMatrix(result, worldMatrix);
+        return result;
+    }
+
+    public List<Face> getAllFaces(Matrix4f worldMatrix) {
+        List<Vector3f> vertices = getAllVertices();
+        Transforms.multiplyListWithMatrix(vertices, worldMatrix);
+        List<Face> faces = new ArrayList<>();
+        for (int i = 0; i < vertices.size(); i += 3) {
+            faces.add(new Face(vertices.get(i), vertices.get(i + 1), vertices.get(i + 2), false));
+        }
+        return faces;
     }
 
     public List<Vector3f> getAllUniqueVertices() {
