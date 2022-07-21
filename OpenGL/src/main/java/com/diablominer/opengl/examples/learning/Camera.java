@@ -4,11 +4,11 @@ import org.joml.Math;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 
-public class Camera implements KeyPressObserver {
+public class Camera {
 
     public static float firstFov = 45.0f, firstNear = 0.1f, firstFar = 100.0f;
+    public static float movementFactor = 4.0f;
     public static Vector3d worldSpaceRight = new Vector3d(1.0, 0.0, 0.0);
     public static Vector3d worldSpaceUp = new Vector3d(0.0, 1.0, 0.0);
 
@@ -28,8 +28,6 @@ public class Camera implements KeyPressObserver {
         fov = firstFov;
         near = firstNear;
         far = firstFar;
-
-        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.KeyPressEvent, this);
     }
 
     public Camera(Vector3f position, Vector3f direction, float near, float far) {
@@ -45,8 +43,6 @@ public class Camera implements KeyPressObserver {
         fov = firstFov;
         this.near = near;
         this.far = far;
-
-        Learning6.engineInstance.getEventManager().addEventObserver(EventTypes.KeyPressEvent, this);
     }
 
     public void update(Mouse mouse) {
@@ -65,7 +61,7 @@ public class Camera implements KeyPressObserver {
         direction.y = Math.sin(Math.toRadians(pitch));
         direction.z = Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
         direction.normalize(this.direction);
-        right = new Vector3f(direction).cross(up);
+        right = new Vector3f(direction).cross(up).normalize();
     }
 
     public void updateZoom(float deltaValue) {
@@ -80,43 +76,27 @@ public class Camera implements KeyPressObserver {
     }
 
     public void moveForwards(float factor) {
-        position.add(new Vector3f(direction).mul(factor));
+        position.add(new Vector3f(direction).mul(movementFactor * factor));
 
         Learning6.engineInstance.getEventManager().addEvent(new CameraPositionUpdate(this));
     }
 
     public void moveBackwards(float factor) {
-        position.sub(new Vector3f(direction).mul(factor));
+        position.sub(new Vector3f(direction).mul(movementFactor * factor));
 
         Learning6.engineInstance.getEventManager().addEvent(new CameraPositionUpdate(this));
     }
 
     public void moveRight(float factor) {
-        position.add(new Vector3f(right).mul(factor));
+        position.add(new Vector3f(right).mul(movementFactor * factor));
 
         Learning6.engineInstance.getEventManager().addEvent(new CameraPositionUpdate(this));
     }
 
     public void moveLeft(float factor) {
-        position.sub(new Vector3f(right).mul(factor));
+        position.sub(new Vector3f(right).mul(movementFactor * factor));
 
         Learning6.engineInstance.getEventManager().addEvent(new CameraPositionUpdate(this));
-    }
-
-    @Override
-    public void update(Event event) {}
-
-    @Override
-    public void update(KeyPressEvent event) {
-        if (event.pressedKey == GLFW.GLFW_KEY_W) {
-            moveForwards(event.factor);
-        } else if (event.pressedKey == GLFW.GLFW_KEY_S) {
-            moveBackwards(event.factor);
-        } else if (event.pressedKey == GLFW.GLFW_KEY_A) {
-            moveLeft(event.factor);
-        } else if (event.pressedKey == GLFW.GLFW_KEY_D) {
-            moveRight(event.factor);
-        }
     }
 
     public Matrix4f getViewMatrix() {

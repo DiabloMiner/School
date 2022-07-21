@@ -28,7 +28,6 @@ void main() {
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
-    mat3 transposedTBN = transpose(TBN);
 
     outTexCoords = inTexCoords;
     outNormal = mat3(transpose(inverse(model))) * inNormal;

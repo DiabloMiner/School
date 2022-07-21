@@ -12,14 +12,14 @@ public class Learning6 implements Engine {
 
     public static Learning6 engineInstance;
     public static final long millisecondsPerFrame = 17;
-    public static final long millisecondsPerSimulationStep = 10;
+    public static final long simulationTimeStep = 10;
 
     public boolean continueEngineLoop = true, resize = false;
     private long deltaTime = 0, lastFrame = 0, accumulator = 0;
-    private Window window;
     private EventManager eventManager;
     private MainRenderingEngine mainRenderingEngine;
     private MainPhysicsEngine mainPhysicsEngine;
+    private MainIOEngine mainIOEngine;
 
     public static void main(String[] args) throws Exception {
         engineInstance = new Learning6();
@@ -38,7 +38,8 @@ public class Learning6 implements Engine {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
         Camera camera = new Camera(new Vector3f(0.0f, 0.0f, 3.0f), new Vector3f(0.0f, 0.0f, -1.0f));
-        window = new Window(1280, 720, "Learning6", camera);
+        Window window = new Window(1280, 720, false, "Learning6", camera);
+        Window.setFocusedWindow(window);
         GLFW.glfwMakeContextCurrent(window.getId());
 
         GL.createCapabilities();
@@ -118,6 +119,7 @@ public class Learning6 implements Engine {
             }
         };
         GL43.glDebugMessageCallback(callback, 0);
+        GL43.glEnable(GL43.GL_DEBUG_OUTPUT);
         GL43.glEnable(GL43.GL_DEBUG_OUTPUT_SYNCHRONOUS);
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_MULTISAMPLE);
@@ -127,6 +129,7 @@ public class Learning6 implements Engine {
 
         mainPhysicsEngine = new MainPhysicsEngine();
         mainRenderingEngine = new MainRenderingEngine(window, camera);
+        mainIOEngine = new MainIOEngine(new Window[]{window}, new Camera[]{camera}, new RenderingEngine[]{mainRenderingEngine});
 
         lastFrame = System.currentTimeMillis();
     }
@@ -138,13 +141,7 @@ public class Learning6 implements Engine {
             lastFrame = currentTime;
             accumulator += deltaTime;
 
-            resize();
-            processInput(deltaTime / 1000.0f);
-
-            while (accumulator >= millisecondsPerSimulationStep) {
-                update(millisecondsPerSimulationStep / 1000.0);
-                accumulator -= millisecondsPerSimulationStep;
-            }
+            update(accumulator, deltaTime / 1000.0);
             render(accumulator / 1000.0);
 
             GLFW.glfwPollEvents();
@@ -153,48 +150,22 @@ public class Learning6 implements Engine {
         }
     }
 
-    public void processInput(float deltaTime) {
-        float factor = 4.0f * deltaTime;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
-            getEventManager().executeEvent(new KeyPressEvent(factor, GLFW.GLFW_KEY_W));
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
-            getEventManager().executeEvent(new KeyPressEvent(factor, GLFW.GLFW_KEY_S));
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
-            getEventManager().executeEvent(new KeyPressEvent(factor, GLFW.GLFW_KEY_A));
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
-            getEventManager().executeEvent(new KeyPressEvent(factor, GLFW.GLFW_KEY_D));
-        }
-
-        if (window.isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
-            continueEngineLoop = false;
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_F11)) {
-            window.setFullscreen(!window.isFullscreen());
-        }
-    }
-
-    public void update(double deltaTime) {
-        mainPhysicsEngine.update(deltaTime);
-
+    public void update(double accumulator, double deltaTime) {
+        mainIOEngine.processInputs(deltaTime);
         getEventManager().executeEvents();
 
-        mainRenderingEngine.update();
+        while (accumulator >= simulationTimeStep) {
+            mainPhysicsEngine.update(simulationTimeStep / 1000.0);
+            accumulator -= simulationTimeStep;
+        }
     }
 
     public void render(double leftOverTime) {
         mainPhysicsEngine.predictTimeStep(leftOverTime);
 
-        mainRenderingEngine.render();
-    }
+        mainRenderingEngine.update();
 
-    public void resize() {
-        if (resize) {
-            mainRenderingEngine.resize();
-            resize = false;
-        }
+        mainRenderingEngine.render();
     }
 
     private void sleep(long time) {
@@ -208,18 +179,16 @@ public class Learning6 implements Engine {
     }
 
     public void close() {
-        window.shouldClose();
-        window.destroy();
+        Texture.unbindAllTextures();
+        AssimpModel.loadedTextures.clear();
+
         mainRenderingEngine.destroy();
+        mainPhysicsEngine.destroy();
+        mainIOEngine.destroy();
 
         ShaderProgramManager.destroyAllStaticShaderPrograms();
-        RenderingEngine.destroyAllRenderingEngines();
-        Renderer.destroyAllRenderers();
-        Framebuffer.destroyAll();
-        Buffer.destroyAll();
-        VAO.destroyAll();
+        RenderableManager.destroyAllStaticRenderables();
         Texture.destroyAllTextures();
-        Renderbuffer.destroyAll();
         GLFW.glfwTerminate();
     }
 

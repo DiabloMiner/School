@@ -40,12 +40,12 @@ public enum FramebufferAttachment {
     STENCIL_ATTACHMENT(GL33.GL_STENCIL_ATTACHMENT, GL33.GL_STENCIL_BUFFER_BIT, false),
     DEPTH_AND_STENCIL_ATTACHMENT(GL33.GL_DEPTH_STENCIL_ATTACHMENT, GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT, false),;
 
-    public final int glType;
+    public final int value;
     public final int glBitType;
     public final boolean isColorAttachment;
 
-    FramebufferAttachment(int glType, int glBitType, boolean isColorAttachment) {
-        this.glType = glType;
+    FramebufferAttachment(int value, int glBitType, boolean isColorAttachment) {
+        this.value = value;
         this.glBitType = glBitType;
         this.isColorAttachment = isColorAttachment;
     }

@@ -13,7 +13,7 @@ public class ElementBufferObject extends Buffer {
         super();
     }
 
-    public ElementBufferObject(IntBuffer buffer, int usage) {
+    public ElementBufferObject(IntBuffer buffer, Usage usage) {
         super();
         fill(buffer, usage);
     }
@@ -23,11 +23,11 @@ public class ElementBufferObject extends Buffer {
         GL33.glBindBuffer(bindingTarget, id);
     }
 
-    public void fill(IntBuffer buffer, int usage) {
+    public void fill(IntBuffer buffer, Usage usage) {
         intBuffer = buffer;
 
         bind();
-        GL33.glBufferData(bindingTarget, buffer, usage);
+        GL33.glBufferData(bindingTarget, buffer, usage.value);
         ElementBufferObject.unbind();
     }
 

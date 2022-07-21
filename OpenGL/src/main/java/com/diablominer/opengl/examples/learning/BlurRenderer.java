@@ -3,7 +3,7 @@ package com.diablominer.opengl.examples.learning;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33;
 
-import java.util.ArrayList;
+import java.util.AbstractMap;
 import java.util.Arrays;
 
 public class BlurRenderer extends Renderer {
@@ -13,63 +13,55 @@ public class BlurRenderer extends Renderer {
 
     public static Vector3f clearColor = new Vector3f(0.0f, 0.0f, 0.0f);
 
+    private final boolean horizontalAtBeginning;
     private final int iterations;
-    private final PingPongRenderingEngineUnit renderingEngineUnit;
+    private final PingPongQuad quad;
 
-    public BlurRenderer(int width, int height, int internalFormat, int format, int type, int iterations, Texture2D inputTex, RenderableManager renderableManager, FramebufferManager framebufferManager) {
+    public BlurRenderer(int width, int height, Texture.InternalFormat internalFormat, Texture.Format format, Texture.Type type, int iterations, Texture2D inputTex) {
         super();
         Framebuffer framebuffer1 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
         Framebuffer framebuffer2 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
-        framebufferManager.addFramebuffers(Arrays.asList(framebuffer1, framebuffer2));
-
         framebuffers.addAll(Arrays.asList(framebuffer1, framebuffer2));
-        renderingEngineUnit = new PingPongRenderingEngineUnit(blurShaderProgram, framebuffer1.getAttached2DTextures().get(0).storedTexture, framebuffer2.getAttached2DTextures().get(0).storedTexture, inputTex, renderableManager);
-        this.renderingEngineUnits.add(renderingEngineUnit);
+
         this.iterations = iterations;
-    }
-
-    public BlurRenderer(int width, int height, int internalFormat, int format, int type, ShaderProgram shaderProgram, int iterations, Texture2D inputTex, RenderableManager renderableManager, FramebufferManager framebufferManager) {
-        super();
-        Framebuffer framebuffer1 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
-        Framebuffer framebuffer2 = new Framebuffer(new FramebufferTexture2D(width, height, internalFormat, format, type, FramebufferAttachment.COLOR_ATTACHMENT0));
-        framebufferManager.addFramebuffers(Arrays.asList(framebuffer1, framebuffer2));
-
-        framebuffers.addAll(Arrays.asList(framebuffer1, framebuffer2));
-        renderingEngineUnit = new PingPongRenderingEngineUnit(shaderProgram, framebuffer1.getAttached2DTextures().get(0).storedTexture, framebuffer2.getAttached2DTextures().get(0).storedTexture, inputTex, renderableManager);
-        this.renderingEngineUnits.add(renderingEngineUnit);
-        this.iterations = iterations;
+        this.horizontalAtBeginning = true;
+        quad = new PingPongQuad(framebuffer1.getAttached2DTexture(FramebufferAttachment.COLOR_ATTACHMENT0).storedTexture, framebuffer2.getAttached2DTexture(FramebufferAttachment.COLOR_ATTACHMENT0).storedTexture, inputTex, horizontalAtBeginning);
     }
 
     @Override
-    public void update() {
-        update(this.renderingEngineUnit.shaderProgram);
+    public void update() { }
+
+    @Override
+    public void update(ShaderProgram shaderProgram) { }
+
+    @Override
+    public void render(RenderingIntoFlag flag) {
+        render(BlurRenderer.blurShaderProgram, flag);
     }
 
     @Override
-    public void update(ShaderProgram shaderProgram) {
-        updateAllRenderingEngineUnits(shaderProgram);
-    }
+    public void render(ShaderProgram shaderProgram, RenderingIntoFlag flag) {
+        GL33.glDisable(GL33.GL_DEPTH_TEST);
+        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        GL33.glViewport(0, 0, framebuffers.get(0).width, framebuffers.get(0).height);
 
-    @Override
-    public void render() {
-        render(this.renderingEngineUnit.shaderProgram);
-    }
-
-    @Override
-    public void render(ShaderProgram shaderProgram) {
-        boolean horizontal = true;
+        boolean horizontal = horizontalAtBeginning;
+        quad.setFirstIteration(true);
         for (int i = 0; i < iterations; i++) {
             Framebuffer framebuffer = framebuffers.get(horizontal ? 1 : 0);
 
             framebuffer.bind();
             GL33.glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
             GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-            Learning6.engineInstance.getEventManager().executeEvent(new PingPongIterationEvent(i == 0, horizontal));
-            renderingEngineUnit.render(shaderProgram);
+
+            quad.draw(blurShaderProgram, new AbstractMap.SimpleEntry<>(flag, RenderingParametersFlag.COLOR_ENABLED));
 
             horizontal = !horizontal;
         }
         Framebuffer.unbind();
+
+        GL33.glEnable(GL33.GL_DEPTH_TEST);
+        GL33.glEnable(GL33.GL_STENCIL_TEST);
     }
 
     @Override
@@ -79,8 +71,7 @@ public class BlurRenderer extends Renderer {
     }
 
     public Framebuffer getFinalFramebuffer() {
-        int n = (int) Math.round((((double) iterations - 1) / ((double) framebuffers.size())) - ( 1.0 / 2.0));
-        int index = (iterations - 1) - n * framebuffers.size();
+        int index =  (iterations - 1) % framebuffers.size();
         return framebuffers.get(index);
     }
 

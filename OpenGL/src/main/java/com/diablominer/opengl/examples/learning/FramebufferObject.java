@@ -1,7 +1,11 @@
 package com.diablominer.opengl.examples.learning;
 
-public interface FramebufferObject {
+public abstract class FramebufferObject {
 
-    FramebufferAttachment getFramebufferAttachment();
+    public FramebufferAttachment framebufferAttachment;
+
+    public FramebufferObject(FramebufferAttachment framebufferAttachment) {
+        this.framebufferAttachment = framebufferAttachment;
+    }
 
 }

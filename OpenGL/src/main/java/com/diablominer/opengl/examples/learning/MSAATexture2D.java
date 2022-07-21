@@ -6,13 +6,13 @@ public class MSAATexture2D extends Texture2D {
 
     public final int samples;
 
-    public MSAATexture2D(int width, int height, int internalFormat, int samples) {
-        super(internalFormat, GL33.GL_UNSIGNED_BYTE, width, height);
-        this.target = GL33.GL_TEXTURE_2D_MULTISAMPLE;
+    public MSAATexture2D(int width, int height, InternalFormat internalFormat, int samples) {
+        super(internalFormat, Type.UNSIGNED_BYTE, width, height);
+        this.target = Target.MultisampledTexture2D;
         this.samples = samples;
 
         bind();
-        GL33.glTexImage2DMultisample(target, samples, internalFormat, width, height, true);
+        GL33.glTexImage2DMultisample(target.value, samples, internalFormat.value, width, height, true);
         unbind();
     }
 

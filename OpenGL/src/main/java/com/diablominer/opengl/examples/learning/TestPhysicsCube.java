@@ -5,8 +5,6 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
 import java.lang.Math;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.*;
 
 public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
@@ -16,11 +14,11 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
     public Vector3d max, min;
     public double coefficientOfRestitution = 1.0, coefficientOfStaticFriction = 0.1, coefficientOfKineticFriction = 0.14;
 
-    private double mass, edgeLength;
-    private Vector3d position, momentum, force, angularMomentum, torque;
-    private Quaterniond orientation;
-    private Matrix3d inertiaMatrix;
-    private Matrix4d worldMatrix;
+    private final double mass, edgeLength;
+    private final Vector3d position, momentum, force, angularMomentum, torque;
+    private final Quaterniond orientation;
+    private final Matrix3d inertiaMatrix;
+    private final Matrix4d worldMatrix;
 
     public TestPhysicsCube(String path, Vector3d position, Vector3d momentum, Vector3d force, Quaterniond orientation, Vector3d angularMomentum, Vector3d torque, double mass, double edgeLength) {
         super(path, new Vector3f(0.0f).set(position));
@@ -48,7 +46,7 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
         Vector3d angularVelocity = new Vector3d(angularMomentum).mul(inertiaMatrix);
         orientation.integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
-        worldMatrix = new Matrix4d().identity().translate(position).rotate(orientation);
+        worldMatrix.set(new Matrix4d().identity().translate(position).rotate(orientation));
         this.setModelMatrix(new Matrix4f(worldMatrix));
         this.max = new Vector3d(position).add(new Vector3d(edgeLength / 2.0));
         this.min = new Vector3d(position).sub(new Vector3d(edgeLength / 2.0));

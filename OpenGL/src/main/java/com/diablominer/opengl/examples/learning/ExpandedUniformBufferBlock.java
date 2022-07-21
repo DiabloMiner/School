@@ -6,7 +6,7 @@ public class ExpandedUniformBufferBlock extends UniformBufferBlock {
     private final List<UniformBufferBlockElement> elements;
     private final List<Integer> offsets;
 
-    public ExpandedUniformBufferBlock(int usage, String name, List<UniformBufferBlockElement> elements) {
+    public ExpandedUniformBufferBlock(Usage usage, String name, List<UniformBufferBlockElement> elements) {
         super(usage, elements.stream().mapToInt(e -> e.size).sum(), name);
         this.elements = new ArrayList<>(elements);
         offsets = new ArrayList<>(Collections.singletonList(0));
@@ -16,7 +16,7 @@ public class ExpandedUniformBufferBlock extends UniformBufferBlock {
         }
     }
 
-    public ExpandedUniformBufferBlock(int usage, String name, List<Integer> sizes, int sumOfSizes) {
+    public ExpandedUniformBufferBlock(Usage usage, String name, List<Integer> sizes, int sumOfSizes) {
         super(usage, sumOfSizes, name);
         this.elements = new ArrayList<>();
         offsets = new ArrayList<>(Collections.singletonList(0));
@@ -38,9 +38,11 @@ public class ExpandedUniformBufferBlock extends UniformBufferBlock {
     }
 
     public void setUniformBlockData() {
+        bind();
         for (int i = 0; i < elements.size(); i++) {
             elements.get(i).setUniformBlockData(offsets.get(i), this);
         }
+        unbind();
     }
 
     public void setUniformBlockData(List<Integer> indices) {

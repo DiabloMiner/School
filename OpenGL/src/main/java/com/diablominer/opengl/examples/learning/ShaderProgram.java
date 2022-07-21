@@ -5,11 +5,8 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ShaderProgram {
 
@@ -93,7 +90,9 @@ public class ShaderProgram {
         if (fragmentShaderId != 0) {
             GL33.glDetachShader(programId, fragmentShaderId);
         }
+    }
 
+    public void validate() {
         GL33.glValidateProgram(programId);
         if (GL33.glGetProgrami(programId, GL33.GL_VALIDATE_STATUS) == 0) {
             System.err.println("Warning validating Shader code: " + GL33.glGetProgramInfoLog(programId, 1024));
@@ -115,7 +114,7 @@ public class ShaderProgram {
         StringBuilder string = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(new File("./src/main/java/com/diablominer/opengl/examples/learning/" + filename + ".glsl")));
+            reader = new BufferedReader(new FileReader("./src/main/java/com/diablominer/opengl/examples/learning/" + filename + ".glsl"));
             String line;
             while ((line = reader.readLine()) != null) {
                 string.append(line);
@@ -173,6 +172,36 @@ public class ShaderProgram {
             GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name + "[" + i + "]"), false, value);
         }
         unbind();
+    }
+
+    public void setUniform1IBindless(String name, int value) {
+        GL33.glUniform1i(GL33.glGetUniformLocation(programId, name), value);
+    }
+
+    public void setUniform1FBindless(String name, float value) {
+        GL33.glUniform1f(GL33.glGetUniformLocation(programId, name), value);
+    }
+
+    public void setUniformVec3FBindless(String name, float val1, float val2, float val3) {
+        GL33.glUniform3f(GL33.glGetUniformLocation(programId, name), val1, val2, val3);
+    }
+
+    public void setUniformVec3FBindless(String name, Vector3f vector) {
+        GL33.glUniform3f(GL33.glGetUniformLocation(programId, name), vector.get(0), vector.get(1), vector.get(2));
+    }
+
+    public void setUniformMat4FBindless(String name, Matrix4f data) {
+        float[] value = new float[4 * 4];
+        data.get(value);
+        GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name), false, value);
+    }
+
+    public void setUniformMat4FArrayBindless(String name, Matrix4f[] data) {
+        for (int i = 0; i < data.length; i++) {
+            float[] value = new float[4 * 4];
+            data[i].get(value);
+            GL33.glUniformMatrix4fv(GL33.glGetUniformLocation(programId, name + "[" + i + "]"), false, value);
+        }
     }
 
     public void setUniformBlockBindings(UniformBufferBlock[] buffers) {

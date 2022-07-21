@@ -4,65 +4,49 @@ import com.diablominer.opengl.utils.BufferUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL33;
 
-import java.util.*;
-
-public class SpotLight implements Light {
+public class SpotLight extends Light {
 
     private static ShaderProgram shadowShader;
     public static float near = 0.0001f, far = 30.0f;
 
-    public Vector3f position, direction, color;
-    private Renderer shadowRenderer;
-    private final Framebuffer shadowFramebuffer;
-    private final FramebufferTexture2D shadowTexture;
+    public Vector3f position, direction;
+    protected final Framebuffer shadowFramebuffer;
+    protected final FramebufferTexture2D shadowTexture;
 
     public SpotLight(Vector3f position, Vector3f direction, Vector3f color, int shadowSize) {
+        super(color);
         this.position = position;
         this.direction = direction;
-        this.color = color;
 
-        shadowTexture = new FramebufferTexture2D(shadowSize, shadowSize, GL33.GL_DEPTH_COMPONENT, GL33.GL_DEPTH_COMPONENT, GL33.GL_FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT);
+        shadowTexture = new FramebufferTexture2D(shadowSize, shadowSize, Texture.InternalFormat.DEPTH, Texture.Format.DEPTH, Texture.Type.FLOAT, BufferUtil.createBuffer(new Vector4f(1.0f)), FramebufferAttachment.DEPTH_ATTACHMENT);
         shadowFramebuffer = new Framebuffer(shadowTexture);
+        shadowTexture.bind();
     }
 
     @Override
-    public Vector3f getColor() {
-        return color;
+    void updateShadowMatrices() {
+        Matrix4f projection = new Matrix4f().identity().ortho(-15.0f, 15.0f, -15.0f, 15.0f, near, far);
+        Matrix4f view = new Matrix4f().identity().lookAt(new Vector3f(position), new Vector3f(position).add(direction), new Vector3f(0.0f, 1.0f, 0.0f));
+        lightSpaceMatrices = new Matrix4f[] {new Matrix4f(projection).mul(view)};
     }
 
     @Override
     public void setUniformData(ShaderProgram shaderProgram, int index) {
-        shaderProgram.setUniformVec3F("spotLight" + index + ".position", position);
-        shaderProgram.setUniformVec3F("spotLight" + index + ".direction", direction);
-        shaderProgram.setUniformVec3F("spotLight" + index + ".color", color);
-        shaderProgram.setUniformMat4F("spotLight" + index + "Matrix", getLightSpaceMatrices()[0]);
+        shaderProgram.setUniformVec3FBindless("spotLight" + index + ".position", position);
+        shaderProgram.setUniformVec3FBindless("spotLight" + index + ".direction", direction);
+        shaderProgram.setUniformVec3FBindless("spotLight" + index + ".color", color);
+        shaderProgram.setUniformMat4FBindless("spotLight" + index + "Matrix", lightSpaceMatrices[0]);
 
-        shadowTexture.bind();
-        shaderProgram.setUniform1I("spotLight" + index + ".shadowMap", shadowTexture.storedTexture.getIndex());
-    }
-
-    @Override
-    public void unbindShadowTextures() {
-        shadowTexture.unbind();
+        if (!shadowTexture.storedTexture.isBound()) {
+            shadowTexture.storedTexture.bind();
+        }
+        shaderProgram.setUniform1IBindless("spotLight" + index + ".shadowMap", shadowTexture.storedTexture.getIndex());
     }
 
     @Override
     public void initializeShadowRenderer(Renderable[] renderables) {
-        shadowRenderer = new SingleFramebufferRenderer(shadowFramebuffer, new RenderingEngineUnit[] {new ShadowRenderingEngineUnit(getShadowShader(), renderables, this)});
-    }
-
-    @Override
-    public Renderer getShadowRenderer() {
-        return shadowRenderer;
-    }
-
-    @Override
-    public Matrix4f[] getLightSpaceMatrices() {
-        Matrix4f projection = new Matrix4f().identity().ortho(-15.0f, 15.0f, -15.0f, 15.0f, near, far);
-        Matrix4f view = new Matrix4f().identity().lookAt(new Vector3f(position), new Vector3f(position).add(direction), new Vector3f(0.0f, 1.0f, 0.0f));
-        return new Matrix4f[] {new Matrix4f(projection).mul(view)};
+        shadowRenderer = new SingleFramebufferRenderer(shadowFramebuffer, new RenderingUnit[] {new ShadowRenderingUnit(getShadowShader(), renderables, this)});
     }
 
     public static ShaderProgram getShadowShader() {

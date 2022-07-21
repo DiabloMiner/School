@@ -1,7 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.BufferUtil;
-import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +18,7 @@ public class FloatElement extends UniformBufferBlockElement {
 
     @Override
     void setUniformBlockData(int offset, UniformBufferBlock uniformBufferBlock) {
-        uniformBufferBlock.setUniformBlockData(offset, BufferUtil.createBuffer(data));
+        uniformBufferBlock.setUniformBlockDataBindless(offset, BufferUtil.createBuffer(data));
     }
 
     public static List<UniformBufferBlockElement> createElementList(List<Float> floats) {

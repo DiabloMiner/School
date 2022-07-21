@@ -12,7 +12,7 @@ public class VertexBufferObject extends Buffer {
         super();
     }
 
-    public VertexBufferObject(FloatBuffer buffer, int usage) {
+    public VertexBufferObject(FloatBuffer buffer, Usage usage) {
         super();
         fill(buffer, usage);
     }
@@ -22,9 +22,9 @@ public class VertexBufferObject extends Buffer {
         GL33.glBindBuffer(bindingTarget, id);
     }
 
-    public void fill(FloatBuffer buffer, int usage) {
+    public void fill(FloatBuffer buffer, Usage usage) {
         bind();
-        GL33.glBufferData(bindingTarget, buffer, usage);
+        GL33.glBufferData(bindingTarget, buffer, usage.value);
     }
 
     public static void unbind() {

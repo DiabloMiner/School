@@ -36,7 +36,6 @@ public class FramebufferManager {
     public void destroy() {
         for (Framebuffer framebuffer : framebuffers) {
             framebuffer.destroy();
-            Framebuffer.allFramebuffers.remove(framebuffer);
         }
     }
 

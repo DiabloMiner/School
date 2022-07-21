@@ -3,88 +3,106 @@ package com.diablominer.opengl.examples.learning;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 public class SingleFramebufferRenderer extends Renderer {
 
     public static Vector3f clearColor = new Vector3f(0.0f, 0.0f, 0.0f);
 
     private final Framebuffer framebuffer;
+    private final RenderingParametersFlag parametersFlag;
 
-    public SingleFramebufferRenderer(Framebuffer framebuffer, RenderingEngineUnit[] renderingEngineUnits) {
-        super(new ArrayList<>(Collections.singletonList(framebuffer)), new ArrayList<>(Arrays.asList(renderingEngineUnits)));
+    public SingleFramebufferRenderer(Framebuffer framebuffer, RenderingUnit[] renderingUnits) {
+        super(new ArrayList<>(Collections.singletonList(framebuffer)), new ArrayList<>(Arrays.asList(renderingUnits)));
         this.framebuffer = framebuffer;
+        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
-    public SingleFramebufferRenderer(FramebufferTexture2D[] textures, RenderingEngineUnit[] renderingEngineUnits) {
-        super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures))), new ArrayList<>(Arrays.asList(renderingEngineUnits)));
-        framebuffer = this.framebuffers.get(0);
+    public SingleFramebufferRenderer(Framebuffer framebuffer, RenderingUnit[] renderingUnits, RenderingParametersFlag parametersFlag) {
+        super(new ArrayList<>(Collections.singletonList(framebuffer)), new ArrayList<>(Arrays.asList(renderingUnits)));
+        this.framebuffer = framebuffer;
+        this.parametersFlag = parametersFlag;
     }
 
-    public SingleFramebufferRenderer(FramebufferCubeMap[] textures, RenderingEngineUnit[] renderingEngineUnits) {
-        super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures))), new ArrayList<>(Arrays.asList(renderingEngineUnits)));
+    public SingleFramebufferRenderer(FramebufferTexture2D[] textures, RenderingUnit[] renderingUnits) {
+        super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures))), new ArrayList<>(Arrays.asList(renderingUnits)));
         framebuffer = this.framebuffers.get(0);
+        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
-    public SingleFramebufferRenderer(FramebufferTexture2D[] textures, FramebufferRenderbuffer[] renderbuffers, RenderingEngineUnit[] renderingEngineUnits) {
-        super(Collections.singletonList(new Framebuffer(textures, renderbuffers)), Arrays.asList(renderingEngineUnits));
+    public SingleFramebufferRenderer(FramebufferCubeMap[] textures, RenderingUnit[] renderingUnits) {
+        super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures))), new ArrayList<>(Arrays.asList(renderingUnits)));
         framebuffer = this.framebuffers.get(0);
+        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
-    public SingleFramebufferRenderer(FramebufferCubeMap[] textures, FramebufferRenderbuffer[] renderbuffers, RenderingEngineUnit[] renderingEngineUnits) {
-        super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures, renderbuffers))), new ArrayList<>(Arrays.asList(renderingEngineUnits)));
+    public SingleFramebufferRenderer(FramebufferTexture2D[] textures, FramebufferRenderbuffer[] renderbuffers, RenderingUnit[] renderingUnits) {
+        super(Collections.singletonList(new Framebuffer(textures, renderbuffers)), Arrays.asList(renderingUnits));
         framebuffer = this.framebuffers.get(0);
+        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
+    }
+
+    public SingleFramebufferRenderer(FramebufferCubeMap[] textures, FramebufferRenderbuffer[] renderbuffers, RenderingUnit[] renderingUnits) {
+        super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures, renderbuffers))), new ArrayList<>(Arrays.asList(renderingUnits)));
+        framebuffer = this.framebuffers.get(0);
+        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
     public void update() {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.update();
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.update();
         }
     }
 
     public void update(ShaderProgram shaderProgram) {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.update(shaderProgram);
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.update(shaderProgram);
         }
     }
 
-    public void render() {
+    public void render(RenderingIntoFlag flag) {
         framebuffer.bind();
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
-        GL33.glViewport(0, 0, framebuffer.width, framebuffer.height);
+        if (parametersFlag.depthEnabled) { GL33.glEnable(GL33.GL_DEPTH_TEST); }
+        if (parametersFlag.stencilEnabled) { GL33.glEnable(GL33.GL_STENCIL_TEST); }
+        setViewport();
         clear();
 
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.render();
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.render(new AbstractMap.SimpleEntry<>(flag, parametersFlag));
         }
 
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        if (!parametersFlag.depthEnabled) { GL33.glEnable(GL33.GL_DEPTH_TEST); }
+        if (!parametersFlag.stencilEnabled) { GL33.glEnable(GL33.GL_STENCIL_TEST); }
         Framebuffer.unbind();
     }
 
-    public void render(ShaderProgram shaderProgram) {
+    public void render(ShaderProgram shaderProgram, RenderingIntoFlag flag) {
         framebuffer.bind();
-        GL33.glViewport(0, 0, framebuffer.width, framebuffer.height);
-        GL33.glEnable(GL33.GL_DEPTH_TEST);
-        GL33.glEnable(GL33.GL_STENCIL_TEST);
+        if (parametersFlag.depthEnabled) { GL33.glEnable(GL33.GL_DEPTH_TEST); }
+        if (parametersFlag.stencilEnabled) { GL33.glEnable(GL33.GL_STENCIL_TEST); }
+        setViewport();
         clear();
 
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.render(shaderProgram);
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.render(shaderProgram, new AbstractMap.SimpleEntry<>(flag, parametersFlag));
         }
 
-        GL33.glDisable(GL33.GL_DEPTH_TEST);
-        GL33.glDisable(GL33.GL_STENCIL_TEST);
+        if (!parametersFlag.depthEnabled) { GL33.glEnable(GL33.GL_DEPTH_TEST); }
+        if (!parametersFlag.stencilEnabled) { GL33.glEnable(GL33.GL_STENCIL_TEST); }
         Framebuffer.unbind();
+    }
+
+    public void setViewport() {
+        GL33.glViewport(0, 0, framebuffer.width, framebuffer.height);
     }
 
     public void clear() {
         GL33.glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
-        GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
+        int mask = 0;
+        if (parametersFlag.colorEnabled) {mask |= GL33.GL_COLOR_BUFFER_BIT; }
+        if (parametersFlag.depthEnabled) {mask |= GL33.GL_DEPTH_BUFFER_BIT; }
+        if (parametersFlag.stencilEnabled) {mask |= GL33.GL_STENCIL_BUFFER_BIT; }
+        GL33.glClear(mask);
     }
 
     public void destroy() {

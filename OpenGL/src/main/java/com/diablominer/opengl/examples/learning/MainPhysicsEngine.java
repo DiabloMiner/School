@@ -9,6 +9,6 @@ public class MainPhysicsEngine extends PhysicsEngine {
     }
 
     @Override
-    public void destroy() { }
+    public void destroy() {}
 
 }

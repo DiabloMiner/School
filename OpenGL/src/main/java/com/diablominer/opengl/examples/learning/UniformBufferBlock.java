@@ -16,7 +16,7 @@ public class UniformBufferBlock extends Buffer {
     public int bindingPoint, size;
     public String name;
 
-    public UniformBufferBlock(int usage, int size, String name) {
+    public UniformBufferBlock(Usage usage, int size, String name) {
         super();
         this.size = size;
         this.name = name;
@@ -40,9 +40,9 @@ public class UniformBufferBlock extends Buffer {
         GL33.glBindBufferRange(bindingTarget, bindingPoint, id, offset, size);
     }
 
-    public void defineStorage(int usage) {
+    public void defineStorage(Usage usage) {
         bind();
-        GL33.glBufferData(bindingTarget, size, usage);
+        GL33.glBufferData(bindingTarget, size, usage.value);
         UniformBufferBlock.unbind();
     }
 
@@ -85,6 +85,30 @@ public class UniformBufferBlock extends Buffer {
         bind();
         GL33.glBufferSubData(bindingTarget, offset, data);
         unbind();
+    }
+
+    public void setUniformBlockDataBindless(int offset, double[] data) {
+        GL33.glBufferSubData(bindingTarget, offset, data);
+    }
+
+    public void setUniformBlockDataBindless(int offset, int[] data) {
+        GL33.glBufferSubData(bindingTarget, offset, data);
+    }
+
+    public void setUniformBlockDataBindless(int offset, float[] data) {
+        GL33.glBufferSubData(bindingTarget, offset, data);
+    }
+
+    public void setUniformBlockDataBindless(int offset, DoubleBuffer data) {
+        GL33.glBufferSubData(bindingTarget, offset, data);
+    }
+
+    public void setUniformBlockDataBindless(int offset, IntBuffer data) {
+        GL33.glBufferSubData(bindingTarget, offset, data);
+    }
+
+    public void setUniformBlockDataBindless(int offset, FloatBuffer data) {
+        GL33.glBufferSubData(bindingTarget, offset, data);
     }
 
     @Override

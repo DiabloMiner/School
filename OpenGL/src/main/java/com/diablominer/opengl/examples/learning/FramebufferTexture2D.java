@@ -5,24 +5,22 @@ import org.lwjgl.opengl.GL33;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-public class FramebufferTexture2D implements FramebufferObject {
+public class FramebufferTexture2D extends FramebufferObject {
 
-    public FramebufferAttachment attachment;
     public Texture2D storedTexture;
 
-    public FramebufferTexture2D(FramebufferAttachment attachment) {
-        this.storedTexture = null;
-        this.attachment = attachment;
+    protected FramebufferTexture2D(FramebufferAttachment attachment) {
+        super(attachment);
     }
 
-    public FramebufferTexture2D(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
+    public FramebufferTexture2D(int width, int height, Texture.InternalFormat internalFormat, Texture.Format format, Texture.Type type, FramebufferAttachment attachment) {
+        super(attachment);
         storedTexture = new Texture2D(width, height, internalFormat, format, type);
-        this.attachment = attachment;
     }
 
-    public FramebufferTexture2D(int width, int height, int internalFormat, int format, int type, FloatBuffer borderColor, FramebufferAttachment attachment) {
+    public FramebufferTexture2D(int width, int height, Texture.InternalFormat internalFormat, Texture.Format format, Texture.Type type, FloatBuffer borderColor, FramebufferAttachment attachment) {
+        super(attachment);
         storedTexture = new Texture2D(width, height, internalFormat, format, type, borderColor);
-        this.attachment = attachment;
     }
 
     public void bind() {
@@ -35,13 +33,8 @@ public class FramebufferTexture2D implements FramebufferObject {
 
     public void resize(int width, int height) {
         bind();
-        GL33.glTexImage2D(storedTexture.target, 0, storedTexture.internalFormat, width, height, 0, storedTexture.format, storedTexture.type, (ByteBuffer) null);
+        GL33.glTexImage2D(storedTexture.target.value, 0, storedTexture.internalFormat.value, width, height, 0, storedTexture.format.value, storedTexture.type.value, (ByteBuffer) null);
         unbind();
-    }
-
-    @Override
-    public FramebufferAttachment getFramebufferAttachment() {
-        return attachment;
     }
 
     public void destroy() {

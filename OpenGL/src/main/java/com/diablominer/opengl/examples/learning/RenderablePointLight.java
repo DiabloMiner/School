@@ -3,9 +3,11 @@ package com.diablominer.opengl.examples.learning;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.util.Map;
+
 public class RenderablePointLight extends RenderableLight {
 
-    public static AssimpModel model = new AssimpModel("./src/main/java/com/diablominer/opengl/examples/models/cube/cube.obj", new Vector3f(0.0f), false);
+    public static AssimpModel model = new AssimpModel("./src/main/java/com/diablominer/opengl/examples/models/cube/cube.obj", new Vector3f(0.0f));
 
     public PointLight pointLight;
 
@@ -20,8 +22,8 @@ public class RenderablePointLight extends RenderableLight {
     }
 
     @Override
-    public void draw(ShaderProgram shaderProgram) {
-        model.draw(shaderProgram, new Matrix4f().identity().translate(pointLight.position).scale(0.2f));
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+        model.draw(shaderProgram, new Matrix4f().identity().translate(pointLight.position).scale(0.2f), flags);
     }
 
     @Override
@@ -30,7 +32,7 @@ public class RenderablePointLight extends RenderableLight {
     }
 
     public static void destroyModel() {
-        if (!(model.meshes.isEmpty() && model.loadedTexture2DS.isEmpty())) {
+        if (!(model.meshes.isEmpty())) {
             model.destroy();
         }
     }

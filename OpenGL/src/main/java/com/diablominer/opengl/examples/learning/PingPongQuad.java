@@ -1,34 +1,30 @@
 package com.diablominer.opengl.examples.learning;
 
-import java.util.ArrayList;
+
+import java.util.Map;
 
 public class PingPongQuad extends Model {
 
     private final PingPongQuadMesh quadMesh;
 
-    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, RenderableManager renderableManager) {
-        super(false);
-        quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
+    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, boolean horizontalAtStart) {
+        super();
+        quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex, horizontalAtStart);
         this.meshes.add(quadMesh);
-        renderableManager.addRenderable(this);
-    }
-
-    public PingPongQuad(Texture2D verticalTex, Texture2D horizontalTex, Texture2D inputTex, RenderableManager renderableManager, boolean throwsShadow) {
-        super(throwsShadow);
-        quadMesh = new PingPongQuadMesh(verticalTex, horizontalTex, inputTex);
-        this.meshes.add(quadMesh);
-        renderableManager.addRenderable(this);
     }
 
     @Override
-    public void draw(ShaderProgram shaderProgram) {
-        quadMesh.draw(shaderProgram);
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+        quadMesh.draw(shaderProgram, flags);
+    }
+
+    public void setFirstIteration(boolean firstIteration) {
+        quadMesh.setFirstIteration(firstIteration);
     }
 
     @Override
     public void destroy() {
         destroyAllMeshes();
-        destroyAllTextures();
     }
 
 }

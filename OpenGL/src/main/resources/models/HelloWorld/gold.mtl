@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kn lightgold_normal-dx.png
+map_Kn test.png
 map_Kd lightgold_albedo.png
 disp blackDisplacement.png
 map_Ks lightgold_roughness.png

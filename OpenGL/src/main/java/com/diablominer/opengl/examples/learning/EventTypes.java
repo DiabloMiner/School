@@ -7,7 +7,7 @@ public enum EventTypes {
     CameraPositionUpdate(CameraPositionUpdate.class),
     CameraZoomUpdate(CameraZoomUpdate.class),
     KeyPressEvent(KeyPressEvent.class),
-    PingPongIterationEvent(PingPongIterationEvent.class);
+    WindowResizeEvent(com.diablominer.opengl.examples.learning.WindowResizeEvent.class);
 
     public final Class<?> classValue;
 

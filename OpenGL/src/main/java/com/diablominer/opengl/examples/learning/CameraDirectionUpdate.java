@@ -6,6 +6,7 @@ public class CameraDirectionUpdate implements Event {
 
     public Vector3f direction, right, up;
     public float yaw, pitch;
+    public Camera camera;
 
     public CameraDirectionUpdate(Camera camera) {
         this.direction = camera.direction;
@@ -13,5 +14,6 @@ public class CameraDirectionUpdate implements Event {
         this.up = camera.up;
         this.yaw = camera.yaw;
         this.pitch = camera.pitch;
+        this.camera = camera;
     }
 }

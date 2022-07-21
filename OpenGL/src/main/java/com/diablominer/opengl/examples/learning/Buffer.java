@@ -2,18 +2,30 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public abstract class Buffer {
 
-    public static Set<Buffer> allBuffers = new HashSet<>();
+    public enum Usage {
+        STREAM_DRAW(GL33.GL_STREAM_DRAW),
+        STREAM_READ(GL33.GL_STREAM_READ),
+        STREAM_COPY(GL33.GL_STREAM_COPY),
+        STATIC_DRAW(GL33.GL_STATIC_DRAW),
+        STATIC_READ(GL33.GL_STATIC_READ),
+        STATIC_COPY(GL33.GL_STATIC_COPY),
+        DYNAMIC_DRAW(GL33.GL_DYNAMIC_DRAW),
+        DYNAMIC_READ(GL33.GL_DYNAMIC_READ),
+        DYNAMIC_COPY(GL33.GL_DYNAMIC_COPY);
+
+        public int value;
+
+        Usage(int value) {
+            this.value = value;
+        }
+    }
 
     protected int id;
 
     public Buffer() {
         id = GL33.glGenBuffers();
-        allBuffers.add(this);
     }
 
     abstract void bind();
@@ -22,12 +34,6 @@ public abstract class Buffer {
 
     public void destroyBuffer() {
         GL33.glDeleteBuffers(id);
-    }
-
-    public static void destroyAll() {
-        for (Buffer buffer : allBuffers) {
-            buffer.destroy();
-        }
     }
 
 }

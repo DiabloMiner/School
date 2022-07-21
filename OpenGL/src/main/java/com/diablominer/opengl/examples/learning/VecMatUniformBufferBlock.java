@@ -15,11 +15,11 @@ public class VecMatUniformBufferBlock extends ExpandedUniformBufferBlock {
     public static final int floatsInAVec4 = 4;
     public static final int columnsInAMat4 = 4;
 
-    public VecMatUniformBufferBlock(int numberOfVectors, int numberOfMatrices, int usage, String name) {
+    public VecMatUniformBufferBlock(int numberOfVectors, int numberOfMatrices, Buffer.Usage usage, String name) {
         super(usage, name, Stream.concat(Transforms.createPrefilledList(numberOfVectors, floatByteSize * floatsInAVec4).stream(), Transforms.createPrefilledList(numberOfMatrices, floatByteSize * floatsInAVec4 * columnsInAMat4).stream()).collect(Collectors.toList()),floatByteSize * floatsInAVec4 * numberOfVectors + floatByteSize * floatsInAVec4 * columnsInAMat4 * numberOfMatrices);
     }
 
-    public VecMatUniformBufferBlock(List<Vector4f> vectors, List<Matrix4f> matrices, int usage, String name) {
+    public VecMatUniformBufferBlock(List<Vector4f> vectors, List<Matrix4f> matrices, Buffer.Usage usage, String name) {
         super(usage, name, Stream.concat(Transforms.createPrefilledList(vectors.size(), floatByteSize * floatsInAVec4).stream(), Transforms.createPrefilledList(matrices.size(), floatByteSize * floatsInAVec4 * columnsInAMat4).stream()).collect(Collectors.toList()),floatByteSize * floatsInAVec4 * vectors.size() + floatByteSize * floatsInAVec4 * columnsInAMat4 * matrices.size());
 
         List<UniformBufferBlockElement> elements = new ArrayList<>();

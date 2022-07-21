@@ -8,46 +8,19 @@ import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.assimp.*;
-import org.lwjgl.system.CallbackI;
 
 import java.io.File;
-import java.math.MathContext;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class AssimpModel extends Model {
 
-    protected List<AssimpMesh> meshes;
-    protected List<ModelTexture2D> loadedTexture2DS;
     protected String path;
-
-    public AssimpModel(List<AssimpMesh> meshes, List<ModelTexture2D> loadedTexture2DS) {
-        super();
-        this.meshes = new ArrayList<>(meshes);
-        this.loadedTexture2DS = new ArrayList<>(loadedTexture2DS);
-        this.path = "";
-    }
-
-    public AssimpModel(List<AssimpMesh> meshes, List<ModelTexture2D> loadedTexture2DS, boolean throwsShadow) {
-        super(throwsShadow);
-        this.meshes = new ArrayList<>(meshes);
-        this.loadedTexture2DS = new ArrayList<>(loadedTexture2DS);
-        this.path = "";
-    }
+    public static final Map<String, ModelTexture2D> loadedTextures = new HashMap<>();
 
     public AssimpModel(String path, Vector3f position) {
         super(position);
         meshes = new ArrayList<>();
-        loadedTexture2DS = new ArrayList<>();
-        this.path = path;
-        loadModel(path);
-    }
-
-    public AssimpModel(String path, Vector3f position, boolean throwsShadow) {
-        super(position, throwsShadow);
-        meshes = new ArrayList<>();
-        loadedTexture2DS = new ArrayList<>();
         this.path = path;
         loadModel(path);
     }
@@ -55,35 +28,21 @@ public class AssimpModel extends Model {
     public AssimpModel(String path, Matrix4f model) {
         super(model);
         meshes = new ArrayList<>();
-        loadedTexture2DS = new ArrayList<>();
         this.path = path;
         loadModel(path);
     }
 
-    public AssimpModel(String path, Matrix4f model, boolean throwsShadow) {
-        super(model, throwsShadow);
-        meshes = new ArrayList<>();
-        loadedTexture2DS = new ArrayList<>();
-        this.path = path;
-        loadModel(path);
-    }
-
-    public void destroy() {
-        destroyAllMeshes();
-        destroyAllTextures();
-    }
-
-    public void draw(ShaderProgram shaderProgram) {
-        for (AssimpMesh mesh : meshes) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+        for (Mesh mesh : meshes) {
             super.setModelMatrixUniform(shaderProgram);
-            mesh.draw(shaderProgram);
+            mesh.draw(shaderProgram, flags);
         }
     }
 
-    public void draw(ShaderProgram shaderProgram, Matrix4f modelMatrix) {
-        for (AssimpMesh mesh : meshes) {
+    public void draw(ShaderProgram shaderProgram, Matrix4f modelMatrix, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+        for (Mesh mesh : meshes) {
             super.setModelMatrixUniform(shaderProgram, modelMatrix);
-            mesh.draw(shaderProgram);
+            mesh.draw(shaderProgram, flags);
         }
     }
 
@@ -95,13 +54,13 @@ public class AssimpModel extends Model {
         }
 
         // Process the scene
-        processScene(aiScene);
+        processScene(Objects.requireNonNull(aiScene));
     }
 
     private void processScene(AIScene scene) {
         // Process all meshes in this scene
         for (int i = 0; i < scene.mNumMeshes(); i++) {
-            AIMesh mesh = AIMesh.create(scene.mMeshes().get(i));
+            AIMesh mesh = AIMesh.create(Objects.requireNonNull(scene.mMeshes()).get(i));
             meshes.add(processMesh(mesh, scene));
         }
     }
@@ -109,29 +68,29 @@ public class AssimpModel extends Model {
     private AssimpMesh processMesh(AIMesh mesh, AIScene scene) {
         // Vertices, normals, tangents and bitangents are processed here
         List<Float> vertices = processVertexAttribute3F(mesh.mVertices());
-        List<Float> normals = processVertexAttribute3F(mesh.mNormals());
+        List<Float> normals = processVertexAttribute3F(Objects.requireNonNull(mesh.mNormals()));
         List<Float> textureCoordinates = new ArrayList<>();
-        List<Float> tangents = processVertexAttribute3F(mesh.mTangents());
-        List<Float> biTangents = processVertexAttribute3F(mesh.mBitangents());
+        List<Float> tangents = processVertexAttribute3F(Objects.requireNonNull(mesh.mTangents()));
+        List<Float> biTangents = processVertexAttribute3F(Objects.requireNonNull(mesh.mBitangents()));
         List<Integer> indices = processIndices(mesh);
         List<ModelTexture2D> texture2Ds = new ArrayList<>();
 
 
         // Texture2D coordinates are processed here, if they exist
         if (mesh.mTextureCoords(0) != null) {
-            textureCoordinates = processVertexAttribute2F(mesh.mTextureCoords(0));
+            textureCoordinates = processVertexAttribute2F(Objects.requireNonNull(mesh.mTextureCoords(0)));
         }
 
         // Here Texture2Ds are processed if they exist
         if (mesh.mMaterialIndex() >= 0) {
-            AIMaterial material = AIMaterial.create(scene.mMaterials().get(mesh.mMaterialIndex()));
-            List<ModelTexture2D> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_color");
-            List<ModelTexture2D> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal");
-            List<ModelTexture2D> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement");
-            List<ModelTexture2D> roughnessMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_roughness");
-            List<ModelTexture2D> metallicMaps = loadMaterialTexture(material, Assimp.aiTextureType_EMISSIVE, "texture_metallic");
-            List<ModelTexture2D> aoMaps = loadMaterialTexture(material, Assimp.aiTextureType_AMBIENT, "texture_ao");
-            List<ModelTexture2D> reflectionAndRefractionMaps = loadMaterialTexture(material, Assimp.aiTextureType_OPACITY, "texture_reflection");
+            AIMaterial material = AIMaterial.create(Objects.requireNonNull(scene.mMaterials()).get(mesh.mMaterialIndex()));
+            List<ModelTexture2D> diffuseMaps = loadMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, "texture_color", true);
+            List<ModelTexture2D> normalMaps = loadMaterialTexture(material, Assimp.aiTextureType_NORMALS, "texture_normal", false);
+            List<ModelTexture2D> displacementMaps = loadMaterialTexture(material, Assimp.aiTextureType_DISPLACEMENT, "texture_displacement", false);
+            List<ModelTexture2D> roughnessMaps = loadMaterialTexture(material, Assimp.aiTextureType_SPECULAR, "texture_roughness", false);
+            List<ModelTexture2D> metallicMaps = loadMaterialTexture(material, Assimp.aiTextureType_EMISSIVE, "texture_metallic", false);
+            List<ModelTexture2D> aoMaps = loadMaterialTexture(material, Assimp.aiTextureType_AMBIENT, "texture_ao", false);
+            List<ModelTexture2D> reflectionAndRefractionMaps = loadMaterialTexture(material, Assimp.aiTextureType_OPACITY, "texture_reflection", false);
 
             texture2Ds.addAll(diffuseMaps);
             texture2Ds.addAll(normalMaps);
@@ -147,24 +106,18 @@ public class AssimpModel extends Model {
                 indices.stream().mapToInt(i -> i).toArray(), texture2Ds);
     }
 
-    private List<ModelTexture2D> loadMaterialTexture(AIMaterial material, int type, String typeName) {
+    private List<ModelTexture2D> loadMaterialTexture(AIMaterial material, int type, String typeName, boolean isInSRGBColorSpace) {
         List<ModelTexture2D> texture2DS = new ArrayList<>();
         for (int i = 0; i < Assimp.aiGetMaterialTextureCount(material, type); i++) {
             AIString str = AIString.calloc();
             Assimp.aiGetMaterialTexture(material, type, 0, str, (IntBuffer) null, null, null, null, null, null);
-            boolean skip = false;
             String path = new File(this.path).getParent() + File.separator + str.dataString();
-            for (ModelTexture2D texture2D : loadedTexture2DS) {
-                if (texture2D.path.equals(path)) {
-                    texture2DS.add(texture2D);
-                    skip = true;
-                    break;
-                }
-            }
-            if (!skip) {
-                ModelTexture2D texture2D = new ModelTexture2D(path, typeName, true, true);
+            if (loadedTextures.get(path) != null && loadedTextures.get(path).type.equals(typeName)) {
+                texture2DS.add(loadedTextures.get(path));
+            } else {
+                ModelTexture2D texture2D = new ModelTexture2D(path, typeName, isInSRGBColorSpace, true);
                 texture2DS.add(texture2D);
-                loadedTexture2DS.add(texture2D);
+                loadedTextures.put(texture2D.path, texture2D);
             }
             str.free();
         }
@@ -206,12 +159,14 @@ public class AssimpModel extends Model {
     public List<Vector3f> getAllVertices() {
         List<Vector3f> points = new ArrayList<>();
         List<Vector3f> result = new ArrayList<>();
-        for (AssimpMesh mesh : meshes) {
-            for (int i = 0; i < mesh.getVertices().length; i += 3) {
-                points.add(new Vector3f(mesh.getVertices()[i], mesh.getVertices()[i + 1], mesh.getVertices()[i + 2]));
+        for (Mesh mesh : meshes) {
+            AssimpMesh assimpMesh = (AssimpMesh) mesh;
+
+            for (int i = 0; i < assimpMesh.getVertices().length; i += 3) {
+                points.add(new Vector3f(assimpMesh.getVertices()[i], assimpMesh.getVertices()[i + 1], assimpMesh.getVertices()[i + 2]));
             }
-            for (int i = 0; i < mesh.getIndices().length; i++) {
-                result.add(new Vector3f(points.get(mesh.getIndices()[i])));
+            for (int i = 0; i < assimpMesh.getIndices().length; i++) {
+                result.add(new Vector3f(points.get(assimpMesh.getIndices()[i])));
             }
         }
         return result;
@@ -220,12 +175,14 @@ public class AssimpModel extends Model {
     public List<Vector3d> getAllVerticesD() {
         List<Vector3d> points = new ArrayList<>();
         List<Vector3d> result = new ArrayList<>();
-        for (AssimpMesh mesh : meshes) {
-            for (int i = 0; i < mesh.getVertices().length; i += 3) {
-                points.add(new Vector3d(mesh.getVertices()[i], mesh.getVertices()[i + 1], mesh.getVertices()[i + 2]));
+        for (Mesh mesh : meshes) {
+            AssimpMesh assimpMesh = (AssimpMesh) mesh;
+
+            for (int i = 0; i < assimpMesh.getVertices().length; i += 3) {
+                points.add(new Vector3d(assimpMesh.getVertices()[i], assimpMesh.getVertices()[i + 1], assimpMesh.getVertices()[i + 2]));
             }
-            for (int i = 0; i < mesh.getIndices().length; i++) {
-                result.add(new Vector3d(points.get(mesh.getIndices()[i])));
+            for (int i = 0; i < assimpMesh.getIndices().length; i++) {
+                result.add(new Vector3d(points.get(assimpMesh.getIndices()[i])));
             }
         }
         return result;
@@ -255,15 +212,21 @@ public class AssimpModel extends Model {
 
     public List<Vector3f> getAllUniqueVertices() {
         List<Vector3f> result = new ArrayList<>();
-        for (AssimpMesh mesh : meshes) {
-            for (int i = 0; i < mesh.getVertices().length; i += 3) {
+        for (Mesh mesh : meshes) {
+            AssimpMesh assimpMesh = (AssimpMesh) mesh;
+
+            for (int i = 0; i < assimpMesh.getVertices().length; i += 3) {
                 int finalI = i;
-                if (result.stream().noneMatch(vector3f -> vector3f.equals(mesh.getVertices()[finalI], mesh.getVertices()[finalI + 1], mesh.getVertices()[finalI + 2]))) {
-                    result.add(new Vector3f(mesh.getVertices()[i], mesh.getVertices()[i + 1], mesh.getVertices()[i + 2]));
+                if (result.stream().noneMatch(vector3f -> vector3f.equals(assimpMesh.getVertices()[finalI], assimpMesh.getVertices()[finalI + 1], assimpMesh.getVertices()[finalI + 2]))) {
+                    result.add(new Vector3f(assimpMesh.getVertices()[i], assimpMesh.getVertices()[i + 1], assimpMesh.getVertices()[i + 2]));
                 }
             }
         }
         return result;
+    }
+
+    public void destroy() {
+        destroyAllMeshes();
     }
 
 }

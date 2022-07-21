@@ -9,11 +9,10 @@ import java.util.List;
 
 public class SimpleVAO extends VAO {
 
-    int vertices;
+    private final int vertices;
+    private final List<VertexBufferObject> attachedVertexBuffers = new ArrayList<>();
 
-    private List<VertexBufferObject> attachedVertexBuffers = new ArrayList<>();
-
-    public SimpleVAO(List<float[]> floatData, List<Integer> sizeData, int usage) {
+    public SimpleVAO(List<float[]> floatData, List<Integer> sizeData, Buffer.Usage usage) {
         super();
         this.vertices = floatData.get(0).length;
 
@@ -22,10 +21,11 @@ public class SimpleVAO extends VAO {
             createAttachedBuffer(floatData.get(i), usage, i, sizeData.get(i));
         }
         VertexBufferObject.unbind();
+        enableVertexAttribPointers();
         unbind();
     }
 
-    private void createAttachedBuffer(float[] floatData, int usage, int index, int size) {
+    private void createAttachedBuffer(float[] floatData, Buffer.Usage usage, int index, int size) {
         FloatBuffer floatBuffer = BufferUtil.createBuffer(floatData);
         VertexBufferObject bufferObject = new VertexBufferObject();
         bufferObject.fill(floatBuffer, usage);
@@ -50,15 +50,17 @@ public class SimpleVAO extends VAO {
 
     public void draw() {
         bind();
-        enableVertexAttribPointers();
 
         GL33.glDrawArrays(GL33.GL_TRIANGLES, 0, vertices);
 
-        disableVertexAttribPointers();
         SimpleVAO.unbind();
     }
 
     public void destroy() {
+        bind();
+        disableVertexAttribPointers();
+        unbind();
+
         destroyVAO();
         for (VertexBufferObject bufferObject : attachedVertexBuffers) {
             bufferObject.destroy();

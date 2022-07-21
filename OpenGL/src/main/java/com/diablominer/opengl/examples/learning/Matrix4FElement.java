@@ -20,7 +20,7 @@ public class Matrix4FElement extends UniformBufferBlockElement{
 
     @Override
     void setUniformBlockData(int offset, UniformBufferBlock uniformBufferBlock) {
-        uniformBufferBlock.setUniformBlockData(offset, BufferUtil.createBuffer(data));
+        uniformBufferBlock.setUniformBlockDataBindless(offset, BufferUtil.createBuffer(data));
     }
 
     public static List<UniformBufferBlockElement> createElementList(List<Matrix4f> matrices) {

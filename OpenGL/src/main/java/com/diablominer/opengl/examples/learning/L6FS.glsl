@@ -53,7 +53,6 @@ uniform samplerCube irradianceMap0;
 uniform samplerCube prefilteredMap0;
 uniform sampler2D brdfLUT0;
 
-in vec3 outNormal;
 in vec2 outTexCoords;
 in vec3 fragPos;
 in vec4 dirLight0FragPos;
@@ -281,7 +280,6 @@ void main() {
     Lo += calcAmbientLight(albedo, metallic, roughness, ao, norm, viewDir, F0, irradianceMap0, prefilteredMap0, brdfLUT0);
 
     fragmentColor = vec4(Lo, texture(material.texture_color1, outTexCoords).w);
-
 
     // Brightness color is determined
     float brightness = dot(fragmentColor.rgb, vec3(0.2126f, 0.7152f, 0.0722f));

@@ -4,19 +4,18 @@ import org.lwjgl.opengl.GL33;
 
 import java.nio.ByteBuffer;
 
-public class FramebufferCubeMap implements FramebufferObject {
+public class FramebufferCubeMap extends FramebufferObject {
 
-    public FramebufferAttachment attachment;
     public CubeMap storedTexture;
 
-    public FramebufferCubeMap(int width, int height, int internalFormat, int format, int type, int minFilter, int magFilter, FramebufferAttachment attachment) {
+    public FramebufferCubeMap(int width, int height, Texture.InternalFormat internalFormat, Texture.Format format, Texture.Type type, int minFilter, int magFilter, FramebufferAttachment attachment) {
+        super(attachment);
         storedTexture = new CubeMap(width, height, internalFormat, format, type, minFilter, magFilter);
-        this.attachment = attachment;
     }
 
-    public FramebufferCubeMap(int width, int height, int internalFormat, int format, int type, FramebufferAttachment attachment) {
+    public FramebufferCubeMap(int width, int height, Texture.InternalFormat internalFormat, Texture.Format format, Texture.Type type, FramebufferAttachment attachment) {
+        super(attachment);
         storedTexture = new CubeMap(width, height, internalFormat, format, type);
-        this.attachment = attachment;
     }
 
     public void bind() {
@@ -30,14 +29,9 @@ public class FramebufferCubeMap implements FramebufferObject {
     public void resize(int width, int height) {
         storedTexture.bind();
         for (int i = 0; i < 6; i++) {
-            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storedTexture.internalFormat, width, height, 0, storedTexture.format, storedTexture.type, (ByteBuffer) null);
+            GL33.glTexImage2D(GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storedTexture.internalFormat.value, width, height, 0, storedTexture.format.value, storedTexture.type.value, (ByteBuffer) null);
         }
         storedTexture.unbind();
-    }
-
-    @Override
-    public FramebufferAttachment getFramebufferAttachment() {
-        return attachment;
     }
 
     public void destroy() {

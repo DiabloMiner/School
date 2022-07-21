@@ -20,44 +20,22 @@ public class ShaderProgramManager implements Manager {
         addStaticShaderProgram(PointLight.getShadowShader(), this, true, false);
         addStaticShaderProgram(SpotLight.getShadowShader(), this, true, false);
         addStaticShaderProgram(BlurRenderer.getBlurShaderProgram(), this, false, false);
-        addStaticShaderProgram(SkyboxRenderingEngineUnit.getSkyboxShaderProgram(), this, false, false);
+        addStaticShaderProgram(SkyboxRenderingUnit.getSkyboxShaderProgram(), this, false, false);
     }
 
     // UsesSkybox means in this context that a shaderprogram uses a skybox's irradiance map
-    public ShaderProgram createShaderProgram(boolean usesShadows, boolean usesSkyboxes) throws Exception {
-        ShaderProgram shaderProgram = new ShaderProgram();
+    public ShaderProgram addShaderProgram(ShaderProgram shaderProgram, boolean usesShadows, boolean usesSkyboxes) {
         allShaderPrograms.add(shaderProgram);
         if (usesShadows) {  allShaderProgramsUsingShadows.add(shaderProgram);}
         if (usesSkyboxes) {  allShaderProgramsUsingSkyboxes.add(shaderProgram);}
         return shaderProgram;
     }
 
-    public ShaderProgram createShaderProgram(String vertexShaderPath, String fragmentShaderPath, boolean usesShadows, boolean usesSkyboxes) throws Exception {
-        ShaderProgram shaderProgram = new ShaderProgram(vertexShaderPath, fragmentShaderPath);
-        allShaderPrograms.add(shaderProgram);
-        if (usesShadows) {  allShaderProgramsUsingShadows.add(shaderProgram);}
-        if (usesSkyboxes) {  allShaderProgramsUsingSkyboxes.add(shaderProgram);}
-        return shaderProgram;
-    }
-
-    public ShaderProgram createShaderProgram(String vertexShaderPath, String geometryShaderPath, String fragmentShaderPath, boolean usesShadows, boolean usesSkyboxes) throws Exception {
-        ShaderProgram shaderProgram = new ShaderProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath);
-        allShaderPrograms.add(shaderProgram);
-        if (usesShadows) {  allShaderProgramsUsingShadows.add(shaderProgram);}
-        if (usesSkyboxes) {  allShaderProgramsUsingSkyboxes.add(shaderProgram);}
-        return shaderProgram;
-    }
-
-    public void addShaderProgram(ShaderProgram shaderProgram, boolean usesShadows, boolean usesSkyboxes) {
-        allShaderPrograms.add(shaderProgram);
-        if (usesShadows) {  allShaderProgramsUsingShadows.add(shaderProgram);}
-        if (usesSkyboxes) {  allShaderProgramsUsingSkyboxes.add(shaderProgram);}
-    }
-
-    public void addShaderPrograms(List<ShaderProgram> shaderPrograms, List<Boolean> usesShadows, List<Boolean> usesSkyboxes) {
+    public List<ShaderProgram> addShaderPrograms(List<ShaderProgram> shaderPrograms, List<Boolean> usesShadows, List<Boolean> usesSkyboxes) {
         for (int i = 0; i < shaderPrograms.size(); i++) {
             addShaderProgram(shaderPrograms.get(i), usesShadows.get(i), usesSkyboxes.get(i));
         }
+        return shaderPrograms;
     }
 
     public void destroyAllShaderPrograms() {

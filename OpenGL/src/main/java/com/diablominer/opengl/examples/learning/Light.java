@@ -3,18 +3,20 @@ package com.diablominer.opengl.examples.learning;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public interface Light {
+public abstract class Light {
 
-    Vector3f getColor();
+    public Vector3f color;
+    protected Renderer shadowRenderer;
+    protected Matrix4f[] lightSpaceMatrices;
 
-    void setUniformData(ShaderProgram shaderProgram, int index);
+    public Light(Vector3f color) {
+        this.color = color;
+    }
 
-    void unbindShadowTextures();
+    abstract void updateShadowMatrices();
 
-    void initializeShadowRenderer(Renderable[] renderables);
+    abstract void setUniformData(ShaderProgram shaderProgram, int index);
 
-    Renderer getShadowRenderer();
-
-    Matrix4f[] getLightSpaceMatrices();
+    abstract void initializeShadowRenderer(Renderable[] renderables);
 
 }

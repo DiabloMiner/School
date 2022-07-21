@@ -11,14 +11,7 @@ public class SkyboxManager implements Manager {
         skyboxes = new ArrayList<>();
     }
 
-    public Skybox createSkybox(String directory, String fileType, boolean flipImage) throws Exception {
-        Skybox skybox = new Skybox(directory, fileType, flipImage);
-        skyboxes.add(skybox);
-        return skybox;
-    }
-
-    public Skybox createSkybox(String filePath, int size, boolean flipImage) throws Exception {
-        Skybox skybox = new Skybox(filePath, size, flipImage);
+    public Skybox addSkybox(Skybox skybox) {
         skyboxes.add(skybox);
         return skybox;
     }
@@ -26,21 +19,12 @@ public class SkyboxManager implements Manager {
     public void setSkyboxUniforms(List<ShaderProgram> shaderPrograms) {
         for (ShaderProgram shaderProgram : shaderPrograms) {
             for (int i = 0; i < skyboxes.size(); i++) {
-                skyboxes.get(i).bindConvolutedTexture();
-                shaderProgram.setUniform1I("irradianceMap" + i, skyboxes.get(i).getConvolutedTextureIndex());
-                skyboxes.get(i).bindPrefilteredTexture();
-                shaderProgram.setUniform1I("prefilteredMap" + i, skyboxes.get(i).getPrefilteredTextureIndex());
-                skyboxes.get(i).bindBrdfLookUpTextureTexture();
-                shaderProgram.setUniform1I("brdfLUT" + i, skyboxes.get(i).getBrdfLookUpTextureIndex());
+                shaderProgram.bind();
+                shaderProgram.setUniform1IBindless("irradianceMap" + i, skyboxes.get(i).getConvolutedTextureIndex());
+                shaderProgram.setUniform1IBindless("prefilteredMap" + i, skyboxes.get(i).getPrefilteredTextureIndex());
+                shaderProgram.setUniform1IBindless("brdfLUT" + i, Skybox.getBrdfLookUpTextureIndex());
+                ShaderProgram.unbind();
             }
-        }
-    }
-
-    public void unbindSkyboxTextures() {
-        for (Skybox skybox : skyboxes) {
-            skybox.unbindConvolutedTexture();
-            skybox.unbindPrefilteredTexture();
-            skybox.unbindBrdfLookUpTextureTexture();
         }
     }
 

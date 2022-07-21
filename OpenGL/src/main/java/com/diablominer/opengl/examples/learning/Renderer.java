@@ -4,50 +4,45 @@ import java.util.*;
 
 public abstract class Renderer {
 
-    public static Set<Renderer> allRenderers = new HashSet<>();
-
     protected final List<Framebuffer> framebuffers;
-    protected final List<RenderingEngineUnit> renderingEngineUnits;
+    protected final List<RenderingUnit> renderingUnits;
 
     public Renderer() {
         this.framebuffers = new ArrayList<>();
-        this.renderingEngineUnits = new ArrayList<>();
-        allRenderers.add(this);
+        this.renderingUnits = new ArrayList<>();
     }
 
     public Renderer(Collection<Framebuffer> framebuffers) {
         this.framebuffers = new ArrayList<>(framebuffers);
-        this.renderingEngineUnits = new ArrayList<>();
-        allRenderers.add(this);
+        this.renderingUnits = new ArrayList<>();
     }
 
-    public Renderer(Collection<Framebuffer> framebuffers, Collection<RenderingEngineUnit> renderingEngineUnits) {
+    public Renderer(Collection<Framebuffer> framebuffers, Collection<RenderingUnit> renderingUnits) {
         this.framebuffers = new ArrayList<>(framebuffers);
-        this.renderingEngineUnits = new ArrayList<>(renderingEngineUnits);
-        allRenderers.add(this);
+        this.renderingUnits = new ArrayList<>(renderingUnits);
     }
 
     protected void updateAllRenderingEngineUnits() {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.update();
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.update();
         }
     }
 
     protected void updateAllRenderingEngineUnits(ShaderProgram shaderProgram) {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.update(shaderProgram);
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.update(shaderProgram);
         }
     }
 
-    protected void renderAllRenderingEngineUnits() {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.render();
+    protected void renderAllRenderingEngineUnits(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.render(flags);
         }
     }
 
-    protected void renderAllRenderingEngineUnits(ShaderProgram shaderProgram) {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.render(shaderProgram);
+    protected void renderAllRenderingEngineUnits(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.render(shaderProgram, flags);
         }
     }
 
@@ -58,8 +53,8 @@ public abstract class Renderer {
     }
 
     protected void destroyRenderingEngineUnits() {
-        for (RenderingEngineUnit renderingEngineUnit : renderingEngineUnits) {
-            renderingEngineUnit.destroy();
+        for (RenderingUnit renderingUnit : renderingUnits) {
+            renderingUnit.destroy();
         }
     }
 
@@ -67,16 +62,18 @@ public abstract class Renderer {
 
     public abstract void update(ShaderProgram shaderProgram);
 
-    public abstract void render();
+    public abstract void render(RenderingIntoFlag flag);
 
-    public abstract void render(ShaderProgram shaderProgram);
+    public abstract void render(ShaderProgram shaderProgram, RenderingIntoFlag flag);
 
     public abstract void destroy();
 
-    public static void destroyAllRenderers() {
-        for (Renderer renderer : allRenderers) {
-            renderer.destroy();
-        }
+    public List<Framebuffer> getFramebuffers() {
+        return framebuffers;
+    }
+
+    public List<RenderingUnit> getRenderingEngineUnits() {
+        return renderingUnits;
     }
 
 }

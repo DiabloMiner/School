@@ -2,18 +2,17 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
-public class FramebufferRenderbuffer implements FramebufferObject {
+public class FramebufferRenderbuffer extends FramebufferObject {
 
-    public FramebufferAttachment attachment;
     public Renderbuffer storedRenderbuffer;
 
-    public FramebufferRenderbuffer(FramebufferAttachment attachment) {
-        this.attachment = attachment;
+    protected FramebufferRenderbuffer(FramebufferAttachment attachment) {
+        super(attachment);
     }
 
-    public FramebufferRenderbuffer(int width, int height, int format, FramebufferAttachment attachment) {
+    public FramebufferRenderbuffer(int width, int height, Renderbuffer.InternalFormat format, FramebufferAttachment attachment) {
+        super(attachment);
         storedRenderbuffer = new Renderbuffer(width, height, format);
-        this.attachment = attachment;
     }
 
     public void bind() {
@@ -22,13 +21,8 @@ public class FramebufferRenderbuffer implements FramebufferObject {
 
     public void resize(int width, int height) {
         storedRenderbuffer.bind();
-        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, storedRenderbuffer.format, width, height);
+        GL33.glRenderbufferStorage(GL33.GL_RENDERBUFFER, storedRenderbuffer.internalFormat.value, width, height);
         Renderbuffer.unbind();
-    }
-
-    @Override
-    public FramebufferAttachment getFramebufferAttachment() {
-        return attachment;
     }
 
     public void destroy() {

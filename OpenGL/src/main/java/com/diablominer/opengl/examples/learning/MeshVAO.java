@@ -10,10 +10,10 @@ import java.util.List;
 
 public class MeshVAO extends VAO {
 
-    private List<VertexBufferObject> attachedVertexBuffers;
+    private final List<VertexBufferObject> attachedVertexBuffers;
     private ElementBufferObject attachedElementBuffer;
 
-    public MeshVAO(List<float[]> floatData, List<Integer> sizeData, int[] intData, int usage) {
+        public MeshVAO(List<float[]> floatData, List<Integer> sizeData, int[] intData, Buffer.Usage usage) {
         super();
         attachedVertexBuffers = new ArrayList<>();
 
@@ -23,11 +23,11 @@ public class MeshVAO extends VAO {
         }
         VertexBufferObject.unbind();
         createAttachedBuffer(intData, usage);
-
+        enableVertexAttribPointers();
         unbind();
     }
 
-    private void createAttachedBuffer(float[] floatData, int usage, int index, int size) {
+    private void createAttachedBuffer(float[] floatData, Buffer.Usage usage, int index, int size) {
         FloatBuffer floatBuffer = BufferUtil.createBuffer(floatData);
         VertexBufferObject bufferObject = new VertexBufferObject();
         bufferObject.fill(floatBuffer, usage);
@@ -38,7 +38,7 @@ public class MeshVAO extends VAO {
         BufferUtil.destroyBuffer(floatBuffer);
     }
 
-    private void createAttachedBuffer(int[] intData, int usage) {
+    private void createAttachedBuffer(int[] intData, Buffer.Usage usage) {
         IntBuffer intBuffer = BufferUtil.createBuffer(intData);
         attachedElementBuffer = new ElementBufferObject(intBuffer, usage);
     }
@@ -57,15 +57,17 @@ public class MeshVAO extends VAO {
 
     public void draw() {
         bind();
-        enableVertexAttribPointers();
 
         GL33.glDrawElements(GL33.GL_TRIANGLES, attachedElementBuffer.getIntBuffer());
 
-        disableVertexAttribPointers();
-        MeshVAO.unbind();
+        unbind();
     }
 
     public void destroy() {
+        bind();
+        disableVertexAttribPointers();
+        unbind();
+
         destroyVAO();
         for (VertexBufferObject bufferObject : attachedVertexBuffers) {
             bufferObject.destroy();

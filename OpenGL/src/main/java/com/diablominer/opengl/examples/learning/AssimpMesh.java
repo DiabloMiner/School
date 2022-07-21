@@ -1,10 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
-import org.lwjgl.opengl.GL33;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class AssimpMesh extends Mesh {
 
@@ -22,39 +18,44 @@ public class AssimpMesh extends Mesh {
 
 
     protected int[] indices;
-    protected List<ModelTexture2D> texture2DS;
+    protected int colorCounter, normalCounter, displacementCounter, roughnessCounter, metallicCounter, aoCounter, reflectionCounter;
+    protected List<Map.Entry<String, ModelTexture2D>> textureUniforms;
 
     public AssimpMesh() {
         super();
-        floatData = new ArrayList<>(Arrays.asList(new float[0], new float[0], new float[0], new float[0], new float[0]));
+        this.floatData = new ArrayList<>(Arrays.asList(new float[0], new float[0], new float[0], new float[0], new float[0]));
         this.indices = new int[0];
         this.texture2DS = new ArrayList<>();
         this.vertexAttributeSizes = new ArrayList<>();
+        this.textureUniforms = new ArrayList<>();
     }
 
     public AssimpMesh(float[] vertices, float[] normals, float[] texCoords, float[] tangents, float[] biTangents, int[] indices, List<ModelTexture2D> texture2DS) {
         super();
-        floatData = new ArrayList<>(Arrays.asList(vertices, normals, texCoords, tangents, biTangents));
+        this.floatData = new ArrayList<>(Arrays.asList(vertices, normals, texCoords, tangents, biTangents));
         this.indices = indices;
-        this.texture2DS = texture2DS;
+        this.texture2DS.addAll(texture2DS);
         this.vertexAttributeSizes = new ArrayList<>();
-        setUpMesh();
+        this.textureUniforms = new ArrayList<>();
+        this.setUpMesh();
     }
 
     void setUpMesh() {
         vertexAttributeSizes.addAll(Arrays.asList(vertexSize, normalSize, texCoordSize, tangentSize, bitangentSize));
-        vao = new MeshVAO(floatData, vertexAttributeSizes, indices, GL33.GL_STATIC_DRAW);
+        vao = new MeshVAO(floatData, vertexAttributeSizes, indices, Buffer.Usage.STATIC_DRAW);
+        bindTextures();
     }
 
-    public void draw(ShaderProgram shaderProgram) {
-        int colorCounter = 1;
-        int normalCounter = 1;
-        int displacementCounter = 1;
-        int roughnessCounter = 1;
-        int metallicCounter = 1;
-        int aoCounter = 1;
-        int reflectionCounter = 1;
-        for (ModelTexture2D currentTexture2D : texture2DS) {
+    private void bindTextures() {
+        colorCounter = 1;
+        normalCounter = 1;
+        displacementCounter = 1;
+        roughnessCounter = 1;
+        metallicCounter = 1;
+        aoCounter = 1;
+        reflectionCounter = 1;
+        for (Texture2D currentTexture : texture2DS) {
+            ModelTexture2D currentTexture2D = (ModelTexture2D) currentTexture;
             int number = 0;
             String name = currentTexture2D.type;
             switch (name) {
@@ -82,51 +83,37 @@ public class AssimpMesh extends Mesh {
             }
             if (number != 0) {
                 currentTexture2D.bind();
-                shaderProgram.setUniform1I("material." + name + number, currentTexture2D.getIndex());
+                textureUniforms.add(new AbstractMap.SimpleEntry<>("material." + name + number, currentTexture2D));
             }
         }
+    }
 
+    private void setTextureUniforms(ShaderProgram shaderProgram) {
+        for (Map.Entry<String, ModelTexture2D> entry : textureUniforms) {
+            if (!entry.getValue().isBound()) {
+                entry.getValue().bind();
+            }
+            shaderProgram.setUniform1IBindless(entry.getKey(), entry.getValue().getIndex());
+        }
+    }
+
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
         // Bind the shaderProgram
         shaderProgram.bind();
+
+        // Set all texture uniforms for this mesh if the correct flag is set
+        if (flags.getKey().intoColor) {
+            setTextureUniforms(shaderProgram);
+        }
+
+        // Validate the shaderProgram
+        shaderProgram.validate();
 
         // Let the VAO draw its contents
         vao.draw();
 
         // Unbind the shaderProgram
         ShaderProgram.unbind();
-
-        // Unbind all twoDimensionalTextures used for this mesh
-        for (ModelTexture2D currentTexture2D : texture2DS) {
-            int number = 0;
-            String name = currentTexture2D.type;
-            switch (name) {
-                case "texture_color":
-                    number = colorCounter;
-                    break;
-                case "texture_normal":
-                    number = normalCounter;
-                    break;
-                case "texture_displacement":
-                    number = displacementCounter;
-                    break;
-                case "texture_roughness":
-                    number = roughnessCounter;
-                    break;
-                case "texture_metallic":
-                    number = metallicCounter;
-                    break;
-                case "texture_ao":
-                    number = aoCounter;
-                    break;
-                case "texture_reflection":
-                    number = reflectionCounter;
-                    break;
-            }
-            if (number != 0) {
-                currentTexture2D.unbind();
-                shaderProgram.setUniform1I("material." + name + number, currentTexture2D.getIndex());
-            }
-        }
     }
 
     public void destroy() {

@@ -2,12 +2,10 @@ package com.diablominer.opengl.examples.learning;
 
 import org.lwjgl.opengl.GL33;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class VAO {
-
-    public static Set<VAO> allVAOs = new HashSet<>();
 
     protected final int id;
 
@@ -29,13 +27,6 @@ public abstract class VAO {
 
     public void destroyVAO() {
         GL33.glDeleteVertexArrays(id);
-    }
-
-    public static void destroyAll() {
-        VAO.unbind();
-        for (VAO vao : allVAOs) {
-            vao.destroy();
-        }
     }
 
 }
