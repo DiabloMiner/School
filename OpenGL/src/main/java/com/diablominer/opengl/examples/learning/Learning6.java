@@ -1,5 +1,7 @@
 package com.diablominer.opengl.examples.learning;
 
+import org.jblas.DoubleMatrix;
+import org.jblas.NativeBlas;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
@@ -11,7 +13,7 @@ import org.lwjgl.system.MemoryUtil;
 public class Learning6 implements Engine {
 
     public static Learning6 engineInstance;
-    public static final long millisecondsPerFrame = 17;
+    public static final long millisecondsPerFrame = 15;
     public static final long simulationTimeStep = 10;
 
     public boolean continueEngineLoop = true, resize = false;
@@ -22,10 +24,22 @@ public class Learning6 implements Engine {
     private MainIOEngine mainIOEngine;
 
     public static void main(String[] args) throws Exception {
+        initializeJBlas();
         engineInstance = new Learning6();
         engineInstance.init();
         engineInstance.mainLoop();
         engineInstance.close();
+    }
+
+    public static void initializeJBlas() throws ClassNotFoundException {
+        // A new NativeBlas instance is created to force the loading of the library, so the Engine doesn't experience a lag spike while running
+        NativeBlas nativeBlas = new NativeBlas();
+        // A new JBlas Matrix is created to force the initialization of the JBlas matrix class, so the Engine doesn't experience a lag spike while running
+        DoubleMatrix doubleMatrix = new DoubleMatrix(1, 1);
+        // Different matrix operations are performed as there seems to be some loading time connected with the first use of a function
+        doubleMatrix.mmul(DoubleMatrix.ones(1, 1));
+        DoubleMatrix.zeros(1, 2).mmul(DoubleMatrix.ones(2, 1));
+        DoubleMatrix.zeros(2, 2).subi(DoubleMatrix.ones(2, 2));
     }
 
     public Learning6() {}
@@ -37,7 +51,7 @@ public class Learning6 implements Engine {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-        Camera camera = new Camera(new Vector3f(0.0f, 0.0f, 3.0f), new Vector3f(0.0f, 0.0f, -1.0f));
+        Camera camera = new Camera(new Vector3f(0.0f, 7.0f, 3.0f), new Vector3f(0.0f, 0.0f, -1.0f));
         Window window = new Window(1280, 720, false, "Learning6", camera);
         Window.setFocusedWindow(window);
         GLFW.glfwMakeContextCurrent(window.getId());
@@ -127,7 +141,7 @@ public class Learning6 implements Engine {
         GL33.glEnable(GL33.GL_TEXTURE_CUBE_MAP_SEAMLESS);
         GL33.glCullFace(GL33.GL_BACK);
 
-        mainPhysicsEngine = new MainPhysicsEngine();
+        mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false));
         mainRenderingEngine = new MainRenderingEngine(window, camera);
         mainIOEngine = new MainIOEngine(new Window[]{window}, new Camera[]{camera}, new RenderingEngine[]{mainRenderingEngine});
 

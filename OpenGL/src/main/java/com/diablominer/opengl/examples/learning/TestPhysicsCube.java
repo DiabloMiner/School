@@ -7,64 +7,37 @@ import org.joml.*;
 import java.lang.Math;
 import java.util.*;
 
-public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
+public class TestPhysicsCube extends PhysicsObject {
 
-    public static float epsilon = Math.ulp(1.0f);
+    public AssimpModel model;
 
-    public Vector3d max, min;
-    public double coefficientOfRestitution = 1.0, coefficientOfStaticFriction = 0.1, coefficientOfKineticFriction = 0.14;
+    private final double edgeLength;
 
-    private final double mass, edgeLength;
-    private final Vector3d position, momentum, force, angularMomentum, torque;
-    private final Quaterniond orientation;
-    private final Matrix3d inertiaMatrix;
-    private final Matrix4d worldMatrix;
-
-    public TestPhysicsCube(String path, Vector3d position, Vector3d momentum, Vector3d force, Quaterniond orientation, Vector3d angularMomentum, Vector3d torque, double mass, double edgeLength) {
-        super(path, new Vector3f(0.0f).set(position));
-        this.position = position;
-        this.momentum = momentum;
-        this.force = force;
-        this.mass = mass;
-        this.orientation = orientation;
-        this.angularMomentum = angularMomentum;
-        this.torque = torque;
+    public TestPhysicsCube(String path, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
+        super(new AABB(position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, 1.0, 0.1, 0.14);
         this.edgeLength = edgeLength;
-        this.worldMatrix = new Matrix4d().identity().translate(position);
-        inertiaMatrix = new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength).invert();
-        this.max = new Vector3d(position).add(new Vector3d(edgeLength / 2.0));
-        this.min = new Vector3d(position).sub(new Vector3d(edgeLength / 2.0));
-        performTimeStep(0.0);
+        this.model = new AssimpModel(path, new Vector3f(0.0f).set(position));
     }
 
     @Override
     public void performTimeStep(double timeStep) {
-        momentum.add(new Vector3d(force).mul(timeStep));
-        position.add(new Vector3d(momentum).mul(timeStep).div(mass));
-
-        angularMomentum.add(new Vector3d(torque).mul(timeStep));
-        Vector3d angularVelocity = new Vector3d(angularMomentum).mul(inertiaMatrix);
-        orientation.integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
-
-        worldMatrix.set(new Matrix4d().identity().translate(position).rotate(orientation));
-        this.setModelMatrix(new Matrix4f(worldMatrix));
-        this.max = new Vector3d(position).add(new Vector3d(edgeLength / 2.0));
-        this.min = new Vector3d(position).sub(new Vector3d(edgeLength / 2.0));
+        performEulerTimeStep(timeStep);
+        model.setModelMatrix(new Matrix4f(worldMatrix));
     }
 
     @Override
     public boolean isColliding(PhysicsObject physicsObject) {
         TestPhysicsCube cube = (TestPhysicsCube) physicsObject;
-        return (this.min.x <= cube.max.x && this.max.x >= cube.min.x) && (this.min.y <= cube.max.y && this.max.y >= cube.min.y) && (this.min.z <= cube.max.z && this.max.z >= cube.min.z);
+        return areCollisionShapesColliding(cube.collisionShape);
     }
 
     @Override
-    public void handleCollisions(PhysicsObject physicsObject, double timeStep) {
+    public Collision[] getCollisions(PhysicsObject physicsObject, double timeStep) {
         TestPhysicsCube cube = (TestPhysicsCube) physicsObject;
         if (this.position.distance(cube.position) < (this.edgeLength + cube.edgeLength) / 2.0) {
             double distance = (this.edgeLength + cube.edgeLength) / 2.0;
-            List<Vector3d> thisVertices = getAllVerticesInWorldCoordinates(worldMatrix);
-            List<Vector3d> cubeVertices = cube.getAllVerticesInWorldCoordinates(cube.worldMatrix);
+            List<Vector3d> thisVertices = model.getAllVerticesInWorldCoordinates(worldMatrix);
+            List<Vector3d> cubeVertices = cube.model.getAllVerticesInWorldCoordinates(cube.worldMatrix);
             for (Vector3d thisVertex : thisVertices) {
                 for (Vector3d cubeVertex : cubeVertices) {
                     if (thisVertex.distance(cubeVertex) < distance) {
@@ -74,18 +47,18 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
             }
             Vector3d thisDir = new Vector3d(cube.position).sub(this.position).normalize();
             Vector3d cubeDir = new Vector3d(this.position).sub(cube.position).normalize();
-            double v = Math.abs(new Vector3d(thisDir).dot(new Vector3d(this.momentum).div(mass))) + Math.abs(new Vector3d(thisDir).dot(new Vector3d(cube.momentum).div(mass)));
-            double f1 = new Vector3d(this.momentum).div(this.mass).dot(thisDir) / v;
-            double f2 = new Vector3d(cube.momentum).div(cube.mass).dot(cubeDir) / v;
-            double h1 = (distance * f1) / new Vector3d(this.momentum).div(this.mass).dot(thisDir);
-            double h2 = (distance * f2) / new Vector3d(cube.momentum).div(cube.mass).dot(cubeDir);
+            double v = Math.abs(new Vector3d(thisDir).dot(new Vector3d(this.velocity))) + Math.abs(new Vector3d(thisDir).dot(new Vector3d(cube.velocity)));
+            double f1 = new Vector3d(this.velocity).dot(thisDir) / v;
+            double f2 = new Vector3d(cube.velocity).dot(cubeDir) / v;
+            double h1 = (distance * f1) / new Vector3d(this.velocity).dot(thisDir);
+            double h2 = (distance * f2) / new Vector3d(cube.velocity).dot(cubeDir);
             double h = (h1 + h2) / 2.0;
             this.performTimeStep(-h);
             cube.performTimeStep(-h);
 
             Set<Vector3f> contactVertices = new HashSet<>();
-            for (Face thisFace : this.getAllFaces(new Matrix4f(this.worldMatrix))) {
-                for (Face cubeFace : cube.getAllFaces(new Matrix4f(cube.worldMatrix))) {
+            for (Face thisFace : this.model.getAllFaces(new Matrix4f(this.worldMatrix))) {
+                for (Face cubeFace : cube.model.getAllFaces(new Matrix4f(cube.worldMatrix))) {
                     thisFace.isColliding(cubeFace, null, null).forEach(collision -> contactVertices.add(collision.getPoint()));
                 }
             }
@@ -93,7 +66,7 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
             contactVertices.forEach(contactVertex::add);
             contactVertex.div(contactVertices.size());
             Vector3f normal = new Vector3f(contactVertices.toArray(new Vector3f[0])[0]).sub(contactVertices.toArray(new Vector3f[0])[1]).cross(new Vector3f(contactVertices.toArray(new Vector3f[0])[2]).sub(contactVertices.toArray(new Vector3f[0])[3])).normalize();
-            if (new Vector3f(contactVertex).sub(normal).distance(new Vector3f().set(this.position)) < new Vector3f(contactVertex).distance(new Vector3f().set(this.position))) {
+            if (new Vector3f(contactVertex).add(normal).distance(new Vector3f().set(this.position)) < new Vector3f(contactVertex).add(normal).distance(new Vector3f().set(cube.position))) {
                 normal.mul(-1.0f);
             }
 
@@ -101,23 +74,31 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
             Vector3d rB = new Vector3d(contactVertex).sub(cube.position);
             Vector3d kA = new Vector3d(rA).cross(new Vector3d(normal));
             Vector3d kB = new Vector3d(rB).cross(new Vector3d(normal));
-            Vector3d uA = Transforms.round(Transforms.mulVectorWithMatrix4(kA, new Matrix4d().identity().set(new Matrix3d(this.inertiaMatrix)).invert()), 2);
-            Vector3d uB = Transforms.round(Transforms.mulVectorWithMatrix4(kB, new Matrix4d().identity().set(new Matrix3d(cube.inertiaMatrix)).invert()), 2);
+            Vector3d uA = Transforms.round(Transforms.mulVectorWithMatrix4(kA, new Matrix4d().identity().set(worldFrameInertiaInv)), 2);
+            Vector3d uB = Transforms.round(Transforms.mulVectorWithMatrix4(kB, new Matrix4d().identity().set(cube.worldFrameInertiaInv)), 2);
 
             double coefficientOfRestitution = (this.coefficientOfRestitution + cube.coefficientOfRestitution) / 2;
 
-            double numerator = -(1 + coefficientOfRestitution) * (new Vector3d(normal).dot(new Vector3d(this.getVelocity()).sub(new Vector3d(cube.getVelocity()))) + (new Vector3d(this.getAngularVelocity()).dot(kA)) - new Vector3d(cube.getAngularVelocity()).dot(kB));
+            double numerator = -(1 + coefficientOfRestitution) * (new Vector3d(normal).dot(new Vector3d(this.velocity).sub(new Vector3d(cube.velocity))) + (new Vector3d(this.angularVelocity).dot(kA)) - new Vector3d(cube.angularVelocity).dot(kB));
             double denominator = (1.0 / this.mass) + (1.0 / cube.mass) + kA.dot(uA) + kB.dot(uB);
-            double f = numerator / denominator;
+            double f = Transforms.round(numerator / denominator, 10);
             Vector3d impulse = new Vector3d(normal).mul(f);
 
             double normalObjFrictionImpulse = computeFrictionImpulse(this, normal, (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0);
             double otherObjFrictionImpulse = computeFrictionImpulse(cube, normal, (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0);
 
-            this.momentum.add(new Vector3f().set(new Vector3d(impulse)));
-            cube.momentum.sub(new Vector3f().set(new Vector3d(impulse)));
-            this.angularMomentum.add(new Vector3f().set(new Vector3d(kA).mul(f)));
-            cube.angularMomentum.sub(new Vector3f().set(new Vector3d(kB).mul(f)));
+            // DoubleMatrix[] lcpMatrices = LCPSolver.constructLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {(this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0}, 4, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, -1.0, 0.0), new Vector3d(0.0, 0.0, 1.0), new Vector3d(0.0, 0.0, -1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});
+            /*DoubleMatrix[] blcpMatrices = LCPSolver.constructBLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {coefficientOfRestitution}, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, 0.0, 1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});
+            LCPSolver.getInstance().solveBLCPWithPSOR(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 1.0, 10e-6, 100);
+            LCPSolver.getInstance().solveBLCPWithNNCG(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0,1000);
+            LCPSolver.getInstance().solveBLCPWithPGS(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 10e-6, 100);
+            LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 10e-4, 0.5, 10e-30, 10e-10, 10e-20, 250);*/
+            // LCPSolver.getInstance().solveLCPWithMinimumMapNewton(lcpMatrices[0], lcpMatrices[1], 10e-4, 0.5, 10e-30, 10e-10, 100);
+
+            this.velocity.add(new Vector3f().set(new Vector3d(impulse).div(mass)));
+            cube.velocity.sub(new Vector3f().set(new Vector3d(impulse).div(cube.mass)));
+            this.angularVelocity.add(new Vector3f().set(new Vector3d(kA).mul(f).mul(worldFrameInertiaInv)));
+            cube.angularVelocity.sub(new Vector3f().set(new Vector3d(kB).mul(f).mul(worldFrameInertiaInv)));
 
             applyFrictionImpulse(this, normal, normalObjFrictionImpulse);
             applyFrictionImpulse(cube, normal, otherObjFrictionImpulse);
@@ -125,11 +106,12 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
             this.performTimeStep(timeStep - h);
             cube.performTimeStep(timeStep - h);
         }
+        return new Collision[] {};
     }
 
     private void applyFrictionImpulse(TestPhysicsCube physicsObject, Vector3f normal, double frictionImpulse) {
         Vector3d tangentialVelDir = Transforms.safeNormalize(computeTangentialVelocity(physicsObject, normal));
-        physicsObject.getVelocity().sub(new Vector3f().set(new Vector3d(tangentialVelDir).mul(Math.min(frictionImpulse, physicsObject.getVelocity().length() * physicsObject.mass)).div(physicsObject.mass)));
+        physicsObject.velocity.sub(new Vector3f().set(new Vector3d(tangentialVelDir).mul(Math.min(frictionImpulse, physicsObject.velocity.length() * physicsObject.mass)).div(physicsObject.mass)));
     }
 
     private double computeFrictionImpulse(TestPhysicsCube cube, Vector3f normal, double coefficientOfKineticFriction) {
@@ -138,32 +120,17 @@ public class TestPhysicsCube extends AssimpModel implements PhysicsObject {
     }
 
     private Vector3d computeNormalVelocity(TestPhysicsCube physicsObject, Vector3f normal) {
-        return new Vector3d(normal).normalize().mul(new Vector3d(normal).normalize().dot(new Vector3d(physicsObject.getVelocity())));
+        return new Vector3d(normal).normalize().mul(new Vector3d(normal).normalize().dot(new Vector3d(physicsObject.velocity)));
     }
 
     private Vector3d computeTangentialVelocity(TestPhysicsCube physicsObject, Vector3f normal) {
-        return new Vector3d(physicsObject.getVelocity()).sub(new Vector3d(normal).normalize().mul(new Vector3d(normal).normalize().dot(new Vector3d(physicsObject.getVelocity()))));
+        return new Vector3d(physicsObject.velocity).sub(new Vector3d(normal).normalize().mul(new Vector3d(normal).normalize().dot(new Vector3d(physicsObject.velocity))));
     }
 
     @Override
     public void predictTimeStep(double timeStep) {
-        Vector3d momentum = new Vector3d(this.momentum).add(new Vector3d(force).mul(timeStep));
-        Vector3d position = new Vector3d(this.position).add(new Vector3d(momentum).mul(timeStep).div(mass));
-
-        Vector3d angularMomentum = new Vector3d(this.angularMomentum).add(new Vector3d(torque).mul(timeStep));
-        Vector3d angularVelocity = new Vector3d(angularMomentum).mul(inertiaMatrix);
-        Quaterniond orientation = new Quaterniond(this.orientation).integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z);
-
-        Matrix4d mat = new Matrix4d().identity().translate(position).rotate(orientation);
-        this.setModelMatrix(new Matrix4f(mat));
-    }
-
-    private Vector3d getVelocity() {
-        return new Vector3d(this.momentum).div(mass);
-    }
-
-    private Vector3d getAngularVelocity() {
-        return new Vector3d(this.angularMomentum).mul(new Matrix3d(inertiaMatrix).invert());
+        Matrix4d mat = predictEulerTimeStep(timeStep);
+        this.model.setModelMatrix(new Matrix4f(mat));
     }
 
 }

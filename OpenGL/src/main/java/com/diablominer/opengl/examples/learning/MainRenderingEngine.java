@@ -1,12 +1,11 @@
 package com.diablominer.opengl.examples.learning;
 
+import org.jblas.NativeBlas;
 import org.joml.*;
 import org.joml.Math;
 import org.lwjgl.opengl.GL33;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 public class MainRenderingEngine extends RenderingEngine {
 
@@ -34,13 +33,14 @@ public class MainRenderingEngine extends RenderingEngine {
         lightManager.addRenderablePointLight(new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024));
         lightManager.addSpotLight(new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024, camera));
 
-        AssimpModel helloWorld = (AssimpModel) renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f))), true);
-        AssimpModel cube = (AssimpModel) renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f))), true);
-        TestPhysicsCube physicsCube1 = (TestPhysicsCube) renderableManager.addRenderable(new TestPhysicsCube("./src/main/resources/models/HelloWorld/cube2.obj", new Vector3d(10.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0), new Vector3d(0.0),  new Quaterniond().identity(), new Vector3d(0.0), new Vector3d(0.0), 10, 2), true);
-        TestPhysicsCube physicsCube2 = (TestPhysicsCube) renderableManager.addRenderable(new TestPhysicsCube("./src/main/resources/models/HelloWorld/cube2.obj", new Vector3d(-10.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0), new Vector3d(0.0),  new Quaterniond().identity(), new Vector3d(0.0), new Vector3d(0.0), 10, 2), true);
-        Learning6.engineInstance.getMainPhysicsEngine().physicsObjects.addAll(Arrays.asList(physicsCube1, physicsCube2));
+        Renderable helloWorld = renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f))), true);
+        Renderable cube = renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f))), true);
+        TestPhysicsSphere physicsObject1 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", new Vector3d(0.0, 10.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 10.0, 1.0);
+        TestPhysicsSphere physicsObject2 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", new Vector3d(0.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), Double.POSITIVE_INFINITY, 1.0);
+        renderableManager.addRenderables(new ArrayList<>(Arrays.asList(physicsObject1.model, physicsObject2.model)), new ArrayList<>(Arrays.asList(true, true)));
+        Learning6.engineInstance.getMainPhysicsEngine().physicsObjects.addAll(Arrays.asList(physicsObject1, physicsObject2));
 
-        RenderingUnit standardRenderingUnit = new StandardRenderingUnit(shaderProgram, new Renderable[] {helloWorld, cube,  physicsCube1, physicsCube2});
+        RenderingUnit standardRenderingUnit = new StandardRenderingUnit(shaderProgram, new Renderable[] {helloWorld, cube,  physicsObject1.model, physicsObject2.model});
         RenderingUnit lightRenderingUnit = new LightRenderingUnit(lsShaderProgram, lightManager.allRenderableLights);
         RenderingUnit skyboxRenderingUnit = new SkyboxRenderingUnit(skyboxManager.addSkybox(new Skybox("./src/main/resources/textures/skybox", ".jpg", false)));
         mainRenderer = new SingleFramebufferRenderer(framebufferManager.addFramebuffer(new Framebuffer(new FramebufferTexture2D[] {new FramebufferMSAATexture2D(window.width, window.height, Texture.InternalFormat.RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferMSAATexture2D(window.width, window.height, Texture.InternalFormat.RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT1)},

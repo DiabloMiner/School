@@ -19,6 +19,7 @@ public class StandardRenderingUnit extends RenderingUnit {
         // TODO: Maybe redo some texture maps ; Maybe add in enums for every texture parameter
         // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible --> Fully implement Normal mapping (more effective)
         // TODO: Optimize VBO usage ; Review assimp code ; Rewrite the geometry shaders into for loops in the linux version
+        // TODO: Better Bloom ; Implement curved surfaces rendering ; Implement reflection probes (with retroreflection)
 
         // Added functionality:
         // Implemented directional shadow casting for directional lights and spot lights ; Added dynamic yaw and pitch calculation ; Implemented omnidirectional shadow casting ;
@@ -33,6 +34,7 @@ public class StandardRenderingUnit extends RenderingUnit {
         // Removed all public static sets/lists for base components except textures ;  Used the provided mesh/texture list in AssimpModel instead of specialized lists ; Rewrote framebuffer class to more closely match OpenGL
         // Implemented a sort of I/O-Engine ; Introduced enums for OpenGL integer parameters ; Fixed some strange camera behaviour by normalising the right direction ; Implemented a texture safeguard preventing failure if a texture in the middle of alreadyBound was unbound
         // Minimized the number of OpenGL calls by about 75%(200x->476) by binding textures initially, introducing rendering flags and removing unnecessary re-/unbinding (e.g. vertexAttribPointers)
+        // Added JBlas initialization to prevent lag spikes during collision resolution
     }
 
     @Override
