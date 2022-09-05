@@ -3,69 +3,76 @@ package com.diablominer.opengl.examples.learning;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
-import java.lang.Math;
 import java.util.Set;
 
 public class TestPhysicsSphere extends PhysicsObject {
-
-    public static final int digitAccuracy = 20;
 
     public final AssimpModel model;
 
     private final Sphere collisionSphere;
 
-    public TestPhysicsSphere(String path, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double radius) {
-        super(new Sphere(position, radius), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scaling((2.0 / 5.0) * mass * radius), forces, mass, 1.0, 0.1, 0.14);
+    public TestPhysicsSphere(String path, ObjectType objectType, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double radius) {
+        super(objectType, new Sphere(new Matrix4d().translate(position).rotate(orientation), position, radius), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scaling((2.0 / 5.0) * mass * radius), forces, mass, radius, 1.0, 0.1, 0.14);
         model = new AssimpModel(path, new Matrix4f().set(this.worldMatrix));
         collisionSphere = (Sphere) collisionShape;
     }
 
     @Override
     public void performTimeStep(double timeStep) {
-        performEulerTimeStep(timeStep);
+        if (useRK2) { performRK2TimeStep(timeStep); }
+        else { performSemiImplicitEulerTimeStep(timeStep); }
         model.setModelMatrix(new Matrix4f(worldMatrix));
+        useRK2 = false;
+    }
+
+    @Override
+    public boolean willCollide(PhysicsObject physicsObject, double timeStep) {
+        // This will only work for constant/nearly-constant forces
+        TestPhysicsSphere sphere = (TestPhysicsSphere) physicsObject;
+        Vector3d collisionVector = sphere.collisionShape.findPenetrationDepth(this.collisionShape);
+        Vector3d collisionDirection = computeCollisionDirection(sphere, collisionVector);
+        double distance = collisionVector.length();
+        double deltaF = new Vector3d(sphere.force).div(sphere.mass).sub(new Vector3d(this.force).div(mass)).dot(collisionDirection);
+        double deltaV = new Vector3d(sphere.velocity).sub(this.velocity).dot(collisionDirection) + this.radius * this.angularVelocity.length() + sphere.radius * sphere.angularVelocity.length();
+        double rk2Distance = 0.5 * deltaF * timeStep * timeStep + deltaV * timeStep + distance;
+        if (rk2Distance > -epsilon) { useRK2 = true; }
+        double futureDistance = deltaF * timeStep * timeStep + deltaV * timeStep + distance;
+        return futureDistance < -epsilon;
     }
 
     @Override
     public boolean isColliding(PhysicsObject physicsObject) {
-        TestPhysicsSphere sphere = (TestPhysicsSphere) physicsObject;
-        return areCollisionShapesColliding(sphere.collisionShape);
+        return areCollisionShapesColliding(physicsObject.collisionShape);
     }
 
     @Override
     public Collision[] getCollisions(PhysicsObject physicsObject, double timeStep) {
         TestPhysicsSphere sphere = (TestPhysicsSphere) physicsObject;
-        double distance = this.collisionShape.findPenetrationDepth(sphere.collisionShape).length();
-        Vector3d thisDir = new Vector3d(sphere.position).sub(this.position).normalize(), sphereDir = new Vector3d(this.position).sub(sphere.position).normalize();
-        sphere.velocity = new Vector3d(0.0, -1e-200, 0.0);
-        double v = Math.abs(new Vector3d(thisDir).dot(this.velocity)) + Math.abs(new Vector3d(thisDir).dot(sphere.velocity));
-        double f1 = this.velocity.dot(thisDir) / v;
-        double f2 = sphere.velocity.dot(sphereDir) / v;
-        double h1, h2, h = 0.0;
-        if (!this.force.equals(new Vector3d(0.0))) {
-            h1 = Transforms.chooseSuitableSolution(-timeStep, 0.0, Transforms.solveQuadraticEquation(this.force.dot(thisDir) / this.mass, this.velocity.dot(thisDir), distance * f1, digitAccuracy));
-        } else {
-            h1 = -(distance * f1) / new Vector3d(this.velocity).dot(thisDir);
-        }
-        if (!sphere.force.equals(new Vector3d(0.0))) {
-            h2 = Transforms.chooseSuitableSolution(-timeStep, 0.0, Transforms.solveQuadraticEquation(sphere.force.dot(sphereDir) / sphere.mass, sphere.velocity.dot(sphereDir), distance * f2, digitAccuracy));
-        } else {
-            h2 = -(distance * f2) / new Vector3d(sphere.velocity).dot(sphereDir);
-        }
-        boolean ish1Finite = !Double.isNaN(h1) && Double.isFinite(h1), ish2Finite = !Double.isNaN(h2) && Double.isFinite(h2);
-        if (ish1Finite && ish2Finite) {
-            h = (h1 + h2) / 2.0;
-        } else if (ish1Finite) {
-            h = h1;
-        } else if (ish2Finite) {
-            h = h2;
-        }
-        this.performEulerTimeStep(h);
-        sphere.performEulerTimeStep(h);
+        Vector3d collisionVector = sphere.collisionShape.findPenetrationDepth(this.collisionShape);
+        Vector3d collisionDirection = computeCollisionDirection(sphere, collisionVector);
+        double distance = collisionVector.length(), h = 0.0;
+        for (int i = 0; i < maxCollisionTimeIterations; i++) {
+            double deltaF = new Vector3d(sphere.force).div(sphere.mass).sub(new Vector3d(this.force).div(mass)).dot(collisionDirection);
+            double deltaV = new Vector3d(sphere.velocity).sub(this.velocity).dot(collisionDirection) + this.radius * this.angularVelocity.length() + sphere.radius * sphere.angularVelocity.length();
+            double localH = 0.0;
+            if (deltaF != 0.0 && deltaF != -0.0) {
+                localH = Transforms.chooseSuitableSolution(collisionTimeEpsilon, timeStep, 0.0, Transforms.solveQuadraticEquation(deltaF, deltaV, distance, roundingDigit));
+            } else if (deltaV != 0.0 && deltaV != 0.0) {
+                localH = -distance / deltaV;
+            }
+            this.performSemiImplicitEulerTimeStep(localH);
+            sphere.performSemiImplicitEulerTimeStep(localH);
 
-        double deltaF = new Vector3d(sphere.force).div(sphere.mass).sub(new Vector3d(this.force).div(this.mass)).dot(thisDir);
-        double deltaV = new Vector3d(sphere.velocity).sub(this.velocity).dot(thisDir);
-        double[] solutions = Transforms.solveQuadraticEquation(deltaF, deltaV, -distance, digitAccuracy);
+            h += localH;
+            collisionVector = this.collisionShape.findPenetrationDepth(sphere.collisionShape);
+            if (collisionVector.equals(new Vector3d(0.0))) {
+                collisionDirection = Transforms.safeNormalize(new Vector3d(this.collisionShape.findClosestPoints(sphere.collisionShape)[0]).sub(this.position));
+            } else {
+                collisionDirection = collisionVector.normalize(new Vector3d());
+            }
+            distance = collisionVector.length();
+            if (distance < epsilon && distance > -epsilon) { break; }
+        }
 
         Vector3d dir = new Vector3d(this.position).sub(sphere.position).normalize();
         Vector3d contactPoint = new Vector3d(this.position).sub(new Vector3d(dir).mul(collisionSphere.radius));
@@ -74,19 +81,24 @@ public class TestPhysicsSphere extends PhysicsObject {
         double coefficientOfRestitution = (this.coefficientOfRestitution + sphere.coefficientOfRestitution) / 2.0;
         double coefficientOfStaticFriction = (this.coefficientOfStaticFriction + sphere.coefficientOfStaticFriction) / 2.0;
         double coefficientOfKineticFriction = (this.coefficientOfKineticFriction + sphere.coefficientOfKineticFriction) / 2.0;
-        double timeStepTaken = timeStep + h;
-        // TODO: Small velocity can fuck up timestep calculation: Maybe change to other computation ; Also numerical error
-        // TODO: Test resting contact and try to work on lcp ; (maybe also implement collision detection after contact resolution?)
-        // TODO: Then proceed to multibody collisions ; Implement VLP ; Also maybe error correction ala Erleben in VLP
-        // TODO: Compare with other solver/provided data: Input raw data/compiled matrix to compare results: PyBullet is installed
-        // TODO: Think about force objects
+        double timeStepTaken = h;
 
         return new Collision[] {new Collision(contactPoint, dir, new Vector3d[]{tangentialDir1, tangentialDir2}, coefficientOfRestitution, coefficientOfStaticFriction, coefficientOfKineticFriction, this, sphere, timeStepTaken)};
     }
 
+    private Vector3d computeCollisionDirection(PhysicsObject object, Vector3d collisionVector) {
+        Vector3d collisionDirection;
+        if (Transforms.fixZeros(collisionVector).equals(new Vector3d(0.0))) {
+            collisionDirection = Transforms.safeNormalize(new Vector3d(this.collisionShape.findClosestPoints(object.collisionShape)[0]).sub(this.position));
+        } else {
+            collisionDirection = collisionVector.normalize(new Vector3d());
+        }
+        return collisionDirection;
+    }
+
     @Override
     public void predictTimeStep(double timeStep) {
-        Matrix4d mat = predictEulerTimeStep(timeStep);
+        Matrix4d mat = predictRK2TimeStep(timeStep);
         this.model.setModelMatrix(new Matrix4f(mat));
     }
 

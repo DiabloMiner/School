@@ -10,6 +10,8 @@ import java.util.*;
 
 public class LCPSolver {
 
+    public static Map<Integer, DoubleMatrix> solvedCollisions = new HashMap<>();
+
     private LCPSolver() {}
 
     private DoubleMatrix initializeX(int rows) {
@@ -74,42 +76,42 @@ public class LCPSolver {
         return H;
     }
 
-    private DoubleMatrix[] constructBHParts(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, Collection<Integer> setA, Collection<Integer> setJ) {
+    private DoubleMatrix[] constructBHParts(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setA, List<Integer> setJ) {
         DoubleMatrix C = constructC(x, l, y, mu, setA, setJ);
         DoubleMatrix D = constructD(x, l, y, mu, setJ);
         DoubleMatrix DInv = D.dup().sub(D.diag()).neg().add(D.diag());
         return new DoubleMatrix[] {C, D, DInv};
     }
 
-    private DoubleMatrix constructC(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, Collection<Integer> setA, Collection<Integer> setJ) {
+    private DoubleMatrix constructC(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setA, List<Integer> setJ) {
         DoubleMatrix C = new DoubleMatrix(setJ.size(), setA.size());
-        for (Integer i : setJ) {
-            for (Integer j : setA) {
+        for (int i = 0; i < setJ.size(); i++) {
+            for (int j = 0; j < setA.size(); j++) {
                 if (y.get(i) > x.get(i) - l.get(i)) {
-                    C.put(i, j, Transforms.kroneckerDelta(i, j) + mu * Transforms.kroneckerDelta(0, j));
+                    C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) + mu * Transforms.kroneckerDelta(0, setA.get(j)));
                 } else {
-                    C.put(i, j, Transforms.kroneckerDelta(i, j) - mu * Transforms.kroneckerDelta(0, j));
+                    C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) - mu * Transforms.kroneckerDelta(0, setA.get(j)));
                 }
             }
         }
         return C;
     }
 
-    private DoubleMatrix constructD(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, Collection<Integer> setJ) {
+    private DoubleMatrix constructD(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setJ) {
         DoubleMatrix D = new DoubleMatrix(setJ.size(), setJ.size());
-        for (Integer i : setJ) {
-            for (Integer j : setJ) {
+        for (int i = 0; i < setJ.size(); i++) {
+            for (int j = 0; j < setJ.size(); j++) {
                 if (y.get(i) > x.get(i) - l.get(i)) {
-                    D.put(i, j, Transforms.kroneckerDelta(i, j) + mu * Transforms.kroneckerDelta(0, j));
+                    D.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setJ.get(j)) + mu * Transforms.kroneckerDelta(0, setJ.get(j)));
                 } else {
-                    D.put(i, j, Transforms.kroneckerDelta(i, j) - mu * Transforms.kroneckerDelta(0, j));
+                    D.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setJ.get(j)) - mu * Transforms.kroneckerDelta(0, setJ.get(j)));
                 }
             }
         }
         return D;
     }
 
-    private DoubleMatrix constructDInv(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, Collection<Integer> setJ) {
+    private DoubleMatrix constructDInv(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setJ) {
         DoubleMatrix D = constructD(x, l, y, mu, setJ);
         return D.dup().sub(D.diag()).neg().add(D.diag());
     }
@@ -181,7 +183,11 @@ public class LCPSolver {
     }
 
     public LCPSolverResult solveLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
-        DoubleMatrix x = new DoubleMatrix(b.rows, 1).fill(0.0);
+        return solveLCPWithMinimumMapNewton(new DoubleMatrix(b.rows, 1).fill(0.0), A, b, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
+    }
+
+    public LCPSolverResult solveLCPWithMinimumMapNewton(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
+        DoubleMatrix x = x0.dup();
         DoubleMatrix y, H = constructH(x, A.mmul(x).add(b)), deltaX = new DoubleMatrix(b.rows, 1);
         List<Integer> setA = new ArrayList<>(), setF = new ArrayList<>();
         double currentMeritValue, previousMeritValue = computeNewtonMeritValue(H);
@@ -217,7 +223,11 @@ public class LCPSolver {
     }
 
     public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double mu, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
-        DoubleMatrix x = solveBLCPWithPGS(A, b, mu, epsilonRelative, 2, roundingDigit).x, u = new DoubleMatrix(b.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(b.rows, 1).fill(0.0);
+        return solveBLCPWithMinimumMapNewton(solveBLCPWithPGS(A, b, mu, epsilonRelative, 2, roundingDigit).x, A, b, mu, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
+    }
+
+    public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
+        DoubleMatrix x = x0.dup(), u = new DoubleMatrix(b.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(b.rows, 1).fill(0.0);
         setBounds(u, l, x.get(0), mu);
         List<Integer> setA = new ArrayList<>(), setJ = new ArrayList<>();
         DoubleMatrix y = Transforms.round(A.mmul(x).add(b), roundingDigit), H = constructHAndIntegerSets(x, y, u, l, setA, setJ), deltaX = new DoubleMatrix(b.rows, 1);
@@ -270,9 +280,13 @@ public class LCPSolver {
     }
 
     public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix A, DoubleMatrix b, double mu, int iterations, int roundingDigit) {
+        return solveBLCPWithNNCG(initializeX(b), A, b, mu, iterations, roundingDigit);
+    }
+
+    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
-        DoubleMatrix x0 = initializeX(b), x1 = solveBLCPWithPGS(APrime, bPrime, b, mu, 10e-10, 1).x;
-        DoubleMatrix grad0 = x1.sub(x0).neg(), p0 = grad0.neg();
+        DoubleMatrix x1 = solveBLCPWithPGS(APrime, bPrime, b, mu, 10e-10, 1).x;
+        DoubleMatrix grad0 = x1.sub(x0.dup()).neg(), p0 = grad0.neg();
 
         DoubleMatrix xOld = x1.dup(), xNew = x1.dup(), gradNew, gradOld = grad0.dup(), p = p0.dup();
         for (int k = 1; k <= iterations; k++) {
@@ -320,8 +334,12 @@ public class LCPSolver {
     }
 
     public LCPSolverResult solveBLCPWithPGS(DoubleMatrix A, DoubleMatrix b, double mu, double epsilon, int iterations, int roundingDigit) {
+        return solveBLCPWithPGS(initializeX(b), A, b, mu, epsilon, iterations, roundingDigit);
+    }
+
+    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
-        DoubleMatrix x = initializeX(b), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
+        DoubleMatrix x = x0.dup(), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
         setBounds(u, l, x.get(0), mu);
         double gamma, delta = Double.POSITIVE_INFINITY;
 
@@ -361,10 +379,14 @@ public class LCPSolver {
     }
 
     public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix A, DoubleMatrix b, double mu, double omega, double epsilon, int iterations, int roundingDigit) {
+        return solveBLCPWithPSOR(initializeX(b), A, b, mu, omega, epsilon, iterations, roundingDigit);
+    }
+
+    public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double omega, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix U = Transforms.strictUpperTriangular(A), L = Transforms.strictLowerTriangular(A), D = DoubleMatrix.diag(A.diag());
 
         DoubleMatrix M = D.dup().add(L.dup().mul(omega)), MInv = Transforms.round(Solve.pinv(M), roundingDigit), N = Transforms.round(D.dup().mul(omega - 1.0).add(U.dup().mul(omega)), roundingDigit);
-        DoubleMatrix x = initializeX(b), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
+        DoubleMatrix x = x0.dup(), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
         setBounds(u, l, x.get(0, 0), mu);
         double gamma, delta = Double.POSITIVE_INFINITY;
         for (int i = 0; i < iterations; i++) {
@@ -394,7 +416,7 @@ public class LCPSolver {
         DoubleMatrix f = constructFVector(collisions);
 
         DoubleMatrix A = J.mmul(MInv).mmul(J.transpose());
-        DoubleMatrix b = applyCoefficientsOfRestitution(J.mmul(u).mul(-1.0).subi(J.mmul(MInv).mmul(f).mul(timeStep)), 3, collisions);
+        DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.mmul(u).mul(-1.0).subi(J.mmul(MInv).mmul(f).mul(timeStep)), collisions);
         return new DoubleMatrix[] {A, b};
     }
 
@@ -405,35 +427,37 @@ public class LCPSolver {
         DoubleMatrix f = constructFVector(forces, torques, angularVelocities, inertiaMatrices);
 
         DoubleMatrix A = J.mmul(MInv).mmul(J.transpose());
-        DoubleMatrix b = applyCoefficientsOfRestitution(J.neg().mmul(u).sub(J.dup().mul(timeStep).mmul(MInv).mmul(f)), 3, coefficientsOfRestitution);
+        DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.neg().mmul(u).sub(J.dup().mul(timeStep).mmul(MInv).mmul(f)), coefficientsOfRestitution);
         return new DoubleMatrix[] {A, b};
     }
 
-    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix b, int distanceBetweenContacts, Collision[] collisions) {
+    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, Collision[] collisions) {
         DoubleMatrix restitutionVector = new DoubleMatrix(b.rows, b.columns);
         for (int i = 0; i < collisions.length; i++) {
-            restitutionVector.put(i * distanceBetweenContacts, 0, collisions[i].coefficientOfRestitution * b.get(i * 3));
+            // The minus is there because b is negative in the SIGGRAPH 2021 paper used as the basis for this implementation
+            restitutionVector.put(3 * i, 0, -collisions[i].coefficientOfRestitution * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
         }
         b.addi(restitutionVector);
         return b;
     }
 
-    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix b, int distanceBetweenContacts, double[] coefficientsOfRestitution) {
+    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, double[] coefficientsOfRestitution) {
         DoubleMatrix restitutionVector = new DoubleMatrix(b.rows, b.columns);
         for (int i = 0; i < coefficientsOfRestitution.length; i++) {
-            restitutionVector.put(i * distanceBetweenContacts, 0, coefficientsOfRestitution[i] * b.get(i * distanceBetweenContacts));
+            // The minus is there because b is negative in the SIGGRAPH 2021 paper used as the basis for this implementation
+            restitutionVector.put(3 * i, 0, -coefficientsOfRestitution[i] * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
         }
         b.addi(restitutionVector);
         return b;
     }
 
     public static DoubleMatrix constructBLCPJacobian(Collision[] collisions) {
-        DoubleMatrix jacobian = new DoubleMatrix(3 * collisions.length, 12);
+        DoubleMatrix jacobian = new DoubleMatrix(3 * collisions.length, 12 * collisions.length);
         for (int i = 0; i < collisions.length; i++) {
             DoubleMatrix interpenetrationJacobian = constructInterpenetrationJacobian(collisions[i].normal, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
             DoubleMatrix frictionJacobian = constructFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
-            jacobian.put(new int[] {i + i * 2}, Transforms.createIndexArray(12), interpenetrationJacobian);
-            jacobian.put( Transforms.createIndexArray(1 + i + i * 2, 2), Transforms.createIndexArray(12), frictionJacobian);
+            jacobian.put(new int[] {i + i * 2}, Transforms.createIndexArray(i * 12, 12), interpenetrationJacobian);
+            jacobian.put( Transforms.createIndexArray(1 + i + i * 2, 2), Transforms.createIndexArray(i * 12, 12), frictionJacobian);
         }
         return jacobian;
     }
@@ -459,7 +483,7 @@ public class LCPSolver {
         DoubleMatrix f = constructFVector(collisions);
 
         DoubleMatrix A = G.mmul(MInv.mmul(G.transpose())).add(C);
-        DoubleMatrix b = applyCoefficientsOfRestitution(G.mmul(MInv).mmul(M.mmul(u).add(f.mmul(timeStep))), A.rows, collisions);
+        DoubleMatrix b = G.mmul(MInv).mmul(M.mmul(u).add(f.mmul(timeStep)));
         return new DoubleMatrix[] {A, b};
     }
 
@@ -472,7 +496,7 @@ public class LCPSolver {
         DoubleMatrix f = constructFVector(forces, torques, angularVelocities, inertiaMatrices);
 
         DoubleMatrix A = G.mmul(MInv.mmul(G.transpose())).add(C);
-        DoubleMatrix b = applyCoefficientsOfRestitution(G.mmul(MInv).mmul(M.mmul(u).add(f.mmul(timeStep))), A.rows, coefficientsOfRestitution);
+        DoubleMatrix b = G.mmul(MInv).mmul(M.mmul(u).add(f.mmul(timeStep)));
         return new DoubleMatrix[] {A, b};
     }
 
@@ -661,9 +685,10 @@ public class LCPSolver {
 
     public static Vector3d[] constructTotalTorque(Collision collision) {
         PhysicsObject A = collision.A, B = collision.B;
-        // TODO: Simplification might be wrong
-        Vector3d ATotalTorque = new Vector3d(A.torque).sub(new Vector3d(A.angularVelocity.mul(A.worldFrameInertiaInv)).cross(new Vector3d(A.angularVelocity)));
-        Vector3d BTotalTorque = new Vector3d(B.torque).sub(new Vector3d(B.angularVelocity).mul(B.worldFrameInertiaInv).cross(new Vector3d(B.angularVelocity)));
+        Vector3d ATotalTorque = new Vector3d(A.torque);
+        if (A.updateInertiaMatrix) { ATotalTorque.sub(new Vector3d(A.angularVelocity).cross(new Vector3d(A.angularVelocity).mul(A.worldFrameInertia))); }
+        Vector3d BTotalTorque = new Vector3d(B.torque);
+        if (B.updateInertiaMatrix) { BTotalTorque.sub(new Vector3d(B.angularVelocity).cross(new Vector3d(B.angularVelocity).mul(B.worldFrameInertia)));}
         return new Vector3d[] {ATotalTorque, BTotalTorque};
     }
 
@@ -695,6 +720,14 @@ public class LCPSolver {
 
     public static LCPSolver getInstance() {
         return new LCPSolver();
+    }
+
+    public static void addSolvedCollisions(List<Collision> collisions, DoubleMatrix result) {
+        collisions.forEach(collision -> solvedCollisions.putIfAbsent(collision.hashCode(), result));
+    }
+
+    public static void addSolvedCollision(Collision collision, DoubleMatrix result) {
+        solvedCollisions.putIfAbsent(collision.hashCode(), result);
     }
 
 }

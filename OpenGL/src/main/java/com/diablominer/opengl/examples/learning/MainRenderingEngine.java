@@ -1,6 +1,5 @@
 package com.diablominer.opengl.examples.learning;
 
-import org.jblas.NativeBlas;
 import org.joml.*;
 import org.joml.Math;
 import org.lwjgl.opengl.GL33;
@@ -35,8 +34,8 @@ public class MainRenderingEngine extends RenderingEngine {
 
         Renderable helloWorld = renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f))), true);
         Renderable cube = renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f))), true);
-        TestPhysicsSphere physicsObject1 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", new Vector3d(0.0, 10.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 10.0, 1.0);
-        TestPhysicsSphere physicsObject2 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", new Vector3d(0.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), Double.POSITIVE_INFINITY, 1.0);
+        TestPhysicsSphere physicsObject1 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", ObjectType.DYNAMIC, new Vector3d(0.0, 8.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 10.0, 1.0);
+        TestPhysicsSphere physicsObject2 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", ObjectType.STATIC, new Vector3d(0.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), Double.POSITIVE_INFINITY, 1.0);
         renderableManager.addRenderables(new ArrayList<>(Arrays.asList(physicsObject1.model, physicsObject2.model)), new ArrayList<>(Arrays.asList(true, true)));
         Learning6.engineInstance.getMainPhysicsEngine().physicsObjects.addAll(Arrays.asList(physicsObject1, physicsObject2));
 

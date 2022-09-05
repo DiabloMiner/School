@@ -15,21 +15,25 @@ import java.util.*;
 
 public class AssimpModel extends Model {
 
-    protected String path;
     public static final Map<String, ModelTexture2D> loadedTextures = new HashMap<>();
+
+    protected String path;
+    protected List<Face> faces;
 
     public AssimpModel(String path, Vector3f position) {
         super(position);
-        meshes = new ArrayList<>();
+        this.meshes = new ArrayList<>();
         this.path = path;
         loadModel(path);
+        this.faces = getAllFaces();
     }
 
     public AssimpModel(String path, Matrix4f model) {
         super(model);
-        meshes = new ArrayList<>();
+        this.meshes = new ArrayList<>();
         this.path = path;
         loadModel(path);
+        this.faces = getAllFaces();
     }
 
     public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
@@ -188,12 +192,6 @@ public class AssimpModel extends Model {
         return result;
     }
 
-    public List<Vector3f> getAllVerticesInWorldCoordinates(Matrix4f worldMatrix) {
-        List<Vector3f> result = getAllVertices();
-        Transforms.multiplyListWithMatrix(result, worldMatrix);
-        return result;
-    }
-
     public List<Vector3d> getAllVerticesInWorldCoordinates(Matrix4d worldMatrix) {
         List<Vector3d> result = getAllVerticesD();
         Transforms.multiplyListWithMatrix(result, worldMatrix);
@@ -203,6 +201,15 @@ public class AssimpModel extends Model {
     public List<Face> getAllFaces(Matrix4f worldMatrix) {
         List<Vector3f> vertices = getAllVertices();
         Transforms.multiplyListWithMatrix(vertices, worldMatrix);
+        List<Face> faces = new ArrayList<>();
+        for (int i = 0; i < vertices.size(); i += 3) {
+            faces.add(new Face(vertices.get(i), vertices.get(i + 1), vertices.get(i + 2), false));
+        }
+        return faces;
+    }
+
+    public List<Face> getAllFaces() {
+        List<Vector3f> vertices = getAllVertices();
         List<Face> faces = new ArrayList<>();
         for (int i = 0; i < vertices.size(); i += 3) {
             faces.add(new Face(vertices.get(i), vertices.get(i + 1), vertices.get(i + 2), false));

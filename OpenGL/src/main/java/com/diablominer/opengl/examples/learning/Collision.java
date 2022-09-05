@@ -69,8 +69,8 @@ public class Collision {
         B.angularVelocity.sub(new Vector3d(kB).mul(normalImpulse).mul(B.worldFrameInertiaInv));
 
         for (int i = 0; i < frictionImpulses.length; i++) {
-            A.velocity.sub(new Vector3d(tangentialDirections[i]).mul(frictionImpulses[i]));
-            B.velocity.sub(new Vector3d(tangentialDirections[i]).mul(frictionImpulses[i]));
+            A.velocity.add(new Vector3d(tangentialDirections[i]).mul(frictionImpulses[i] / A.mass));
+            B.velocity.add(new Vector3d(tangentialDirections[i]).mul(frictionImpulses[i] / B.mass));
         }
     }
 

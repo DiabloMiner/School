@@ -16,7 +16,7 @@ public class Gravity implements Force {
 
     @Override
     public Map.Entry<Vector3d, Vector3d> applyForce(PhysicsObject physicsObject) {
-        return new AbstractMap.SimpleEntry<>(new Vector3d(0.0, -accelerationConstant / 1000000.0, 0.0).mul(physicsObject.mass), new Vector3d(0.0));
+        return new AbstractMap.SimpleEntry<>(new Vector3d(0.0, -accelerationConstant, 0.0).mul(physicsObject.mass), new Vector3d(0.0));
     }
 
 }

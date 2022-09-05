@@ -143,7 +143,7 @@ public class Transforms {
     }
 
     public static Vector3d mulVectorWithMatrix4(Vector3d vec, Matrix4d mat) {
-        Vector4d vec4 = new Vector4d(vec.x, vec.y, vec.z, 1.0f);
+        Vector4d vec4 = new Vector4d(vec.x, vec.y, vec.z, 1.0);
         vec4.mul(mat);
         return new Vector3d(vec4.x, vec4.y, vec4.z);
     }
@@ -155,6 +155,12 @@ public class Transforms {
 
     public static double round(double value, int digit) {
         double result = Math.round(value * java.lang.Math.pow(10, digit));
+        result /= java.lang.Math.pow(10, digit);
+        return result;
+    }
+
+    public static double ceil(double value, int digit) {
+        double result = Math.ceil(value * java.lang.Math.pow(10, digit));
         result /= java.lang.Math.pow(10, digit);
         return result;
     }
@@ -252,10 +258,11 @@ public class Transforms {
 
     public static Vector3d safeNormalize(Vector3d vec) {
         Vector3d result = new Vector3d(vec);
-        double length = result.length();
+        double invLength = Math.invsqrt(Math.fma(vec.x, vec.x, Math.fma(vec.y, vec.y, vec.z * vec.z)));
+        if (Double.isNaN(invLength)) { invLength = 0.0; }
         for (int i = 0; i < 3; i++) {
             if (result.get(i) != 0.0) {
-                result.setComponent(i, result.get(i) / length);
+                result.setComponent(i, result.get(i) * invLength);
             }
         }
         return result;
@@ -312,6 +319,20 @@ public class Transforms {
                 vec.setComponent(i, 0.0f);
             }
         }
+    }
+
+    /**
+     * Sets -0.0 to 0.0 for the purpose of comparing vectors/numbers
+     * @param vec Vector which may have false zeros
+     */
+    public static Vector3d fixZeros(Vector3d vec) {
+        Vector3d result = new Vector3d(vec);
+        for (int i = 0; i < 3; i++) {
+            if (result.get(i) == -0.0) {
+                result.setComponent(i, 0.0);
+            }
+        }
+        return result;
     }
 
     public static ArrayList<Integer> createPrefilledList(int numberOfElements, int value) {
@@ -443,21 +464,21 @@ public class Transforms {
         return mat;
     }
 
-    public static double[] solveQuadraticEquation(double a, double b, double c, int digitAccuracy) {
+    public static double[] solveQuadraticEquation(double a, double b, double c, int digitAccuracy, int roundingDigit) {
         double[] solutions = new double[2];
         MathContext context = new MathContext(digitAccuracy);
         BigDecimal bigA = BigDecimal.valueOf(a), bigB = BigDecimal.valueOf(b), bigC = BigDecimal.valueOf(c), bigTwo = BigDecimal.valueOf(2.0), bigFour = BigDecimal.valueOf(4.0);
-        BigDecimal determinant = bigB.multiply(bigB, context).subtract(bigA.multiply(bigC, context).multiply(bigFour, context), context);
+        BigDecimal discriminant = bigB.multiply(bigB, context).subtract(bigA.multiply(bigC, context).multiply(bigFour, context), context);
         BigDecimal divisor = bigA.multiply(bigTwo, context);
-        if (determinant.doubleValue() > 0 && divisor.doubleValue() != 0.0) {
-            BigDecimal x1 = (bigB.negate(context).add(determinant.sqrt(context), context)).divide(divisor, context);
-            BigDecimal x2 = (bigB.negate(context).subtract(determinant.sqrt(context), context)).divide(divisor, context);
-            solutions[0] = x1.doubleValue();
-            solutions[1] = x2.doubleValue();
-        } else if (determinant.doubleValue() == 0 && divisor.doubleValue() != 0.0) {
-            BigDecimal x1 = (bigB.negate(context).add(determinant.sqrt(context), context)).divide(divisor, context);
-            solutions[0] = x1.doubleValue();
-            solutions[1] = x1.doubleValue();
+        if (discriminant.doubleValue() > 0 && divisor.doubleValue() != 0.0) {
+            BigDecimal x1 = (bigB.negate(context).add(discriminant.sqrt(context), context)).divide(divisor, context);
+            BigDecimal x2 = (bigB.negate(context).subtract(discriminant.sqrt(context), context)).divide(divisor, context);
+            solutions[0] = Transforms.round(x1.doubleValue(), roundingDigit);
+            solutions[1] = Transforms.round(x2.doubleValue(), roundingDigit);
+        } else if (discriminant.doubleValue() == 0 && divisor.doubleValue() != 0.0) {
+            BigDecimal x1 = (bigB.negate(context).add(discriminant.sqrt(context), context)).divide(divisor, context);
+            solutions[0] = Transforms.round(x1.doubleValue(), roundingDigit);
+            solutions[1] = Transforms.round(x1.doubleValue(), roundingDigit);
         } else {
             solutions[0] = Double.NaN;
             solutions[1] = Double.NaN;
@@ -465,13 +486,30 @@ public class Transforms {
         return solutions;
     }
 
-    public static double chooseSuitableSolution(double min, double max, double[] solutions) {
+    public static double[] solveQuadraticEquation(double a, double b, double c, int roundingDigit) {
+        double[] solutions = new double[2];
+        double discriminant = b * b - 4 * a * c;
+        if (discriminant > 0.0) {
+            double discriminantRoot = Math.sqrt(discriminant);
+            solutions[0] = Transforms.round((-b + discriminantRoot) / (2.0 * a), roundingDigit);
+            solutions[1] = Transforms.round((-b - discriminantRoot) / (2.0 * a), roundingDigit);
+        } else if (discriminant == 0.0) {
+            solutions[0] = Transforms.round((-b) / (2.0 * a), roundingDigit);
+            solutions[0] = solutions[1];
+        } else {
+            solutions[0] = Double.NaN;
+            solutions[1] = Double.NaN;
+        }
+        return solutions;
+    }
+
+    public static double chooseSuitableSolution(double min, double max, double returnValue, double[] solutions) {
         for (double solution : solutions) {
-            if (solution < max && solution > min) {
+            if (solution <= max && solution >= min) {
                 return solution;
             }
         }
-        return solutions[new Random().nextInt(solutions.length)];
+        return returnValue;
     }
 
 }

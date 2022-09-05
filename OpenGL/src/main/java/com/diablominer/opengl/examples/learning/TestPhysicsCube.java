@@ -13,22 +13,26 @@ public class TestPhysicsCube extends PhysicsObject {
 
     private final double edgeLength;
 
-    public TestPhysicsCube(String path, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
-        super(new AABB(position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, 1.0, 0.1, 0.14);
+    public TestPhysicsCube(String path, ObjectType objectType, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
+        super(objectType, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)), 1.0, 0.1, 0.14);
         this.edgeLength = edgeLength;
         this.model = new AssimpModel(path, new Vector3f(0.0f).set(position));
     }
 
     @Override
     public void performTimeStep(double timeStep) {
-        performEulerTimeStep(timeStep);
+        performSemiImplicitEulerTimeStep(timeStep);
         model.setModelMatrix(new Matrix4f(worldMatrix));
     }
 
     @Override
     public boolean isColliding(PhysicsObject physicsObject) {
-        TestPhysicsCube cube = (TestPhysicsCube) physicsObject;
-        return areCollisionShapesColliding(cube.collisionShape);
+        return areCollisionShapesColliding(physicsObject.collisionShape);
+    }
+
+    @Override
+    public boolean willCollide(PhysicsObject physicsObject, double timeStep) {
+        return collisionShape.findPenetrationDepth(physicsObject.collisionShape).length() > 0.0;
     }
 
     @Override

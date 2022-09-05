@@ -14,7 +14,7 @@ public class Learning6 implements Engine {
 
     public static Learning6 engineInstance;
     public static final long millisecondsPerFrame = 15;
-    public static final long simulationTimeStep = 10;
+    public static double maxTimeStep = 0.01, minTimeStep = 0.0005;
 
     public boolean continueEngineLoop = true, resize = false;
     private long deltaTime = 0, lastFrame = 0, accumulator = 0;
@@ -31,7 +31,7 @@ public class Learning6 implements Engine {
         engineInstance.close();
     }
 
-    public static void initializeJBlas() throws ClassNotFoundException {
+    public static void initializeJBlas() {
         // A new NativeBlas instance is created to force the loading of the library, so the Engine doesn't experience a lag spike while running
         NativeBlas nativeBlas = new NativeBlas();
         // A new JBlas Matrix is created to force the initialization of the JBlas matrix class, so the Engine doesn't experience a lag spike while running
@@ -141,7 +141,7 @@ public class Learning6 implements Engine {
         GL33.glEnable(GL33.GL_TEXTURE_CUBE_MAP_SEAMLESS);
         GL33.glCullFace(GL33.GL_BACK);
 
-        mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false));
+        mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false), 0.01);
         mainRenderingEngine = new MainRenderingEngine(window, camera);
         mainIOEngine = new MainIOEngine(new Window[]{window}, new Camera[]{camera}, new RenderingEngine[]{mainRenderingEngine});
 
@@ -155,7 +155,7 @@ public class Learning6 implements Engine {
             lastFrame = currentTime;
             accumulator += deltaTime;
 
-            update(accumulator, deltaTime / 1000.0);
+            accumulator = update(accumulator, deltaTime / 1000.0);
             render(accumulator / 1000.0);
 
             GLFW.glfwPollEvents();
@@ -164,18 +164,19 @@ public class Learning6 implements Engine {
         }
     }
 
-    public void update(double accumulator, double deltaTime) {
+    public long update(double accumulator, double deltaTime) {
         mainIOEngine.processInputs(deltaTime);
         getEventManager().executeEvents();
 
-        while (accumulator >= simulationTimeStep) {
-            mainPhysicsEngine.update(simulationTimeStep / 1000.0);
-            accumulator -= simulationTimeStep;
+        while (accumulator >= (mainPhysicsEngine.simulationTimeStep * 1000)) {
+            mainPhysicsEngine.update();
+            accumulator -= ((mainPhysicsEngine.simulationTimeStep + mainPhysicsEngine.getLeftOverTime()) * 1000);
         }
+        return (long) accumulator;
     }
 
     public void render(double leftOverTime) {
-        mainPhysicsEngine.predictTimeStep(leftOverTime);
+        mainPhysicsEngine.predictTimeStep(leftOverTime / 1000.0);
 
         mainRenderingEngine.update();
 

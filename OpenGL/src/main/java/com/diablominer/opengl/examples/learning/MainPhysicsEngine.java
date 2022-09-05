@@ -2,14 +2,15 @@ package com.diablominer.opengl.examples.learning;
 
 public class MainPhysicsEngine extends PhysicsEngine {
 
-    public MainPhysicsEngine(LCPSolverConfiguration solverConfig) {
-        super(solverConfig);
+    public MainPhysicsEngine(LCPSolverConfiguration solverConfig, double simulationTimeStep) {
+        super(solverConfig, simulationTimeStep);
     }
 
     @Override
-    public void update(double timeStep) {
-        performTimeStep(timeStep);
-        checkForCollisions(timeStep);
+    public void update() {
+        updateTimeStep();
+        checkForCollisions(simulationTimeStep);
+        performTimeStep(simulationTimeStep);
     }
 
     @Override
