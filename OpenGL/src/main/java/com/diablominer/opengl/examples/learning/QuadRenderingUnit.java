@@ -12,7 +12,7 @@ public class QuadRenderingUnit extends RenderingUnit {
     public QuadRenderingUnit(ShaderProgram shaderProgram, Collection<Texture2D> textures) {
         super(shaderProgram);
         quad = new Quad(textures);
-        renderables.add(quad);
+        renderComponents.add(quad);
     }
 
     @Override
@@ -24,15 +24,15 @@ public class QuadRenderingUnit extends RenderingUnit {
     public void update(ShaderProgram shaderProgram) {}
 
     @Override
-    public void render(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(Map.Entry<RenderInto, RenderParameters> flags) {
         this.render(shaderProgram, flags);
     }
 
     @Override
-    public void render(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
-        flags.setValue(RenderingParametersFlag.COLOR_ENABLED);
+        flags.setValue(RenderParameters.COLOR_ENABLED);
 
         renderRenderables(shaderProgram, flags);
 

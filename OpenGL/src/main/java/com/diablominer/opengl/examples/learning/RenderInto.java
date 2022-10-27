@@ -1,6 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
-public enum RenderingIntoFlag {
+public enum RenderInto {
     COLOR_DEPTH_STENCIL(true, true, true),
     COLOR_DEPTH(true, true, false),
     COLOR_STENCIL(true, false, true),
@@ -11,7 +11,7 @@ public enum RenderingIntoFlag {
 
     public boolean intoColor, intoDepth, intoStencil;
 
-    RenderingIntoFlag(boolean intoColor, boolean intoDepth, boolean intoStencil) {
+    RenderInto(boolean intoColor, boolean intoDepth, boolean intoStencil) {
         this.intoColor = intoColor;
         this.intoDepth = intoDepth;
         this.intoStencil = intoStencil;

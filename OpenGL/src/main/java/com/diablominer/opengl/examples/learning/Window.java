@@ -169,7 +169,7 @@ public class Window {
 
     public void shouldClose() {
         this.closed = true;
-        GLFW.glfwWindowShouldClose(id);
+        GLFW.glfwSetWindowShouldClose(id, true);
     }
 
     public static void setFocusedWindow(Window window) {

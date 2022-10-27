@@ -22,7 +22,7 @@ public class RenderablePointLight extends RenderableLight {
     }
 
     @Override
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         model.draw(shaderProgram, new Matrix4f().identity().translate(pointLight.position).scale(0.2f), flags);
     }
 

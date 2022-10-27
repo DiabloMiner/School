@@ -3,7 +3,7 @@ package com.diablominer.opengl.examples.learning;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Mesh extends Renderable {
+public abstract class Mesh implements Renderable {
 
     protected List<float[]> floatData;
     protected List<Integer> vertexAttributeSizes;

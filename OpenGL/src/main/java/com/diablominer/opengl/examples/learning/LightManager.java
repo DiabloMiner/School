@@ -68,7 +68,7 @@ public class LightManager implements Manager {
         }
     }
 
-    public void createShadowRenderers(Renderable[] renderablesThrowingShadows) {
+    public void createShadowRenderers(RenderComponent[] renderablesThrowingShadows) {
         for (Light light : allLights) {
             light.initializeShadowRenderer(renderablesThrowingShadows);
         }
@@ -78,7 +78,7 @@ public class LightManager implements Manager {
         for (Light light : allLights) {
             GL33.glCullFace(GL33.GL_FRONT);
             light.shadowRenderer.update();
-            light.shadowRenderer.render(RenderingIntoFlag.DEPTH_ONLY);
+            light.shadowRenderer.render(RenderInto.DEPTH_ONLY);
             GL33.glCullFace(GL33.GL_BACK);
         }
     }

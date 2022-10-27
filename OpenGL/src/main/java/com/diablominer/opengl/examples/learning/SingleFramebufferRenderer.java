@@ -10,15 +10,15 @@ public class SingleFramebufferRenderer extends Renderer {
     public static Vector3f clearColor = new Vector3f(0.0f, 0.0f, 0.0f);
 
     private final Framebuffer framebuffer;
-    private final RenderingParametersFlag parametersFlag;
+    private final RenderParameters parametersFlag;
 
     public SingleFramebufferRenderer(Framebuffer framebuffer, RenderingUnit[] renderingUnits) {
         super(new ArrayList<>(Collections.singletonList(framebuffer)), new ArrayList<>(Arrays.asList(renderingUnits)));
         this.framebuffer = framebuffer;
-        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
+        this.parametersFlag = RenderParameters.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
-    public SingleFramebufferRenderer(Framebuffer framebuffer, RenderingUnit[] renderingUnits, RenderingParametersFlag parametersFlag) {
+    public SingleFramebufferRenderer(Framebuffer framebuffer, RenderingUnit[] renderingUnits, RenderParameters parametersFlag) {
         super(new ArrayList<>(Collections.singletonList(framebuffer)), new ArrayList<>(Arrays.asList(renderingUnits)));
         this.framebuffer = framebuffer;
         this.parametersFlag = parametersFlag;
@@ -27,25 +27,25 @@ public class SingleFramebufferRenderer extends Renderer {
     public SingleFramebufferRenderer(FramebufferTexture2D[] textures, RenderingUnit[] renderingUnits) {
         super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures))), new ArrayList<>(Arrays.asList(renderingUnits)));
         framebuffer = this.framebuffers.get(0);
-        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
+        this.parametersFlag = RenderParameters.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
     public SingleFramebufferRenderer(FramebufferCubeMap[] textures, RenderingUnit[] renderingUnits) {
         super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures))), new ArrayList<>(Arrays.asList(renderingUnits)));
         framebuffer = this.framebuffers.get(0);
-        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
+        this.parametersFlag = RenderParameters.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
     public SingleFramebufferRenderer(FramebufferTexture2D[] textures, FramebufferRenderbuffer[] renderbuffers, RenderingUnit[] renderingUnits) {
         super(Collections.singletonList(new Framebuffer(textures, renderbuffers)), Arrays.asList(renderingUnits));
         framebuffer = this.framebuffers.get(0);
-        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
+        this.parametersFlag = RenderParameters.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
     public SingleFramebufferRenderer(FramebufferCubeMap[] textures, FramebufferRenderbuffer[] renderbuffers, RenderingUnit[] renderingUnits) {
         super(new ArrayList<>(Collections.singletonList(new Framebuffer(textures, renderbuffers))), new ArrayList<>(Arrays.asList(renderingUnits)));
         framebuffer = this.framebuffers.get(0);
-        this.parametersFlag = RenderingParametersFlag.COLOR_DEPTH_STENCIL_ENABLED;
+        this.parametersFlag = RenderParameters.COLOR_DEPTH_STENCIL_ENABLED;
     }
 
     public void update() {
@@ -60,7 +60,7 @@ public class SingleFramebufferRenderer extends Renderer {
         }
     }
 
-    public void render(RenderingIntoFlag flag) {
+    public void render(RenderInto flag) {
         framebuffer.bind();
         if (parametersFlag.depthEnabled) { GL33.glEnable(GL33.GL_DEPTH_TEST); }
         if (parametersFlag.stencilEnabled) { GL33.glEnable(GL33.GL_STENCIL_TEST); }
@@ -76,7 +76,7 @@ public class SingleFramebufferRenderer extends Renderer {
         Framebuffer.unbind();
     }
 
-    public void render(ShaderProgram shaderProgram, RenderingIntoFlag flag) {
+    public void render(ShaderProgram shaderProgram, RenderInto flag) {
         framebuffer.bind();
         if (parametersFlag.depthEnabled) { GL33.glEnable(GL33.GL_DEPTH_TEST); }
         if (parametersFlag.stencilEnabled) { GL33.glEnable(GL33.GL_STENCIL_TEST); }

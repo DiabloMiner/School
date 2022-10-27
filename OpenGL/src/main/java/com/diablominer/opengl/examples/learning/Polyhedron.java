@@ -413,7 +413,7 @@ public class Polyhedron implements CollisionShape {
 
     public static Vertex getOrCreateVertex(Map<Vector3d, Vertex> alreadyLoaded, Vector3d position) {
         Vertex result;
-        if (alreadyLoaded.containsKey(position)) { result = new Vertex(position); alreadyLoaded.put(position, result); }
+        if (!alreadyLoaded.containsKey(position)) { result = new Vertex(position); alreadyLoaded.put(position, result); }
         else { result = alreadyLoaded.get(position); }
         return result;
     }

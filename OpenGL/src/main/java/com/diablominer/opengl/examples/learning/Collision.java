@@ -10,11 +10,11 @@ public class Collision {
     public double coefficientOfRestitution, coefficientOfStaticFriction, coefficientOfKineticFriction;
     public Vector3d point, normal;
     public Vector3d[] tangentialDirections;
-    public PhysicsObject A, B;
+    public PhysicsComponent A, B;
     public double timeStepTaken;
     public boolean solved;
 
-    public Collision(Vector3d point, Vector3d normal, Vector3d[] tangentialDirections, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction, PhysicsObject A, PhysicsObject B, double timeStepTaken) {
+    public Collision(Vector3d point, Vector3d normal, Vector3d[] tangentialDirections, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction, PhysicsComponent A, PhysicsComponent B, double timeStepTaken) {
         this.point = point;
         this.normal = normal;
         this.tangentialDirections = tangentialDirections;

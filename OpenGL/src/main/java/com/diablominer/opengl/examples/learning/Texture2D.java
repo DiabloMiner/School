@@ -145,7 +145,7 @@ public class Texture2D extends Texture {
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT);
         GL33.glDepthFunc(GL33.GL_LEQUAL);
 
-        quad.draw(shaderProgram, new AbstractMap.SimpleEntry<>(RenderingIntoFlag.COLOR_DEPTH, RenderingParametersFlag.COLOR_DEPTH_ENABLED));
+        quad.draw(shaderProgram, new AbstractMap.SimpleEntry<>(RenderInto.COLOR_DEPTH, RenderParameters.COLOR_DEPTH_ENABLED));
 
         GL33.glDepthFunc(GL33.GL_LESS);
         GL33.glDisable(GL33.GL_DEPTH_TEST);

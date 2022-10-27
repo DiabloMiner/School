@@ -13,8 +13,14 @@ public class Quad extends Model {
         this.meshes.add(quadMesh);
     }
 
+    public Quad(Collection<Texture2D> textures, boolean hasShadow) {
+        super(hasShadow);
+        quadMesh = new QuadMesh(textures);
+        this.meshes.add(quadMesh);
+    }
+
     @Override
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         for (Mesh mesh : meshes) {
             mesh.draw(shaderProgram, flags);
         }

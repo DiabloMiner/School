@@ -6,8 +6,8 @@ public class ShadowRenderingUnit extends RenderingUnit {
 
     private final Light light;
 
-    public ShadowRenderingUnit(ShaderProgram shaderProgram, Renderable[] renderables, Light light) {
-        super(shaderProgram, renderables);
+    public ShadowRenderingUnit(ShaderProgram shaderProgram, RenderComponent[] renderComponents, Light light) {
+        super(shaderProgram, renderComponents);
         this.light = light;
     }
 
@@ -26,12 +26,12 @@ public class ShadowRenderingUnit extends RenderingUnit {
     }
 
     @Override
-    public void render(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(Map.Entry<RenderInto, RenderParameters> flags) {
         renderRenderables(flags);
     }
 
     @Override
-    public void render(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         renderRenderables(shaderProgram, flags);
     }
 

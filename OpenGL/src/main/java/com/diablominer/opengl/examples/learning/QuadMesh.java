@@ -65,7 +65,7 @@ public class QuadMesh extends Mesh {
         }
     }
 
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         shaderProgram.bind();
         if (flags.getKey().intoColor) {
             setTextureUniforms(shaderProgram);

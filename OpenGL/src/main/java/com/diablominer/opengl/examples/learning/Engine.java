@@ -1,11 +1,20 @@
 package com.diablominer.opengl.examples.learning;
 
-public interface Engine {
+import java.util.ArrayList;
+import java.util.List;
 
-    void init() throws Exception;
+public abstract class Engine {
 
-    void mainLoop();
+    protected List<Entity> entities;
 
-    void close();
+    public Engine() {
+        entities = new ArrayList<>();
+    }
+
+    public abstract void init() throws Exception;
+
+    public abstract void mainLoop();
+
+    public abstract void close();
 
 }

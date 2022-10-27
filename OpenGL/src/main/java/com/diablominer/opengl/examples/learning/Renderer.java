@@ -34,13 +34,13 @@ public abstract class Renderer {
         }
     }
 
-    protected void renderAllRenderingEngineUnits(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    protected void renderAllRenderingEngineUnits(Map.Entry<RenderInto, RenderParameters> flags) {
         for (RenderingUnit renderingUnit : renderingUnits) {
             renderingUnit.render(flags);
         }
     }
 
-    protected void renderAllRenderingEngineUnits(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    protected void renderAllRenderingEngineUnits(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         for (RenderingUnit renderingUnit : renderingUnits) {
             renderingUnit.render(shaderProgram, flags);
         }
@@ -62,9 +62,9 @@ public abstract class Renderer {
 
     public abstract void update(ShaderProgram shaderProgram);
 
-    public abstract void render(RenderingIntoFlag flag);
+    public abstract void render(RenderInto flag);
 
-    public abstract void render(ShaderProgram shaderProgram, RenderingIntoFlag flag);
+    public abstract void render(ShaderProgram shaderProgram, RenderInto flag);
 
     public abstract void destroy();
 

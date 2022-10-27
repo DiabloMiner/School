@@ -5,7 +5,7 @@ import org.joml.*;
 import java.lang.Math;
 import java.util.*;
 
-public abstract class PhysicsObject {
+public abstract class PhysicsComponent implements Component {
 
     public static double epsilon = Math.ulp(1.0);
     public static double collisionTimeEpsilon = 10e-50;
@@ -17,17 +17,17 @@ public abstract class PhysicsObject {
     public CollisionShape collisionShape;
     public ObjectType objectType;
 
-    protected final double mass, radius;
+    protected double radius;
+    protected final double mass;
     protected Vector3d position, velocity, force, angularVelocity, torque;
     protected final Quaterniond orientation;
     protected final Matrix3d bodyFrameInertia;
     protected Matrix3d worldFrameInertia, worldFrameInertiaInv;
     protected final Matrix4d worldMatrix;
     protected final Set<Force> forces;
-    protected final boolean updateInertiaMatrix;
-    protected boolean alreadyTimeStepped, useRK2;
+    protected boolean alreadyTimeStepped;
 
-    public PhysicsObject(ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction) {
+    public PhysicsComponent(ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction) {
         this.objectType = objectType;
         this.collisionShape = collisionShape;
         this.mass = mass;
@@ -45,17 +45,14 @@ public abstract class PhysicsObject {
             Matrix3d rotationMatrix = worldMatrix.get3x3(new Matrix3d());
             this.worldFrameInertia = new Matrix3d(rotationMatrix).mul(bodyFrameInertia).mul(rotationMatrix.transpose(new Matrix3d()));
             this.worldFrameInertiaInv = worldFrameInertia.invert(new Matrix3d());
-            this.updateInertiaMatrix = true;
         } else {
             this.worldFrameInertia = new Matrix3d(bodyFrameInertia);
             this.worldFrameInertiaInv = new Matrix3d().scale(0.0);
-            this.updateInertiaMatrix = false;
         }
         this.coefficientOfRestitution = coefficientOfRestitution;
         this.coefficientOfStaticFriction = coefficientOfStaticFriction;
         this.coefficientOfKineticFriction = coefficientOfKineticFriction;
         this.alreadyTimeStepped = false;
-        this.useRK2 = false;
         determineForceAndTorque();
     }
 
@@ -117,7 +114,7 @@ public abstract class PhysicsObject {
 
     private void updateComponents() {
         worldMatrix.set(new Matrix4d().identity().translate(position).rotate(orientation));
-        if (updateInertiaMatrix) { computeWorldFrameInertia(worldMatrix); }
+        computeWorldFrameInertia(worldMatrix);
         collisionShape.update(worldMatrix);
     }
 
@@ -186,12 +183,12 @@ public abstract class PhysicsObject {
      * Only if the two objects are intersecting should this function return true. If the two objects are just touching, it should return false.
      * It should also update useRK2 if an RK2-timestep will not lead to a collision.
      */
-    public abstract boolean willCollide(PhysicsObject physicsObject, double timeStep);
+    public abstract boolean willCollide(PhysicsComponent physicsComponent, double timeStep);
 
-    public abstract boolean isColliding(PhysicsObject physicsObject);
+    public abstract boolean isColliding(PhysicsComponent physicsComponent);
 
-    public abstract Collision[] getCollisions(PhysicsObject physicsObject, double timeStep);
+    public abstract Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep);
 
-    public abstract void predictTimeStep(double timeStep);
+    public abstract Matrix4d predictTimeStep(double timeStep);
 
 }

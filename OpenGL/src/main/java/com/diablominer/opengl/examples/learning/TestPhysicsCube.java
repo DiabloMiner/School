@@ -7,7 +7,7 @@ import org.joml.*;
 import java.lang.Math;
 import java.util.*;
 
-public class TestPhysicsCube extends PhysicsObject {
+public class TestPhysicsCube extends PhysicsComponent {
 
     public AssimpModel model;
 
@@ -22,22 +22,22 @@ public class TestPhysicsCube extends PhysicsObject {
     @Override
     public void performTimeStep(double timeStep) {
         performSemiImplicitEulerTimeStep(timeStep);
-        model.setModelMatrix(new Matrix4f(worldMatrix));
+        model.updateModelMatrix(new Matrix4f(worldMatrix));
     }
 
     @Override
-    public boolean isColliding(PhysicsObject physicsObject) {
-        return areCollisionShapesColliding(physicsObject.collisionShape);
+    public boolean isColliding(PhysicsComponent physicsComponent) {
+        return areCollisionShapesColliding(physicsComponent.collisionShape);
     }
 
     @Override
-    public boolean willCollide(PhysicsObject physicsObject, double timeStep) {
-        return collisionShape.findPenetrationDepth(physicsObject.collisionShape).length() > 0.0;
+    public boolean willCollide(PhysicsComponent physicsComponent, double timeStep) {
+        return collisionShape.findPenetrationDepth(physicsComponent.collisionShape).length() > 0.0;
     }
 
     @Override
-    public Collision[] getCollisions(PhysicsObject physicsObject, double timeStep) {
-        TestPhysicsCube cube = (TestPhysicsCube) physicsObject;
+    public Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep) {
+        TestPhysicsCube cube = (TestPhysicsCube) physicsComponent;
         if (this.position.distance(cube.position) < (this.edgeLength + cube.edgeLength) / 2.0) {
             double distance = (this.edgeLength + cube.edgeLength) / 2.0;
             List<Vector3d> thisVertices = model.getAllVerticesInWorldCoordinates(worldMatrix);
@@ -132,9 +132,8 @@ public class TestPhysicsCube extends PhysicsObject {
     }
 
     @Override
-    public void predictTimeStep(double timeStep) {
-        Matrix4d mat = predictEulerTimeStep(timeStep);
-        this.model.setModelMatrix(new Matrix4f(mat));
+    public Matrix4d predictTimeStep(double timeStep) {
+        return predictEulerTimeStep(timeStep);
     }
 
 }

@@ -1,6 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
-public enum RenderingParametersFlag {
+public enum RenderParameters {
     COLOR_DEPTH_STENCIL_ENABLED(true, true, true),
     COLOR_DEPTH_ENABLED(true, true, false),
     COLOR_STENCIL_ENABLED(true, false, true),
@@ -11,7 +11,7 @@ public enum RenderingParametersFlag {
 
     public boolean colorEnabled, depthEnabled, stencilEnabled;
 
-    RenderingParametersFlag(boolean colorEnabled, boolean depthEnabled, boolean stencilEnabled) {
+    RenderParameters(boolean colorEnabled, boolean depthEnabled, boolean stencilEnabled) {
         this.colorEnabled = colorEnabled;
         this.depthEnabled = depthEnabled;
         this.stencilEnabled = stencilEnabled;

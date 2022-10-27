@@ -5,61 +5,61 @@ import java.util.*;
 public abstract class RenderingUnit {
 
     protected com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram;
-    protected final List<com.diablominer.opengl.examples.learning.Renderable> renderables;
+    protected final List<RenderComponent> renderComponents;
 
     public RenderingUnit(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram) {
         this.shaderProgram = shaderProgram;
-        renderables = new ArrayList<>();
+        renderComponents = new ArrayList<>();
     }
 
-    public RenderingUnit(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, com.diablominer.opengl.examples.learning.Renderable[] renderables) {
+    public RenderingUnit(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, RenderComponent[] renderComponents) {
         this.shaderProgram = shaderProgram;
-        this.renderables = new ArrayList<>(Arrays.asList(renderables));
+        this.renderComponents = new ArrayList<>(Arrays.asList(renderComponents));
     }
 
     public abstract void update();
 
     public abstract void update(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram);
 
-    public abstract void render(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags);
+    public abstract void render(Map.Entry<RenderInto, RenderParameters> flags);
 
-    public abstract void render(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags);
+    public abstract void render(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags);
 
     public abstract void destroy();
 
-    public void renderRenderables(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
-        for (com.diablominer.opengl.examples.learning.Renderable renderable : renderables) {
-            renderable.draw(shaderProgram, flags);
+    public void renderRenderables(Map.Entry<RenderInto, RenderParameters> flags) {
+        for (RenderComponent renderComponent : renderComponents) {
+            renderComponent.draw(shaderProgram, flags);
         }
     }
 
-    public void renderRenderables(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void renderRenderables(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         com.diablominer.opengl.examples.learning.ShaderProgram temporaryShaderProgram = this.shaderProgram;
         this.shaderProgram = shaderProgram;
         renderRenderables(flags);
         this.shaderProgram = temporaryShaderProgram;
     }
 
-    public Set<Renderable> containsRenderables(Set<com.diablominer.opengl.examples.learning.Renderable> renderables) {
-        Set<com.diablominer.opengl.examples.learning.Renderable> result = new HashSet<>();
-        for (Renderable renderable : renderables) {
-            if (this.renderables.contains(renderable)) {
-                result.add(renderable);
+    public Set<RenderComponent> containsRenderables(Set<RenderComponent> renderComponents) {
+        Set<RenderComponent> result = new HashSet<>();
+        for (RenderComponent renderComponent : renderComponents) {
+            if (this.renderComponents.contains(renderComponent)) {
+                result.add(renderComponent);
             }
         }
         return result;
     }
 
-    public void addNewRenderable(com.diablominer.opengl.examples.learning.Renderable renderable) {
-        renderables.add(renderable);
+    public void addNewRenderable(RenderComponent renderComponent) {
+        renderComponents.add(renderComponent);
     }
 
-    public void addNewRenderables(List<com.diablominer.opengl.examples.learning.Renderable> renderables) {
-        this.renderables.addAll(renderables);
+    public void addNewRenderables(List<RenderComponent> renderComponents) {
+        this.renderComponents.addAll(renderComponents);
     }
 
-    public List<com.diablominer.opengl.examples.learning.Renderable> getRenderables() {
-        return renderables;
+    public List<RenderComponent> getRenderables() {
+        return renderComponents;
     }
 
     public void setNewShaderProgram(com.diablominer.opengl.examples.learning.ShaderProgram shaderProgram) {
@@ -71,8 +71,8 @@ public abstract class RenderingUnit {
     }
 
     public void destroyRenderables() {
-        for (com.diablominer.opengl.examples.learning.Renderable renderable : renderables) {
-            renderable.destroy();
+        for (RenderComponent renderComponent : renderComponents) {
+            renderComponent.destroy();
         }
     }
 

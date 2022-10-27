@@ -66,7 +66,7 @@ public class PingPongQuadMesh extends Mesh {
     }
 
     @Override
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         shaderProgram.bind();
         setTextureUniforms(shaderProgram);
         shaderProgram.setUniform1IBindless("horizontal", horizontal ? 1 : 0);

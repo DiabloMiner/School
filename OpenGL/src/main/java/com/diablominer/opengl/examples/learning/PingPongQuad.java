@@ -14,7 +14,7 @@ public class PingPongQuad extends Model {
     }
 
     @Override
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         quadMesh.draw(shaderProgram, flags);
     }
 

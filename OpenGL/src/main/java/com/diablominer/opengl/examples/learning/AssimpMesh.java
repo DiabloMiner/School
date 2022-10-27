@@ -97,7 +97,7 @@ public class AssimpMesh extends Mesh {
         }
     }
 
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         // Bind the shaderProgram
         shaderProgram.bind();
 

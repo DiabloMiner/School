@@ -54,8 +54,8 @@ public class PointLight extends Light {
     }
 
     @Override
-    public void initializeShadowRenderer(Renderable[] renderables) {
-        shadowRenderer = new SingleFramebufferRenderer(shadowFramebuffer, new RenderingUnit[] {new ShadowRenderingUnit(getShadowShader(), renderables, this)});
+    public void initializeShadowRenderer(RenderComponent[] renderComponents) {
+        shadowRenderer = new SingleFramebufferRenderer(shadowFramebuffer, new RenderingUnit[] {new ShadowRenderingUnit(getShadowShader(), renderComponents, this)});
     }
 
     public static ShaderProgram getShadowShader() {

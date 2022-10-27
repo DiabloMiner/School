@@ -5,26 +5,34 @@ import org.jblas.DoubleMatrix;
 import org.joml.Math;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class PhysicsEngine implements SubEngine {
 
     public static final int roundingDigit = 15;
 
-    public List<PhysicsObject> physicsObjects;
     public LCPSolverConfiguration solverConfig;
     public double simulationTimeStep;
+    protected List<Entity> entities;
     protected double leftOverTime;
 
     public PhysicsEngine(LCPSolverConfiguration solverConfig, double simulationTimeStep) {
-        physicsObjects = new ArrayList<>();
+        this.entities = new ArrayList<>();
+        this.solverConfig = solverConfig;
+        this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
+        this.leftOverTime = 0.0;
+    }
+
+    public PhysicsEngine(LCPSolverConfiguration solverConfig, List<Entity> entities, double simulationTimeStep) {
+        this.entities = new ArrayList<>(entities);
         this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.leftOverTime = 0.0;
     }
 
     public void performTimeStep(double timeStep) {
-        for (PhysicsObject physicsObject : physicsObjects) {
-            physicsObject.performTimeStep(timeStep);
+        for (Entity entity : entities) {
+            entity.getPhysicsComponent().performTimeStep(timeStep);
         }
     }
 
@@ -36,24 +44,24 @@ public abstract class PhysicsEngine implements SubEngine {
     protected Set<Collision> findCollisions(double timeStep) {
         Set<Collision> collisions = new HashSet<>();
         Map<Integer, Boolean> alreadySearched = new HashMap<>();
-        for (PhysicsObject object1 : physicsObjects) {
-            List<PhysicsObject> toBeSearched = new ArrayList<>(physicsObjects);
+        for (Entity object1 : entities) {
+            List<Entity> toBeSearched = new ArrayList<>(entities);
             toBeSearched.remove(object1);
 
-            for (PhysicsObject object2 : toBeSearched) {
-                if (object1.objectType.performTimeStep || object2.objectType.performTimeStep) {
-                    if (!alreadySearched.containsKey(indexKey(object1, object2, physicsObjects)) && object1.willCollide(object2, timeStep)) {
-                        collisions.addAll(Arrays.asList(object1.getCollisions(object2, timeStep)));
+            for (Entity object2 : toBeSearched) {
+                if (object1.getPhysicsComponent().objectType.performTimeStep || object2.getPhysicsComponent().objectType.performTimeStep) {
+                    if (!alreadySearched.containsKey(indexKey(object1, object2, entities)) && object1.getPhysicsComponent().willCollide(object2.getPhysicsComponent(), timeStep)) {
+                        collisions.addAll(Arrays.asList(object1.getPhysicsComponent().getCollisions(object2.getPhysicsComponent(), timeStep)));
                     }
-                    alreadySearched.putIfAbsent(indexKey(object1, object2, physicsObjects), true);
+                    alreadySearched.putIfAbsent(indexKey(object1, object2, entities), true);
                 }
             }
         }
         return collisions;
     }
 
-    protected int indexKey(PhysicsObject object1, PhysicsObject object2, List<PhysicsObject> physicsObjects) {
-        return physicsObjects.indexOf(object1) + physicsObjects.indexOf(object2);
+    protected int indexKey(Entity object1, Entity object2, List<Entity> entities) {
+        return entities.indexOf(object1) + entities.indexOf(object2);
     }
 
     protected void updateEarlierObjects(List<Collision> sortedCollisions, double timeStep, int startingIndex) {
@@ -61,7 +69,7 @@ public abstract class PhysicsEngine implements SubEngine {
             sortedCollisions.get(i).A.performTimeStep(timeStep);
             sortedCollisions.get(i).B.performTimeStep(timeStep);
         }
-        List<PhysicsObject> nonCollidingObjects = new ArrayList<>(this.physicsObjects);
+        List<PhysicsComponent> nonCollidingObjects = this.entities.stream().map(Entity::getPhysicsComponent).collect(Collectors.toList());
         nonCollidingObjects.removeAll(physicsObjectsFromCollisions(sortedCollisions));
         nonCollidingObjects.forEach(object -> object.performTimeStep(timeStep));
     }
@@ -189,8 +197,8 @@ public abstract class PhysicsEngine implements SubEngine {
     }
 
     public void predictTimeStep(double timeStep) {
-        for (PhysicsObject physicsObject : physicsObjects) {
-            physicsObject.predictTimeStep(timeStep);
+        for (Entity entity : entities) {
+            entity.getTransformComponent().update(entity.getPhysicsComponent().predictTimeStep(timeStep));
         }
     }
 
@@ -202,13 +210,19 @@ public abstract class PhysicsEngine implements SubEngine {
 
     abstract void update();
 
-    public static List<PhysicsObject> physicsObjectsFromCollisions(List<Collision> collisions) {
-        List<PhysicsObject> physicsObjects = new ArrayList<>();
+    public void updateEntities() {
+        for (Entity entity : entities) {
+            entity.getTransformComponent().update(entity.getPhysicsComponent().worldMatrix);
+        }
+    }
+
+    public static List<PhysicsComponent> physicsObjectsFromCollisions(List<Collision> collisions) {
+        List<PhysicsComponent> physicsComponents = new ArrayList<>();
         collisions.forEach(collision -> {
-            physicsObjects.add(collision.A);
-            physicsObjects.add(collision.B);
+            physicsComponents.add(collision.A);
+            physicsComponents.add(collision.B);
         });
-        return physicsObjects;
+        return physicsComponents;
     }
 
 }

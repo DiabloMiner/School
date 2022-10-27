@@ -4,7 +4,7 @@ import org.joml.Matrix4f;
 
 import java.util.Map;
 
-public class Skybox extends Renderable {
+public class Skybox extends RenderComponent {
 
     public static final int convolutedTextureSize = 32;
     public static final int prefilteredTextureSize = 128;
@@ -53,7 +53,7 @@ public class Skybox extends Renderable {
     }
 
     @Override
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         model.draw(shaderProgram, flags);
     }
 

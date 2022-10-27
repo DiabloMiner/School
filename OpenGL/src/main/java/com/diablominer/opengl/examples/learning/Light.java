@@ -17,6 +17,6 @@ public abstract class Light {
 
     abstract void setUniformData(ShaderProgram shaderProgram, int index);
 
-    abstract void initializeShadowRenderer(Renderable[] renderables);
+    abstract void initializeShadowRenderer(RenderComponent[] renderComponents);
 
 }

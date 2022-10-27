@@ -1,6 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
-public abstract class RenderableLight extends Renderable {
+public abstract class RenderableLight extends RenderComponent {
 
     public Light light;
 

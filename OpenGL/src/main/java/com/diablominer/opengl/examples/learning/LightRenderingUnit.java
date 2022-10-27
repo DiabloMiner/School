@@ -11,29 +11,29 @@ public class LightRenderingUnit extends StandardRenderingUnit {
         super(shaderProgram, allRenderableLights.toArray(new RenderableLight[0]));
     }
 
-    private void renderAllLights(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
-        for (Renderable renderable : renderables) {
-            RenderableLight renderableLight = (RenderableLight) renderable;
+    private void renderAllLights(Map.Entry<RenderInto, RenderParameters> flags) {
+        for (RenderComponent renderComponent : renderComponents) {
+            RenderableLight renderableLight = (RenderableLight) renderComponent;
             shaderProgram.setUniformVec3F(shaderColorVariable, renderableLight.light.color);
-            renderable.draw(shaderProgram, flags);
+            renderComponent.draw(shaderProgram, flags);
         }
     }
 
-    private void renderAllLights(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
-        for (Renderable renderable : renderables) {
-            RenderableLight renderableLight = (RenderableLight) renderable;
+    private void renderAllLights(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
+        for (RenderComponent renderComponent : renderComponents) {
+            RenderableLight renderableLight = (RenderableLight) renderComponent;
             shaderProgram.setUniformVec3F(shaderColorVariable, renderableLight.light.color);
-            renderable.draw(shaderProgram, flags);
+            renderComponent.draw(shaderProgram, flags);
         }
     }
 
     @Override
-    public void render(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(Map.Entry<RenderInto, RenderParameters> flags) {
         this.render(this.shaderProgram, flags);
     }
 
     @Override
-    public void render(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         renderAllLights(shaderProgram, flags);
     }
 }

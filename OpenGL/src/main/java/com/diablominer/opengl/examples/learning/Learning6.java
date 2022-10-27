@@ -2,7 +2,7 @@ package com.diablominer.opengl.examples.learning;
 
 import org.jblas.DoubleMatrix;
 import org.jblas.NativeBlas;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
@@ -10,14 +10,18 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.system.MemoryUtil;
 
-public class Learning6 implements Engine {
+import java.lang.Math;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class Learning6 extends Engine {
 
     public static Learning6 engineInstance;
     public static final long millisecondsPerFrame = 15;
     public static double maxTimeStep = 0.01, minTimeStep = 0.0005;
 
     public boolean continueEngineLoop = true, resize = false;
-    private long deltaTime = 0, lastFrame = 0, accumulator = 0;
+    private long lastFrame = 0, accumulator = 0;
     private EventManager eventManager;
     private MainRenderingEngine mainRenderingEngine;
     private MainPhysicsEngine mainPhysicsEngine;
@@ -42,7 +46,9 @@ public class Learning6 implements Engine {
         DoubleMatrix.zeros(2, 2).subi(DoubleMatrix.ones(2, 2));
     }
 
-    public Learning6() {}
+    public Learning6() {
+        super();
+    }
 
     public void init() throws Exception {
         if (!GLFW.glfwInit()) {
@@ -141,17 +147,39 @@ public class Learning6 implements Engine {
         GL33.glEnable(GL33.GL_TEXTURE_CUBE_MAP_SEAMLESS);
         GL33.glCullFace(GL33.GL_BACK);
 
-        mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false), 0.01);
-        mainRenderingEngine = new MainRenderingEngine(window, camera);
+        loadEntities();
+
+        List<Entity> renderedEntities = entities.stream().filter(entity -> entity.hasComponent(Component.Type.Render)).collect(Collectors.toList());
+        List<Entity> physicsEntities = entities.stream().filter(entity -> entity.hasComponent(Component.Type.Physics)).collect(Collectors.toList());
+        mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false), physicsEntities, 0.01);
+        mainRenderingEngine = new MainRenderingEngine(renderedEntities, window, camera);
         mainIOEngine = new MainIOEngine(new Window[]{window}, new Camera[]{camera}, new RenderingEngine[]{mainRenderingEngine});
 
         lastFrame = System.currentTimeMillis();
     }
 
+    private void loadEntities() {
+        Entity helloWorld = new Entity("0", new Component.Type[]{Component.Type.Transform, Component.Type.Render},
+                new Component[] {new TransformComponent(new Matrix4d().identity().rotate(Math.toRadians(-55.0), new Vector3d(1.0, 0.0, 0.0))),
+                        new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate((float) Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f)), true)});
+        Entity cube = new Entity("1", new Component.Type[]{Component.Type.Transform, Component.Type.Render},
+                new Component[]{new TransformComponent(new Matrix4d().identity().translate(new Vector3d(3.4, -1.5, -4.4))),
+                        new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f)), true)});
+        Entity physicsSphere1 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
+                new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 8.0, 0.0)),
+                        new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.0f, 8.0f, 0.0f), true),
+                        new PhysicsSphere(ObjectType.DYNAMIC, new Vector3d(0.0, 8.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 10.0, 1.0, 1.0, 0.1, 0.14)});
+        Entity physicsSphere2 = new Entity("3", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
+                new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 6.0, 0.0)),
+                        new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.0f, 6.0f, 0.0f), true),
+                        new PhysicsSphere(ObjectType.STATIC, new Vector3d(0.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), Double.POSITIVE_INFINITY, 1.0, 1.0, 0.1, 0.14)});
+        entities.addAll(Arrays.asList(helloWorld, cube, physicsSphere1, physicsSphere2));
+    }
+
     public void mainLoop() {
         while (continueEngineLoop) {
             long currentTime = System.currentTimeMillis();
-            deltaTime = currentTime - lastFrame;
+            long deltaTime = currentTime - lastFrame;
             lastFrame = currentTime;
             accumulator += deltaTime;
 
@@ -178,6 +206,7 @@ public class Learning6 implements Engine {
     public void render(double leftOverTime) {
         mainPhysicsEngine.predictTimeStep(leftOverTime / 1000.0);
 
+        mainRenderingEngine.updateEntities();
         mainRenderingEngine.update();
 
         mainRenderingEngine.render();
@@ -202,7 +231,7 @@ public class Learning6 implements Engine {
         mainIOEngine.destroy();
 
         ShaderProgramManager.destroyAllStaticShaderPrograms();
-        RenderableManager.destroyAllStaticRenderables();
+        RenderComponentManager.destroyAllStaticRenderables();
         Texture.destroyAllTextures();
         GLFW.glfwTerminate();
     }

@@ -641,7 +641,7 @@ public class LCPSolver {
     private static DoubleMatrix constructDiagonalMassVector(Collision[] collisions) {
         DoubleMatrix diagVec = new DoubleMatrix(12 * collisions.length, 1);
         for (int i = 0; i < collisions.length; i++) {
-            PhysicsObject A = collisions[i].A, B = collisions[i].B;
+            PhysicsComponent A = collisions[i].A, B = collisions[i].B;
             DoubleMatrix newVec = new DoubleMatrix(new double[][]{{1.0 / A.mass}, {1.0 / A.mass}, {1.0 / A.mass}, {0.0}, {0.0}, {0.0}, {1.0 / B.mass}, {1.0 / B.mass}, {1.0 / B.mass}, {0.0}, {0.0}, {0.0}});
             diagVec.put(Transforms.createIndexArray(i * 12, 12), new int[] {0}, newVec);
         }
@@ -675,7 +675,7 @@ public class LCPSolver {
     public static DoubleMatrix constructFVector(Collision[] collisions) {
         DoubleMatrix fVector = new DoubleMatrix(12 * collisions.length, 1);
         for (int i = 0; i < collisions.length; i++) {
-            PhysicsObject A = collisions[i].A, B = collisions[i].B;
+            PhysicsComponent A = collisions[i].A, B = collisions[i].B;
             Vector3d[] torques = constructTotalTorque(collisions[i]);
             DoubleMatrix subFVector = Transforms.jomlVectorsToJBLASVector(new Vector3d[]{A.force, torques[0], B.force, torques[1]});
             fVector.put(Transforms.createIndexArray(i * 12, 12), new int[] {0}, subFVector);
@@ -684,11 +684,11 @@ public class LCPSolver {
     }
 
     public static Vector3d[] constructTotalTorque(Collision collision) {
-        PhysicsObject A = collision.A, B = collision.B;
+        PhysicsComponent A = collision.A, B = collision.B;
         Vector3d ATotalTorque = new Vector3d(A.torque);
-        if (A.updateInertiaMatrix) { ATotalTorque.sub(new Vector3d(A.angularVelocity).cross(new Vector3d(A.angularVelocity).mul(A.worldFrameInertia))); }
+        if (A.objectType.performTimeStep) { ATotalTorque.sub(new Vector3d(A.angularVelocity).cross(new Vector3d(A.angularVelocity).mul(A.worldFrameInertia))); }
         Vector3d BTotalTorque = new Vector3d(B.torque);
-        if (B.updateInertiaMatrix) { BTotalTorque.sub(new Vector3d(B.angularVelocity).cross(new Vector3d(B.angularVelocity).mul(B.worldFrameInertia)));}
+        if (B.objectType.performTimeStep) { BTotalTorque.sub(new Vector3d(B.angularVelocity).cross(new Vector3d(B.angularVelocity).mul(B.worldFrameInertia)));}
         return new Vector3d[] {ATotalTorque, BTotalTorque};
     }
 

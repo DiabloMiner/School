@@ -18,8 +18,8 @@ public class MainRenderingEngine extends RenderingEngine {
     private final Framebuffer intermediateFb;
     private final QuadRenderingUnit quadRenderingEngineUnit;
 
-    public MainRenderingEngine(Window window, Camera camera) throws Exception {
-        super();
+    public MainRenderingEngine(List<Entity> entities, Window window, Camera camera) throws Exception {
+        super(entities);
         this.camera = camera;
         this.window = window;
         this.resize = false;
@@ -32,14 +32,14 @@ public class MainRenderingEngine extends RenderingEngine {
         lightManager.addRenderablePointLight(new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024));
         lightManager.addSpotLight(new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024, camera));
 
-        Renderable helloWorld = renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f))), true);
-        Renderable cube = renderableManager.addRenderable(new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f))), true);
+        /*RenderComponent helloWorld = renderComponentManager.addRenderComponent(new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f)), true));
+        RenderComponent cube = renderComponentManager.addRenderComponent(new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f)), true));
         TestPhysicsSphere physicsObject1 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", ObjectType.DYNAMIC, new Vector3d(0.0, 8.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 10.0, 1.0);
         TestPhysicsSphere physicsObject2 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", ObjectType.STATIC, new Vector3d(0.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), Double.POSITIVE_INFINITY, 1.0);
-        renderableManager.addRenderables(new ArrayList<>(Arrays.asList(physicsObject1.model, physicsObject2.model)), new ArrayList<>(Arrays.asList(true, true)));
-        Learning6.engineInstance.getMainPhysicsEngine().physicsObjects.addAll(Arrays.asList(physicsObject1, physicsObject2));
+        renderComponentManager.addRenderComponents(new ArrayList<>(Arrays.asList(physicsObject1.model, physicsObject2.model)));
+        Learning6.engineInstance.getMainPhysicsEngine().entities.addAll(Arrays.asList(physicsObject1, physicsObject2));*/
 
-        RenderingUnit standardRenderingUnit = new StandardRenderingUnit(shaderProgram, new Renderable[] {helloWorld, cube,  physicsObject1.model, physicsObject2.model});
+        RenderingUnit standardRenderingUnit = new StandardRenderingUnit(shaderProgram, Entity.getRenderComponents(renderComponentManager.allEntities));
         RenderingUnit lightRenderingUnit = new LightRenderingUnit(lsShaderProgram, lightManager.allRenderableLights);
         RenderingUnit skyboxRenderingUnit = new SkyboxRenderingUnit(skyboxManager.addSkybox(new Skybox("./src/main/resources/textures/skybox", ".jpg", false)));
         mainRenderer = new SingleFramebufferRenderer(framebufferManager.addFramebuffer(new Framebuffer(new FramebufferTexture2D[] {new FramebufferMSAATexture2D(window.width, window.height, Texture.InternalFormat.RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferMSAATexture2D(window.width, window.height, Texture.InternalFormat.RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT1)},
@@ -54,7 +54,7 @@ public class MainRenderingEngine extends RenderingEngine {
         shaderProgram.setUniformBlockBindings(new UniformBufferBlock[]{matricesUniforms});
         lsShaderProgram.setUniformBlockBindings(new UniformBufferBlock[]{matricesUniforms});
 
-        lightManager.createShadowRenderers(renderableManager.allRenderablesThrowingShadows.toArray(new Renderable[0]));
+        lightManager.createShadowRenderers(renderComponentManager.allRenderComponentsThrowingShadows.toArray(new RenderComponent[0]));
 
         GL33.glEnable(GL33.GL_DEPTH_TEST);
         GL33.glEnable(GL33.GL_STENCIL_TEST);
@@ -78,11 +78,11 @@ public class MainRenderingEngine extends RenderingEngine {
     public void render() {
         lightManager.renderShadowMaps();
 
-        mainRenderer.render(RenderingIntoFlag.COLOR_DEPTH);
+        mainRenderer.render(RenderInto.COLOR_DEPTH);
 
         Framebuffer.blitFrameBuffers(mainRenderer.getFramebuffer(), intermediateFb, new FramebufferAttachment[]{FramebufferAttachment.COLOR_ATTACHMENT0, FramebufferAttachment.COLOR_ATTACHMENT1});
 
-        blurRenderer.render(RenderingIntoFlag.COLOR_ONLY);
+        blurRenderer.render(RenderInto.COLOR_ONLY);
 
         Framebuffer.getStandardFramebuffer().bind();
         GL33.glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
@@ -90,7 +90,7 @@ public class MainRenderingEngine extends RenderingEngine {
         GL33.glEnable(GL33.GL_FRAMEBUFFER_SRGB);
         if (resize) { GL33.glViewport(0, 0, window.width, window.height); resize = false;}
 
-        quadRenderingEngineUnit.render(new AbstractMap.SimpleEntry<>(RenderingIntoFlag.COLOR_ONLY, RenderingParametersFlag.COLOR_ENABLED));
+        quadRenderingEngineUnit.render(new AbstractMap.SimpleEntry<>(RenderInto.COLOR_ONLY, RenderParameters.COLOR_ENABLED));
 
         GL33.glDisable(GL33.GL_FRAMEBUFFER_SRGB);
         window.swapBuffers();

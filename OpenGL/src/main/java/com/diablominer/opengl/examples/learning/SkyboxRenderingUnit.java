@@ -10,7 +10,7 @@ public class SkyboxRenderingUnit extends RenderingUnit {
     private final Skybox skybox;
 
     public SkyboxRenderingUnit(Skybox skybox) {
-        super(getSkyboxShaderProgram(), new Renderable[] {Skybox.model});
+        super(getSkyboxShaderProgram(), new RenderComponent[] {Skybox.model});
         this.skybox = skybox;
         skybox.normalTexture.bind();
     }
@@ -29,12 +29,12 @@ public class SkyboxRenderingUnit extends RenderingUnit {
     }
 
     @Override
-    public void render(Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(Map.Entry<RenderInto, RenderParameters> flags) {
         this.render(shaderProgram, flags);
     }
 
     @Override
-    public void render(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void render(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         if (flags.getValue().depthEnabled) {
             GL33.glDepthFunc(GL33.GL_LEQUAL);
         }

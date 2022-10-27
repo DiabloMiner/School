@@ -36,14 +36,30 @@ public class AssimpModel extends Model {
         this.faces = getAllFaces();
     }
 
-    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public AssimpModel(String path, Vector3f position, boolean hasShadow) {
+        super(position, hasShadow);
+        this.meshes = new ArrayList<>();
+        this.path = path;
+        loadModel(path);
+        this.faces = getAllFaces();
+    }
+
+    public AssimpModel(String path, Matrix4f model, boolean hasShadow) {
+        super(model, hasShadow);
+        this.meshes = new ArrayList<>();
+        this.path = path;
+        loadModel(path);
+        this.faces = getAllFaces();
+    }
+
+    public void draw(ShaderProgram shaderProgram, Map.Entry<RenderInto, RenderParameters> flags) {
         for (Mesh mesh : meshes) {
             super.setModelMatrixUniform(shaderProgram);
             mesh.draw(shaderProgram, flags);
         }
     }
 
-    public void draw(ShaderProgram shaderProgram, Matrix4f modelMatrix, Map.Entry<RenderingIntoFlag, RenderingParametersFlag> flags) {
+    public void draw(ShaderProgram shaderProgram, Matrix4f modelMatrix, Map.Entry<RenderInto, RenderParameters> flags) {
         for (Mesh mesh : meshes) {
             super.setModelMatrixUniform(shaderProgram, modelMatrix);
             mesh.draw(shaderProgram, flags);

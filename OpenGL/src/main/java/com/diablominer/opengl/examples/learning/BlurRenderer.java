@@ -35,12 +35,12 @@ public class BlurRenderer extends Renderer {
     public void update(ShaderProgram shaderProgram) { }
 
     @Override
-    public void render(RenderingIntoFlag flag) {
+    public void render(RenderInto flag) {
         render(BlurRenderer.blurShaderProgram, flag);
     }
 
     @Override
-    public void render(ShaderProgram shaderProgram, RenderingIntoFlag flag) {
+    public void render(ShaderProgram shaderProgram, RenderInto flag) {
         GL33.glDisable(GL33.GL_DEPTH_TEST);
         GL33.glDisable(GL33.GL_STENCIL_TEST);
         GL33.glViewport(0, 0, framebuffers.get(0).width, framebuffers.get(0).height);
@@ -54,7 +54,7 @@ public class BlurRenderer extends Renderer {
             GL33.glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
             GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
 
-            quad.draw(blurShaderProgram, new AbstractMap.SimpleEntry<>(flag, RenderingParametersFlag.COLOR_ENABLED));
+            quad.draw(blurShaderProgram, new AbstractMap.SimpleEntry<>(flag, RenderParameters.COLOR_ENABLED));
 
             horizontal = !horizontal;
         }
