@@ -1,5 +1,6 @@
 package com.diablominer.opengl.examples.learning;
 
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -8,23 +9,22 @@ import org.joml.Vector3f;
 public class Camera {
 
     public static float firstFov = 45.0f, firstNear = 0.1f, firstFar = 100.0f;
-    public static float movementFactor = 4.0f;
+    public static float movementFactor = 8.0f;
     public static Vector3d worldSpaceRight = new Vector3d(1.0, 0.0, 0.0);
     public static Vector3d worldSpaceUp = new Vector3d(0.0, 1.0, 0.0);
 
     public Vector3f position, direction, right, up;
     public float yaw, pitch, fov, near, far;
 
-    public Camera(Vector3f position, Vector3f direction) {
+    public Camera(Vector3f position, Vector3f direction, Vector3f tempUp) {
         this.position = new Vector3f(position);
         this.direction = new Vector3f(direction);
-        Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
         right = new Vector3f(tempUp).cross(direction).normalize();
-        this.up = new Vector3f(direction).cross(right);
+        up = new Vector3f(direction).cross(right);
         right = new Vector3f(direction).cross(up);
 
-        yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
-        pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));
+        yaw = (float) Math.toDegrees(Transforms.nonzeroSignum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
+        pitch = (float) Math.toDegrees(Transforms.nonzeroSignum(up.z) * new Vector3d(up).angle(worldSpaceUp));
         fov = firstFov;
         near = firstNear;
         far = firstFar;
@@ -48,7 +48,11 @@ public class Camera {
     public void update(Mouse mouse) {
         yaw += mouse.deltaX;
         pitch += mouse.deltaY;
-        pitch = Math.clamp(-89.0f, 89.0f, pitch);
+        pitch = Math.clamp(-90.0f, 90.0f, pitch);
+
+        if (Math.abs(pitch) < 90.0f) {
+            up.set(worldSpaceUp);
+        }
 
         changeDirection();
 
@@ -56,12 +60,20 @@ public class Camera {
     }
 
     private void changeDirection() {
-        Vector3f direction = new Vector3f();
+        Vector3f direction = new Vector3f(0.0f), right = new Vector3f(0.0f);
         direction.x = Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
         direction.y = Math.sin(Math.toRadians(pitch));
         direction.z = Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
         direction.normalize(this.direction);
-        right = new Vector3f(direction).cross(up).normalize();
+        if (Math.abs(pitch) == 90.0f) {
+            right.x = Math.cos(Math.toRadians(yaw + 90.0f));
+            right.z = Math.sin(Math.toRadians(yaw + 90.0f));
+            right.negate().normalize(this.right);
+            up = direction.cross(right, new Vector3f()).normalize().negate();
+        } else {
+            this.direction.mul(new Vector3f(-1.0f, 1.0f, -1.0f));
+            this.direction.cross(up, this.right).normalize();
+        }
     }
 
     public void updateZoom(float deltaValue) {

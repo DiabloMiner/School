@@ -10,10 +10,10 @@ import java.util.*;
 
 public class Polyhedron implements CollisionShape {
 
-    public static final Map<Integer, Vector3d> computedSearchDirections = new HashMap<>();
-    public static final Vector3d firstSearchDirection = new Vector3d(1.0, 0.0, 0.0);
     public static final double epsilon = 1e-10;
     public static final int roundingDigit = 12;
+    public static final Map<Integer, Vector3d> computedSearchDirections = new HashMap<>();
+    public static final Vector3d firstSearchDirection = new Vector3d(1.0, 0.0, 0.0);
 
     public List<Vertex> vertices;
     public Matrix4d currentWorldMatrix;

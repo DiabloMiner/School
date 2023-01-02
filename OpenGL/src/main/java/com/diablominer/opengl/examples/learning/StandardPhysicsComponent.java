@@ -12,27 +12,38 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
 
     protected boolean useRK2;
 
-    public StandardPhysicsComponent(ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction) {
-        super(objectType, collisionShape, position, velocity, orientation, angularVelocity, bodyFrameInertia, forces, mass, radius, coefficientOfRestitution, coefficientOfStaticFriction, coefficientOfKineticFriction);
+    public StandardPhysicsComponent(Material material, ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius) {
+        super(material, objectType, collisionShape, position, velocity, orientation, angularVelocity, bodyFrameInertia, forces, mass, radius);
         this.useRK2 = false;
     }
 
     @Override
     public void performTimeStep(double timeStep) {
+        if (objectType.equals(ObjectType.DYNAMIC) && angularVelocity.length() > 0) {
+            // TODO: Remove
+            // System.out.println(position.y);
+            // System.out.println(velocity.length());
+            System.out.println(angularVelocity.length());
+            if (angularVelocity.length() == 10.26172909488669) {
+                System.out.print("");
+            }
+        }
         if (useRK2) { performRK2TimeStep(timeStep); }
         else { performSemiImplicitEulerTimeStep(timeStep); }
         useRK2 = false;
     }
 
     @Override
-    public boolean willCollide(PhysicsComponent physicsComponent, double timeStep) {
+    public boolean willCollide(PhysicsComponent B, double timeStep) {
         // This will only work for constant/nearly-constant forces
-        PhysicsSphere sphere = (PhysicsSphere) physicsComponent;
-        Vector3d collisionVector = sphere.collisionShape.findPenetrationDepth(this.collisionShape);
-        Vector3d collisionDirection = computeCollisionDirection(sphere, collisionVector);
+        // may be add conditional case if it says it will collide, make timestep and check geometrically to avoid replacing angular velocity
+        // Seems like willCollide is incorrect as too long timesteps seem to be performed
+        // may be add class returning collisionInformation from willCollide to getCollisions Or store it in the component
+        Vector3d collisionVector = B.collisionShape.findPenetrationDepth(this.collisionShape);
+        Vector3d collisionDirection = computeCollisionDirection(B, collisionVector);
         double distance = collisionVector.length();
-        double deltaF = new Vector3d(sphere.force).div(sphere.mass).sub(new Vector3d(this.force).div(mass)).dot(collisionDirection);
-        double deltaV = new Vector3d(sphere.velocity).sub(this.velocity).dot(collisionDirection) + this.radius * this.angularVelocity.length() + sphere.radius * sphere.angularVelocity.length();
+        double deltaF = new Vector3d(B.force).div(B.mass).sub(new Vector3d(this.force).div(mass)).dot(collisionDirection);
+        double deltaV = new Vector3d(B.velocity).sub(this.velocity).dot(collisionDirection);
         double rk2Distance = 0.5 * deltaF * timeStep * timeStep + deltaV * timeStep + distance;
         if (rk2Distance > -epsilon) { useRK2 = true; }
         double futureDistance = deltaF * timeStep * timeStep + deltaV * timeStep + distance;
@@ -48,20 +59,20 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
     public Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep) {
         CollisionData collisionData = collectCollisionData(physicsComponent, timeStep);
 
-        double coefficientOfRestitution = (this.coefficientOfRestitution + physicsComponent.coefficientOfRestitution) / 2.0;
-        double coefficientOfStaticFriction = (this.coefficientOfStaticFriction + physicsComponent.coefficientOfStaticFriction) / 2.0;
-        double coefficientOfKineticFriction = (this.coefficientOfKineticFriction + physicsComponent.coefficientOfKineticFriction) / 2.0;
-
-        return new Collision[] {new Collision(new Vector3d(collisionData.position), new Vector3d(collisionData.direction), collisionData.getTangentialDirections(), coefficientOfRestitution, coefficientOfStaticFriction, coefficientOfKineticFriction, this, physicsComponent, collisionData.timeStepTaken)};
+        return new Collision[] {new StandardCollision(new Vector3d(collisionData.position), new Vector3d(collisionData.direction), this, physicsComponent, collisionData.timeStepTaken)};
     }
 
     protected CollisionData collectCollisionData(PhysicsComponent B, double timeStep) {
-        Vector3d position = new Vector3d(0.0);
-        Vector3d collisionVector = B.collisionShape.findPenetrationDepth(this.collisionShape), collisionDirection = computeCollisionDirection(B, collisionVector);
+        if (this.position.z >= 2.648) {
+            System.out.print("");
+        }
+        Vector3d[] closestPoints = new Vector3d[0];
+        Vector3d collisionVector = B.collisionShape.findPenetrationDepth(this.collisionShape), collisionDirection = computeCollisionDirection(B, collisionVector), position = new Vector3d(0.0);
         double distance = collisionVector.length(), h = 0.0;
         for (int i = 0; i < maxCollisionTimeIterations; i++) {
+            if (distance < epsilon && distance > -epsilon) { break; }
             double deltaF = new Vector3d(B.force).div(B.mass).sub(new Vector3d(this.force).div(mass)).dot(collisionDirection);
-            double deltaV = new Vector3d(B.velocity).sub(this.velocity).dot(collisionDirection) + this.radius * this.angularVelocity.length() + B.radius * B.angularVelocity.length();
+            double deltaV = new Vector3d(B.velocity).sub(this.velocity).dot(collisionDirection);
             double localH = 0.0;
             if (deltaF != 0.0 && deltaF != -0.0) {
                 localH = Transforms.chooseSuitableSolution(collisionTimeEpsilon, timeStep, 0.0, Transforms.solveQuadraticEquation(deltaF, deltaV, distance, roundingDigit));
@@ -70,18 +81,27 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
             }
             this.performSemiImplicitEulerTimeStep(localH);
             B.performSemiImplicitEulerTimeStep(localH);
+            // A timestep is performed while only changes along the z axis should have been considered as changes along the y axis havent been taken into account
+            // Depending on the ordering of entities incorrect behavior may arise
+            // Fundamental problem: A timestep is performed at a time when it is not yet known if another force has to be applied before then
+            // Solutions have to perform timesteps at a time when it is known no other forces will have to be resolved before that
+            // May be solve by letting willCollide provide initial estimate and actual collision information is gathered when it is needed shortly before it is solved
+            // In this second collision information gathering phase collisions should also be rejected i.e. "resolved" by just applying a time step, if they do not actually collide
 
             h += localH;
-            collisionVector = this.collisionShape.findPenetrationDepth(B.collisionShape);
+            collisionVector = B.collisionShape.findPenetrationDepth(this.collisionShape);
             if (collisionVector.equals(new Vector3d(0.0), epsilon)) {
-                Vector3d[] closestPoints = this.collisionShape.findClosestPoints(B.collisionShape);
+                closestPoints = this.collisionShape.findClosestPoints(B.collisionShape);
                 collisionDirection = Transforms.safeNormalize(new Vector3d(closestPoints[0]).sub(this.position));
                 position.add(closestPoints[0]).add(closestPoints[1]).div(2.0);
             } else {
                 collisionDirection = collisionVector.normalize(new Vector3d());
             }
             distance = collisionVector.length();
-            if (distance < epsilon && distance > -epsilon) { break; }
+        }
+        if (closestPoints.length == 0) {
+            closestPoints = this.collisionShape.findClosestPoints(B.collisionShape);
+            position.add(closestPoints[0]).add(closestPoints[1]).div(2.0);
         }
         return new CollisionData(position, collisionDirection, h);
     }

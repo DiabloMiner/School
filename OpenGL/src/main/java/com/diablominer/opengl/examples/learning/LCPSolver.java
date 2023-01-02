@@ -79,7 +79,7 @@ public class LCPSolver {
     private DoubleMatrix[] constructBHParts(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setA, List<Integer> setJ) {
         DoubleMatrix C = constructC(x, l, y, mu, setA, setJ);
         DoubleMatrix D = constructD(x, l, y, mu, setJ);
-        DoubleMatrix DInv = D.dup().sub(D.diag()).neg().add(D.diag());
+        DoubleMatrix DInv = D.dup().sub(DoubleMatrix.diag(D.diag())).neg().add(DoubleMatrix.diag(D.diag()));
         return new DoubleMatrix[] {C, D, DInv};
     }
 
@@ -156,7 +156,11 @@ public class LCPSolver {
         return tau;
     }
 
-    private double projectedLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double mu, double alpha, double beta, double delta, int iterations) {
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    private double projectedLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double mu, double muR, double alpha, double beta, double delta, int iterations) {
         double meritValue0 = computePhi(H);
         double deltaMeritValue0 = computeDeltaPhi(H);
         double tau = 1;
@@ -165,7 +169,7 @@ public class LCPSolver {
             for (int i = 0; i < xTau.rows; i++) {
                 xTau.put(i, Math.max(0.0, precomputedX.get(i) - (1 - tau) * deltaX.get(i)));
             }
-            setBounds(uTau, lTau, xTau.get(0), mu);
+            setBounds(uTau, lTau, xTau.get(0), mu, muR);
             double meritValue = computePhi(A, b, xTau, uTau, lTau);
             if (meritValue <= (meritValue0 + alpha * tau * deltaMeritValue0)) {
                 break;
@@ -217,18 +221,34 @@ public class LCPSolver {
         return new LCPSolverResult(x, LCPResultFlag.MAX_ITERATIONS_REACHED);
     }
 
-    private void setBounds(DoubleMatrix u, DoubleMatrix l, double normalImpulse, double mu) {
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    private void setBounds(DoubleMatrix u, DoubleMatrix l, double normalImpulse, double mu, double muR) {
         u.put(new int[] {1, 2}, new int[] {0}, mu * Math.abs(normalImpulse));
+        u.put(new int[] {4, 5}, new int[] {0}, muR * Math.abs(normalImpulse));
         l.put(new int[] {1, 2}, new int[] {0}, -1.0 * mu * Math.abs(normalImpulse));
+        l.put(new int[] {4, 5}, new int[] {0}, -1.0 * muR * Math.abs(normalImpulse));
     }
 
-    public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double mu, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
-        return solveBLCPWithMinimumMapNewton(solveBLCPWithPGS(A, b, mu, epsilonRelative, 2, roundingDigit).x, A, b, mu, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
+        return solveBLCPWithMinimumMapNewton(solveBLCPWithPGS(A, b, mu, muR, epsilonRelative, 2, roundingDigit).x, A, b, mu, muR, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
     }
 
-    public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(b.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(b.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0), mu);
+        setBounds(u, l, x.get(0), mu, muR);
         List<Integer> setA = new ArrayList<>(), setJ = new ArrayList<>();
         DoubleMatrix y = Transforms.round(A.mmul(x).add(b), roundingDigit), H = constructHAndIntegerSets(x, y, u, l, setA, setJ), deltaX = new DoubleMatrix(b.rows, 1);
         double currentMeritValue = computeNewtonMeritValue(H), previousMeritValue = 0.0;
@@ -260,10 +280,10 @@ public class LCPSolver {
                 deltaX.put(setJ.stream().mapToInt(integer -> integer).toArray(), new int[] {0}, deltaXJ);
             }
 
-            double tau = projectedLineSearch(A, b, H, x, deltaX, u, l, mu, alpha, beta, delta, lineSearchIterations);
+            double tau = projectedLineSearch(A, b, H, x, deltaX, u, l, mu, muR, alpha, beta, delta, lineSearchIterations);
             // x is rounded to prevent numerical imprecision from changing the result
             Transforms.round(x.addi(deltaX.dup().mul(tau)), roundingDigit);
-            setBounds(u, l, x.get(0), mu);
+            setBounds(u, l, x.get(0), mu, muR);
 
             currentMeritValue = computeNewtonMeritValue(H);
             if (currentMeritValue < epsilonAbsolute) {
@@ -279,18 +299,28 @@ public class LCPSolver {
         return new LCPSolverResult(x, LCPResultFlag.MAX_ITERATIONS_REACHED);
     }
 
-    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix A, DoubleMatrix b, double mu, int iterations, int roundingDigit) {
-        return solveBLCPWithNNCG(initializeX(b), A, b, mu, iterations, roundingDigit);
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
+        return solveBLCPWithNNCG(initializeX(b), A, b, mu, muR, iterations, roundingDigit);
     }
 
-    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, int iterations, int roundingDigit) {
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
-        DoubleMatrix x1 = solveBLCPWithPGS(APrime, bPrime, b, mu, 10e-10, 1).x;
+        DoubleMatrix x1 = solveBLCPWithPGS(APrime, bPrime, b, mu, muR, 10e-10, 1).x;
         DoubleMatrix grad0 = x1.sub(x0.dup()).neg(), p0 = grad0.neg();
 
         DoubleMatrix xOld = x1.dup(), xNew = x1.dup(), gradNew, gradOld = grad0.dup(), p = p0.dup();
         for (int k = 1; k <= iterations; k++) {
-            xNew = solveBLCPWithPGS(APrime, bPrime, b, mu, 10e-10, 1).x;
+            xNew = solveBLCPWithPGS(APrime, bPrime, b, mu, muR, 10e-10, 1).x;
             gradNew = (xNew.sub(xOld)).neg();
             double beta = (gradNew.norm2() * gradNew.norm2()) / (gradOld.norm2() * gradOld.norm2());
             if (beta > 1.0) {
@@ -309,9 +339,9 @@ public class LCPSolver {
         return new LCPSolverResult(xNew, LCPResultFlag.MAX_ITERATIONS_REACHED);
     }
 
-    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix APrime, DoubleMatrix bPrime, DoubleMatrix b, double mu, double epsilon, int iterations) {
+    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix APrime, DoubleMatrix bPrime, DoubleMatrix b, double mu, double muR, double epsilon, int iterations) {
         DoubleMatrix x = initializeX(b), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0), mu);
+        setBounds(u, l, x.get(0), mu, muR);
         double gamma, delta = Double.POSITIVE_INFINITY;
 
         for (int j = 0; j < iterations; j++) {
@@ -319,7 +349,7 @@ public class LCPSolver {
             delta = 0;
 
             x.subi(bPrime.add(APrime.mmul(x)));
-            setBounds(u, l, x.get(0), mu);
+            setBounds(u, l, x.get(0), mu, muR);
             x = u.min(l.max(x));
             delta = Math.max(delta, x.max());
 
@@ -333,14 +363,19 @@ public class LCPSolver {
         return new LCPSolverResult(x, LCPResultFlag.MAX_ITERATIONS_REACHED);
     }
 
-    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix A, DoubleMatrix b, double mu, double epsilon, int iterations, int roundingDigit) {
-        return solveBLCPWithPGS(initializeX(b), A, b, mu, epsilon, iterations, roundingDigit);
+    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double epsilon, int iterations, int roundingDigit) {
+        return solveBLCPWithPGS(initializeX(b), A, b, mu, muR, epsilon, iterations, roundingDigit);
     }
 
-    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double epsilon, int iterations, int roundingDigit) {
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithPGS(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0), mu);
+        setBounds(u, l, x.get(0), mu, muR);
         double gamma, delta = Double.POSITIVE_INFINITY;
 
         for (int j = 0; j < iterations; j++) {
@@ -348,7 +383,7 @@ public class LCPSolver {
             delta = 0;
 
             x.subi(bPrime.add(APrime.mmul(x)));
-            setBounds(u, l, x.get(0), mu);
+            setBounds(u, l, x.get(0), mu, muR);
             x = u.min(l.max(x));
             delta = Math.max(delta, x.max());
 
@@ -378,16 +413,26 @@ public class LCPSolver {
         return result;
     }
 
-    public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix A, DoubleMatrix b, double mu, double omega, double epsilon, int iterations, int roundingDigit) {
-        return solveBLCPWithPSOR(initializeX(b), A, b, mu, omega, epsilon, iterations, roundingDigit);
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double omega, double epsilon, int iterations, int roundingDigit) {
+        return solveBLCPWithPSOR(initializeX(b), A, b, mu, muR, omega, epsilon, iterations, roundingDigit);
     }
 
-    public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double omega, double epsilon, int iterations, int roundingDigit) {
+
+    /**
+     * @param mu The "normal"/Coulomb friction coefficient
+     * @param muR The rolling friction coefficient
+     */
+    public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double omega, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix U = Transforms.strictUpperTriangular(A), L = Transforms.strictLowerTriangular(A), D = DoubleMatrix.diag(A.diag());
 
         DoubleMatrix M = D.dup().add(L.dup().mul(omega)), MInv = Transforms.round(Solve.pinv(M), roundingDigit), N = Transforms.round(D.dup().mul(omega - 1.0).add(U.dup().mul(omega)), roundingDigit);
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0, 0), mu);
+        setBounds(u, l, x.get(0, 0), mu, muR);
         double gamma, delta = Double.POSITIVE_INFINITY;
         for (int i = 0; i < iterations; i++) {
             gamma = delta;
@@ -396,7 +441,7 @@ public class LCPSolver {
                 DoubleMatrix xPrime = MInv.mmul(N.mmul(x).sub(b));
                 delta = Math.max(delta, xPrime.get(j));
                 x.put(j, Math.min(u.get(j), Math.max(l.get(j), xPrime.get(j))));
-                if (j == 0) { setBounds(u, l, x.get(0, 0), mu); }
+                if (j == 0) { setBounds(u, l, x.get(0, 0), mu, muR); }
             }
 
             if (delta > gamma) {
@@ -415,8 +460,10 @@ public class LCPSolver {
         DoubleMatrix u = constructUVector(collisions);
         DoubleMatrix f = constructFVector(collisions);
 
+        // TODO: Either switch other method to 6 rows in every function or switch back to 5 rows
+        // TODO: Collision class should be rewritten for rolling resistance: Slows down linear and angular velocity
         DoubleMatrix A = J.mmul(MInv).mmul(J.transpose());
-        DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.mmul(u).mul(-1.0).subi(J.mmul(MInv).mmul(f).mul(timeStep)), collisions);
+        DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.mmul(u).mul(-1.0), collisions, 6).subi(J.mmul(MInv).mmul(f).mul(timeStep));
         return new DoubleMatrix[] {A, b};
     }
 
@@ -427,48 +474,50 @@ public class LCPSolver {
         DoubleMatrix f = constructFVector(forces, torques, angularVelocities, inertiaMatrices);
 
         DoubleMatrix A = J.mmul(MInv).mmul(J.transpose());
-        DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.neg().mmul(u).sub(J.dup().mul(timeStep).mmul(MInv).mmul(f)), coefficientsOfRestitution);
+        DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.neg().mmul(u).sub(J.dup().mul(timeStep).mmul(MInv).mmul(f)), coefficientsOfRestitution, 5);
         return new DoubleMatrix[] {A, b};
     }
 
-    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, Collision[] collisions) {
+    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, Collision[] collisions, int indicesBetweenCollisions) {
         DoubleMatrix restitutionVector = new DoubleMatrix(b.rows, b.columns);
         for (int i = 0; i < collisions.length; i++) {
             // The minus is there because b is negative in the SIGGRAPH 2021 paper used as the basis for this implementation
-            restitutionVector.put(3 * i, 0, -collisions[i].coefficientOfRestitution * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
+            restitutionVector.put(indicesBetweenCollisions * i, 0, -collisions[i].coefficientOfRestitution * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
         }
         b.addi(restitutionVector);
         return b;
     }
 
-    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, double[] coefficientsOfRestitution) {
+    public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, double[] coefficientsOfRestitution, int indicesBetweenCollisions) {
         DoubleMatrix restitutionVector = new DoubleMatrix(b.rows, b.columns);
         for (int i = 0; i < coefficientsOfRestitution.length; i++) {
             // The minus is there because b is negative in the SIGGRAPH 2021 paper used as the basis for this implementation
-            restitutionVector.put(3 * i, 0, -coefficientsOfRestitution[i] * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
+            restitutionVector.put(indicesBetweenCollisions * i, 0, -coefficientsOfRestitution[i] * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
         }
         b.addi(restitutionVector);
         return b;
     }
 
     public static DoubleMatrix constructBLCPJacobian(Collision[] collisions) {
-        DoubleMatrix jacobian = new DoubleMatrix(3 * collisions.length, 12 * collisions.length);
+        // This function implicitly assumes that all collisions have 2 tangential directions
+        DoubleMatrix jacobian = new DoubleMatrix(6 * collisions.length, 12 * collisions.length);
         for (int i = 0; i < collisions.length; i++) {
             DoubleMatrix interpenetrationJacobian = constructInterpenetrationJacobian(collisions[i].normal, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
-            DoubleMatrix frictionJacobian = constructFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
-            jacobian.put(new int[] {i + i * 2}, Transforms.createIndexArray(i * 12, 12), interpenetrationJacobian);
-            jacobian.put( Transforms.createIndexArray(1 + i + i * 2, 2), Transforms.createIndexArray(i * 12, 12), frictionJacobian);
+            DoubleMatrix frictionJacobian = constructRotationalFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
+            jacobian.put(new int[] {6 * i}, Transforms.createIndexArray(i * 12, 12), interpenetrationJacobian);
+            jacobian.put(Transforms.createIndexArray(1 + 6 * i, 5), Transforms.createIndexArray(i * 12, 12), frictionJacobian);
         }
         return jacobian;
     }
 
     public static DoubleMatrix constructBLCPJacobian(Vector3d[] normals, Vector3d[][] tangentialDirectionsArrays, Vector3d[] contactPoints, Vector3d[] centerOfMassesA, Vector3d[] centerOfMassesB) {
-        DoubleMatrix jacobian = new DoubleMatrix(12, 3 * contactPoints.length);
+        // This function implicitly assumes that all collisions have 2 tangential directions
+        DoubleMatrix jacobian = new DoubleMatrix(12, 6 * contactPoints.length);
         for (int i = 0; i < contactPoints.length; i++) {
             DoubleMatrix interpenetrationJacobian = constructInterpenetrationJacobian(normals[i], contactPoints[i], centerOfMassesA[i], centerOfMassesB[i]);
-            DoubleMatrix frictionJacobian = constructFrictionJacobian(tangentialDirectionsArrays[i], contactPoints[i], centerOfMassesA[i], centerOfMassesB[i]);
-            jacobian.put(Transforms.createIndexArray(12), new int[] {i + i * 2}, interpenetrationJacobian.transpose());
-            jacobian.put(Transforms.createIndexArray(12), Transforms.createIndexArray(1 + i + i * 2, 2), frictionJacobian.transpose());
+            DoubleMatrix frictionJacobian = constructRotationalFrictionJacobian(tangentialDirectionsArrays[i], contactPoints[i], centerOfMassesA[i], centerOfMassesB[i]);
+            jacobian.put(Transforms.createIndexArray(12), new int[] {6 * i}, interpenetrationJacobian.transpose());
+            jacobian.put(Transforms.createIndexArray(12), Transforms.createIndexArray(1 + 6 * i, 5), frictionJacobian.transpose());
         }
         jacobian = jacobian.transpose();
         return jacobian;
@@ -553,7 +602,7 @@ public class LCPSolver {
         int numOfTangentialDirections = collisions[0].tangentialDirections.length;
         DoubleMatrix frictionJacobian = new DoubleMatrix(12, collisions.length * numOfTangentialDirections);
         for (int i = 0; i < collisions.length; i++) {
-            DoubleMatrix jacobian = constructFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
+            DoubleMatrix jacobian = constructRotationalFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
             int rowBaseIndex = i * numOfTangentialDirections;
             frictionJacobian.put(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, Transforms.createIndexArray(rowBaseIndex, numOfTangentialDirections), jacobian.transpose());
         }
@@ -587,6 +636,8 @@ public class LCPSolver {
     }
 
     public static DoubleMatrix constructFrictionJacobian(Vector3d[] tangentialDirections, Vector3d contactPoint, Vector3d centerOfMassA, Vector3d centerOfMassB) {
+        // (2 * tangential directions + 1) is needed as a size, because the normal tangential friction directions
+        // and then the rotational friction directions which consist of the tangential directions and the normal direction are needed
         DoubleMatrix jacobian = new DoubleMatrix(tangentialDirections.length, 12);
         for (int i = 0; i < tangentialDirections.length; i++) {
             DoubleMatrix tD = Transforms.jomlVectorToJBLASVector(tangentialDirections[i]);
@@ -600,6 +651,29 @@ public class LCPSolver {
             jacobian.put(new int[] {i}, new int[] {6, 7, 8}, tD.transpose());
             jacobian.put(new int[] {i}, new int[] {9, 10, 11}, tDrBProduct);
         }
+        return jacobian;
+    }
+
+    public static DoubleMatrix constructRotationalFrictionJacobian(Vector3d[] tangentialDirections, Vector3d contactPoint, Vector3d centerOfMassA, Vector3d centerOfMassB) {
+        // (2 * tangential directions + 1) is needed as a size, because the normal tangential friction directions
+        // and then the rotational friction directions which consist of the tangential directions and the normal direction are needed
+        DoubleMatrix jacobian = new DoubleMatrix(2 * tangentialDirections.length + 1, 12);
+        for (int i = 0; i < tangentialDirections.length; i++) {
+            DoubleMatrix tD = Transforms.jomlVectorToJBLASVector(tangentialDirections[i]);
+            DoubleMatrix rA = Transforms.jomlVectorToJBLASVector(new Vector3d(contactPoint).sub(centerOfMassA));
+            DoubleMatrix rB = Transforms.jomlVectorToJBLASVector(new Vector3d(contactPoint).sub(centerOfMassB));
+            DoubleMatrix tDrAProduct = tD.transpose().mmul(Transforms.createCrossProductMatrix(rA));
+            DoubleMatrix tDrBProduct = tD.transpose().mul(-1.0).mmul(Transforms.createCrossProductMatrix(rB));
+
+            jacobian.put(new int[] {i}, new int[] {0, 1, 2}, tD.transpose().mul(-1.0));
+            jacobian.put(new int[] {i}, new int[] {3, 4, 5}, tDrAProduct);
+            jacobian.put(new int[] {i}, new int[] {6, 7, 8}, tD.transpose());
+            jacobian.put(new int[] {i}, new int[] {9, 10, 11}, tDrBProduct);
+            jacobian.put(new int[] {i + tangentialDirections.length + 1}, new int[] {3, 4, 5}, tD.transpose().mul(-1.0));
+            jacobian.put(new int[] {i + tangentialDirections.length + 1}, new int[] {9, 10, 11}, tD.transpose());
+        }
+        jacobian.put(new int[] {2}, new int[] {3, 4, 5}, Transforms.jomlVectorToJBLASVector(new Vector3d(0.0, -1.0, 0.0)).transpose());
+        jacobian.put(new int[] {2}, new int[] {9, 10, 11}, Transforms.jomlVectorToJBLASVector(new Vector3d(0.0, 1.0, 0.0)).transpose());
         return jacobian;
     }
 

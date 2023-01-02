@@ -28,6 +28,8 @@ public class Sphere implements CollisionShape {
             return isColliding((Sphere) shape);
         } else if (shape instanceof AABB) {
             return isColliding((AABB) shape);
+        } else if (shape instanceof OBB) {
+            return ((OBB) shape).isColliding(this);
         } else {
             return false;
         }
@@ -48,6 +50,8 @@ public class Sphere implements CollisionShape {
     public Vector3d findPenetrationDepth(CollisionShape shape) {
         if (shape instanceof Sphere) {
             return findPenetrationDepth((Sphere) shape);
+        } else if (shape instanceof OBB) {
+            return ((OBB) shape).findPenetrationDepth(this).negate(new Vector3d());
         } else {
             return new Vector3d(Double.NaN);
         }
@@ -57,6 +61,12 @@ public class Sphere implements CollisionShape {
     public Vector3d[] findClosestPoints(CollisionShape shape) {
         if (shape instanceof Sphere) {
             return getNearestPoints((Sphere) shape);
+        } else if (shape instanceof Polyhedron) {
+            Vector3d[] closestPoints = shape.findClosestPoints(this);
+            return new Vector3d[] {closestPoints[1], closestPoints[0]};
+        } else if (shape instanceof OBB) {
+            Vector3d[] closestPoints = ((OBB) shape).findClosestPoints(this);
+            return new Vector3d[] {closestPoints[1], closestPoints[0]};
         } else {
             return new Vector3d[0];
         }

@@ -32,13 +32,6 @@ public class MainRenderingEngine extends RenderingEngine {
         lightManager.addRenderablePointLight(new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024));
         lightManager.addSpotLight(new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024, camera));
 
-        /*RenderComponent helloWorld = renderComponentManager.addRenderComponent(new AssimpModel("./src/main/resources/models/HelloWorld/HelloWorld.obj", new Matrix4f().identity().rotate(Math.toRadians(-55.0f), new Vector3f(1.0f, 0.0f, 0.0f)), true));
-        RenderComponent cube = renderComponentManager.addRenderComponent(new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f)), true));
-        TestPhysicsSphere physicsObject1 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", ObjectType.DYNAMIC, new Vector3d(0.0, 8.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 10.0, 1.0);
-        TestPhysicsSphere physicsObject2 = new TestPhysicsSphere("./src/main/resources/models/HelloWorld/sphere2.obj", ObjectType.STATIC, new Vector3d(0.0, 6.0, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), Double.POSITIVE_INFINITY, 1.0);
-        renderComponentManager.addRenderComponents(new ArrayList<>(Arrays.asList(physicsObject1.model, physicsObject2.model)));
-        Learning6.engineInstance.getMainPhysicsEngine().entities.addAll(Arrays.asList(physicsObject1, physicsObject2));*/
-
         RenderingUnit standardRenderingUnit = new StandardRenderingUnit(shaderProgram, Entity.getRenderComponents(renderComponentManager.allEntities));
         RenderingUnit lightRenderingUnit = new LightRenderingUnit(lsShaderProgram, lightManager.allRenderableLights);
         RenderingUnit skyboxRenderingUnit = new SkyboxRenderingUnit(skyboxManager.addSkybox(new Skybox("./src/main/resources/textures/skybox", ".jpg", false)));
@@ -82,14 +75,18 @@ public class MainRenderingEngine extends RenderingEngine {
 
         Framebuffer.blitFrameBuffers(mainRenderer.getFramebuffer(), intermediateFb, new FramebufferAttachment[]{FramebufferAttachment.COLOR_ATTACHMENT0, FramebufferAttachment.COLOR_ATTACHMENT1});
 
+        // Blur disappears at first fullscreen
+        // Texture used at beginning is false/from old frame
         blurRenderer.render(RenderInto.COLOR_ONLY);
 
+        // The normal framebuffer is too large at the third window size
         Framebuffer.getStandardFramebuffer().bind();
         GL33.glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
         GL33.glEnable(GL33.GL_FRAMEBUFFER_SRGB);
         if (resize) { GL33.glViewport(0, 0, window.width, window.height); resize = false;}
 
+        // Most likely the source of the fullscreen problem
         quadRenderingEngineUnit.render(new AbstractMap.SimpleEntry<>(RenderInto.COLOR_ONLY, RenderParameters.COLOR_ENABLED));
 
         GL33.glDisable(GL33.GL_FRAMEBUFFER_SRGB);

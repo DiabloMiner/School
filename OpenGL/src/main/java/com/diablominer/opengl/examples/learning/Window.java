@@ -60,7 +60,11 @@ public class Window {
         GLFWWindowSizeCallback windowsizecallback = new GLFWWindowSizeCallback() {
             @Override
             public void invoke(long window, int width, int height) {
+                if (width == 1296) {
+                    System.out.print("");
+                }
                 setSize(width, height);
+                System.out.println(width +  " | " + height + "  |  Fullscreen: " + fullscreen);
                 Learning6.engineInstance.getEventManager().executeEvent(new WindowResizeEvent(allWindows.get(id)));
             }
         };
@@ -135,10 +139,12 @@ public class Window {
             previousHeight = height;
             width = monitorWidth;
             height = monitorHeight;
+            System.out.println("setFullscreen:   " + width + " | " + height + "  |  Fullscreen: " + fullscreen);
             GLFW.glfwSetWindowMonitor(id, GLFW.glfwGetPrimaryMonitor(), ((videoMode.width() - this.width) / 2), ((videoMode.height() - this.height) / 2), width, height, videoMode.refreshRate());
         } else {
             width = previousWidth;
             height = previousHeight;
+            System.out.println("setFullscreen:   " + width + " | " + height + "  |  Fullscreen: " + fullscreen);
             GLFW.glfwSetWindowMonitor(id, 0, ((monitorWidth - this.width) / 2), ((monitorHeight - this.height) / 2), width, height, videoMode.refreshRate());
         }
     }

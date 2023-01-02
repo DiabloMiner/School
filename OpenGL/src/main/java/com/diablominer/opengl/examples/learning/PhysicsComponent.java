@@ -2,20 +2,19 @@ package com.diablominer.opengl.examples.learning;
 
 import org.joml.*;
 
-import java.lang.Math;
 import java.util.*;
 
 public abstract class PhysicsComponent implements Component {
 
-    public static double epsilon = Math.ulp(1.0);
+    public static double epsilon = 1e-15;
     public static double collisionTimeEpsilon = 10e-50;
     public static double massThreshold = Double.MAX_VALUE / 1e160;
     public static int maxCollisionTimeIterations = 30;
-    public static final int roundingDigit = 20;
+    public static final int roundingDigit = 15;
 
-    public double coefficientOfRestitution, coefficientOfStaticFriction, coefficientOfKineticFriction;
     public CollisionShape collisionShape;
     public ObjectType objectType;
+    public Material material;
 
     protected double radius;
     protected final double mass;
@@ -27,7 +26,8 @@ public abstract class PhysicsComponent implements Component {
     protected final Set<Force> forces;
     protected boolean alreadyTimeStepped;
 
-    public PhysicsComponent(ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction) {
+    public PhysicsComponent(Material material, ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius) {
+        this.material = material;
         this.objectType = objectType;
         this.collisionShape = collisionShape;
         this.mass = mass;
@@ -49,9 +49,6 @@ public abstract class PhysicsComponent implements Component {
             this.worldFrameInertia = new Matrix3d(bodyFrameInertia);
             this.worldFrameInertiaInv = new Matrix3d().scale(0.0);
         }
-        this.coefficientOfRestitution = coefficientOfRestitution;
-        this.coefficientOfStaticFriction = coefficientOfStaticFriction;
-        this.coefficientOfKineticFriction = coefficientOfKineticFriction;
         this.alreadyTimeStepped = false;
         determineForceAndTorque();
     }

@@ -335,6 +335,19 @@ public class Transforms {
         return result;
     }
 
+    /**
+     * Sets -0.0s to 0.0 for the purpose of comparing them
+     * @param vec Matrix which may have false zeros
+     */
+    public static DoubleMatrix fixZeros(DoubleMatrix matrix) {
+        for (int i = 0; i < matrix.data.length; i++) {
+            if (matrix.get(i) == -0.0) {
+                matrix.put(i, 0.0);
+            }
+        }
+        return matrix;
+    }
+
     public static ArrayList<Integer> createPrefilledList(int numberOfElements, int value) {
         int[] array = new int[numberOfElements];
         Arrays.fill(array, value);
@@ -510,6 +523,11 @@ public class Transforms {
             }
         }
         return returnValue;
+    }
+
+    public static float nonzeroSignum(float number) {
+        float signum = Math.signum(number);
+        return signum == 0.0f ? 1.0f : signum;
     }
 
 }

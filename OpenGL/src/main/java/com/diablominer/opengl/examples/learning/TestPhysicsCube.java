@@ -13,16 +13,15 @@ public class TestPhysicsCube extends PhysicsComponent {
 
     private final double edgeLength;
 
-    public TestPhysicsCube(String path, ObjectType objectType, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
-        super(objectType, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)), 1.0, 0.1, 0.14);
+    public TestPhysicsCube(AssimpModel model, Material material, ObjectType objectType, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
+        super(material, objectType, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)));
         this.edgeLength = edgeLength;
-        this.model = new AssimpModel(path, new Vector3f(0.0f).set(position));
+        this.model = model;
     }
 
     @Override
     public void performTimeStep(double timeStep) {
         performSemiImplicitEulerTimeStep(timeStep);
-        model.updateModelMatrix(new Matrix4f(worldMatrix));
     }
 
     @Override
@@ -81,15 +80,15 @@ public class TestPhysicsCube extends PhysicsComponent {
             Vector3d uA = Transforms.round(Transforms.mulVectorWithMatrix4(kA, new Matrix4d().identity().set(worldFrameInertiaInv)), 2);
             Vector3d uB = Transforms.round(Transforms.mulVectorWithMatrix4(kB, new Matrix4d().identity().set(cube.worldFrameInertiaInv)), 2);
 
-            double coefficientOfRestitution = (this.coefficientOfRestitution + cube.coefficientOfRestitution) / 2;
+            double coefficientOfRestitution = Material.coefficientsOfRestitution.get(Material.hash(this.material, physicsComponent.material));
 
             double numerator = -(1 + coefficientOfRestitution) * (new Vector3d(normal).dot(new Vector3d(this.velocity).sub(new Vector3d(cube.velocity))) + (new Vector3d(this.angularVelocity).dot(kA)) - new Vector3d(cube.angularVelocity).dot(kB));
             double denominator = (1.0 / this.mass) + (1.0 / cube.mass) + kA.dot(uA) + kB.dot(uB);
             double f = Transforms.round(numerator / denominator, 10);
             Vector3d impulse = new Vector3d(normal).mul(f);
 
-            double normalObjFrictionImpulse = computeFrictionImpulse(this, normal, (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0);
-            double otherObjFrictionImpulse = computeFrictionImpulse(cube, normal, (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0);
+            double normalObjFrictionImpulse = computeFrictionImpulse(this, normal, Material.coefficientsOfKineticFriction.get(Material.hash(this.material, physicsComponent.material)));
+            double otherObjFrictionImpulse = computeFrictionImpulse(cube, normal, Material.coefficientsOfKineticFriction.get(Material.hash(this.material, physicsComponent.material)));
 
             // DoubleMatrix[] lcpMatrices = LCPSolver.constructLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {(this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0}, 4, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, -1.0, 0.0), new Vector3d(0.0, 0.0, 1.0), new Vector3d(0.0, 0.0, -1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});
             /*DoubleMatrix[] blcpMatrices = LCPSolver.constructBLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {coefficientOfRestitution}, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, 0.0, 1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});

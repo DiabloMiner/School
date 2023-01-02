@@ -53,9 +53,16 @@ public abstract class PhysicsEngine implements SubEngine {
                     if (!alreadySearched.containsKey(indexKey(object1, object2, entities)) && object1.getPhysicsComponent().willCollide(object2.getPhysicsComponent(), timeStep)) {
                         collisions.addAll(Arrays.asList(object1.getPhysicsComponent().getCollisions(object2.getPhysicsComponent(), timeStep)));
                     }
+                    // TODO: Remove
+                    object1.getPhysicsComponent().willCollide(object2.getPhysicsComponent(), timeStep);
                     alreadySearched.putIfAbsent(indexKey(object1, object2, entities), true);
                 }
             }
+        }
+        // TODO: Remove
+        if (collisions.size() == 1) {
+            System.out.print("");
+            entities.get(1).getPhysicsComponent().willCollide(entities.get(2).getPhysicsComponent(), 0.01);
         }
         return collisions;
     }
@@ -64,26 +71,28 @@ public abstract class PhysicsEngine implements SubEngine {
         return entities.indexOf(object1) + entities.indexOf(object2);
     }
 
-    protected void updateEarlierObjects(List<Collision> sortedCollisions, double timeStep, int startingIndex) {
-        for (int i = startingIndex; i < sortedCollisions.size(); i++) {
-            sortedCollisions.get(i).A.performTimeStep(timeStep);
-            sortedCollisions.get(i).B.performTimeStep(timeStep);
+    protected void updateEarlierObjects(List<Collision> sortedCollisions, double timeStep, int endingIndex) {
+        for (int i = 0; i < endingIndex; i++) {
+            double h = timeStep - sortedCollisions.get(i).timeStepTaken;
+            sortedCollisions.get(i).A.performTimeStep(h);
+            sortedCollisions.get(i).B.performTimeStep(h);
         }
+        double h = (endingIndex != 0) ? (timeStep - sortedCollisions.get(endingIndex - 1).timeStepTaken) : (timeStep);
         List<PhysicsComponent> nonCollidingObjects = this.entities.stream().map(Entity::getPhysicsComponent).collect(Collectors.toList());
         nonCollidingObjects.removeAll(physicsObjectsFromCollisions(sortedCollisions));
-        nonCollidingObjects.forEach(object -> object.performTimeStep(timeStep));
+        nonCollidingObjects.forEach(object -> object.performTimeStep(h));
     }
 
     protected void resolveCollisions(Set<Collision> collisions, double timeStep) {
         List<Collision> sortedCollisions = new ArrayList<>(collisions);
-        sortedCollisions.sort((c1, c2) -> Double.compare(c2.timeStepTaken, c1.timeStepTaken));
+        sortedCollisions.sort(Comparator.comparingDouble(c -> c.timeStepTaken));
 
         List<Collision> subList = new ArrayList<>();
         for (int i = 0; i < sortedCollisions.size(); i++) {
             Collision collision = sortedCollisions.get(i);
-            if (collision.isColliding()) {
+            if (collision.isColliding(timeStep - collision.timeStepTaken)) {
                 if (!subList.isEmpty() && subList.get(subList.size() - 1).timeStepTaken != collision.timeStepTaken) {
-                    updateEarlierObjects(sortedCollisions, subList.get(subList.size() - 1).timeStepTaken, i);
+                    updateEarlierObjects(sortedCollisions, subList.get(0).timeStepTaken, i - subList.size());
                     processCollisionSubList(subList, timeStep - subList.get(subList.size() - 1).timeStepTaken);
                     subList.clear();
                 }
@@ -92,11 +101,11 @@ public abstract class PhysicsEngine implements SubEngine {
         }
 
         if (subList.size() > 0) {
-            updateEarlierObjects(sortedCollisions, subList.get(subList.size() - 1).timeStepTaken, subList.size());
+            updateEarlierObjects(sortedCollisions, subList.get(0).timeStepTaken, sortedCollisions.size() - subList.size());
             processCollisionSubList(subList, timeStep - subList.get(subList.size() - 1).timeStepTaken);
             subList.clear();
         }
-        checkForFurtherCollisions(timeStep - sortedCollisions.get(sortedCollisions.size() - 1).timeStepTaken);
+        checkForFurtherCollisions(physicsObjectsFromCollisions(sortedCollisions), timeStep - sortedCollisions.get(sortedCollisions.size() - 1).timeStepTaken);
         sortedCollisions.forEach(collision -> {
             collision.A.alreadyTimeStepped = true;
             collision.B.alreadyTimeStepped = true;
@@ -110,7 +119,8 @@ public abstract class PhysicsEngine implements SubEngine {
             DoubleMatrix APrime = matrices[0].get(Transforms.createIndexArray(i * size, size), Transforms.createIndexArray(i * size, size));
             DoubleMatrix bPrime = matrices[1].get(Transforms.createIndexArray(i * size, size), new int[] {0});
             DoubleMatrix x = solveLCP(APrime, bPrime, subList.get(i)).x;
-            subList.get(i).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)});
+            // Add rolling friction coefficients to collision solving
+            subList.get(i).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)}, new double[] {x.get(4), x.get(5)}, roundingDigit);
             LCPSolver.addSolvedCollision(subList.get(i), x);
         }
     }
@@ -132,13 +142,13 @@ public abstract class PhysicsEngine implements SubEngine {
                 return LCPSolver.getInstance().solveLCPWithMinimumMapNewton(x0, APrime, bPrime, config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
             } else if (solverConfig.solverChoice.equals(LCPSolverChoice.BLCP_MIN_MAP_NEWTON)) {
                 MinMapNewtonConfiguration config = (MinMapNewtonConfiguration) solverConfig;
-                return LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(x0, APrime, bPrime, currentCollision.getFrictionCoefficient(), config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
+                return LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(x0, APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
             } else if (solverConfig.solverChoice.equals(LCPSolverChoice.BLCP_NNCP)) {
                 NNCGConfiguration config = (NNCGConfiguration) solverConfig;
-                return LCPSolver.getInstance().solveBLCPWithNNCG(x0, APrime, bPrime, currentCollision.getFrictionCoefficient(), config.iterations, roundingDigit);
+                return LCPSolver.getInstance().solveBLCPWithNNCG(x0, APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.iterations, roundingDigit);
             } else if (solverConfig.solverChoice.equals(LCPSolverChoice.BLCP_PSOR)) {
                 PSORConfiguration config = (PSORConfiguration) solverConfig;
-                return LCPSolver.getInstance().solveBLCPWithPSOR(x0, APrime, bPrime, currentCollision.getFrictionCoefficient(), config.omega, config.epsilonRelative, config.iterations, roundingDigit);
+                return LCPSolver.getInstance().solveBLCPWithPSOR(x0, APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.omega, config.epsilonRelative, config.iterations, roundingDigit);
             } else  {
                 if (solverConfig.solverChoice.forBLCP) {
                     PGSConfiguration config = (PGSConfiguration) solverConfig;
@@ -154,17 +164,17 @@ public abstract class PhysicsEngine implements SubEngine {
                 return LCPSolver.getInstance().solveLCPWithMinimumMapNewton(APrime, bPrime, config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
             } else if (solverConfig.solverChoice.equals(LCPSolverChoice.BLCP_MIN_MAP_NEWTON)) {
                 MinMapNewtonConfiguration config = (MinMapNewtonConfiguration) solverConfig;
-                return LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(APrime, bPrime, currentCollision.getFrictionCoefficient(), config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
+                return LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
             } else if (solverConfig.solverChoice.equals(LCPSolverChoice.BLCP_NNCP)) {
                 NNCGConfiguration config = (NNCGConfiguration) solverConfig;
-                return LCPSolver.getInstance().solveBLCPWithNNCG(APrime, bPrime, currentCollision.getFrictionCoefficient(), config.iterations, roundingDigit);
+                return LCPSolver.getInstance().solveBLCPWithNNCG(APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.iterations, roundingDigit);
             } else if (solverConfig.solverChoice.equals(LCPSolverChoice.BLCP_PSOR)) {
                 PSORConfiguration config = (PSORConfiguration) solverConfig;
-                return LCPSolver.getInstance().solveBLCPWithPSOR(APrime, bPrime, currentCollision.getFrictionCoefficient(), config.omega, config.epsilonRelative, config.iterations, roundingDigit);
+                return LCPSolver.getInstance().solveBLCPWithPSOR(APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.omega, config.epsilonRelative, config.iterations, roundingDigit);
             } else  {
                 if (solverConfig.solverChoice.forBLCP) {
                     PGSConfiguration config = (PGSConfiguration) solverConfig;
-                    return LCPSolver.getInstance().solveBLCPWithPGS(APrime, bPrime, currentCollision.getFrictionCoefficient(), config.epsilonRelative, config.iterations, roundingDigit);
+                    return LCPSolver.getInstance().solveBLCPWithPGS(APrime, bPrime, currentCollision.getFrictionCoefficient(), currentCollision.coefficientOfRollingFriction, config.epsilonRelative, config.iterations, roundingDigit);
                 } else {
                     MinMapNewtonConfiguration config = (MinMapNewtonConfiguration) solverConfig;
                     return LCPSolver.getInstance().solveLCPWithMinimumMapNewton(APrime, bPrime, config.alpha, config.beta, config.delta, config.epsilonAbsolute, config.epsilonRelative, config.iterations, config.lineSearchIterations, roundingDigit);
@@ -173,7 +183,7 @@ public abstract class PhysicsEngine implements SubEngine {
         }
     }
 
-    protected void checkForFurtherCollisions(double timeStep) {
+    protected void checkForFurtherCollisions(Collection<PhysicsComponent> physicsComponents, double timeStep) {
         Set<Collision> collisions = findCollisions(timeStep);
         if (collisions.size() > 0) {
             leftOverTime = this.simulationTimeStep;
@@ -182,7 +192,16 @@ public abstract class PhysicsEngine implements SubEngine {
             resolveCollisions(collisions, timeStep);
             setSimulationTimeStep(newTimeStep);
         } else {
+            setUseRK2(physicsComponents, false);
             performTimeStep(timeStep);
+        }
+    }
+
+    protected void setUseRK2(Collection<PhysicsComponent> physicsComponents, boolean useRK2) {
+        for (PhysicsComponent physicsComponent : physicsComponents) {
+            if (physicsComponent instanceof StandardPhysicsComponent) {
+                ((StandardPhysicsComponent) physicsComponent).useRK2 = useRK2;
+            }
         }
     }
 

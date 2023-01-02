@@ -16,19 +16,18 @@ public class StandardRenderingUnit extends RenderingUnit {
     public void update() {
         update(this.shaderProgram);
         // Essential features
-        // TODO: Introduce LCPs; Add Material system for coefficients
-            // TODO: Then proceed to multibody collisions ; Maybe implement VLP
             // TODO: Engine: Why would objects later in time be updated to this timeStep? ; Should now be updated properly but has to be tested
-        // TODO: Introduce entity-component system
-        // TODO: Test billard
+        // TODO: Test billard / Proceed to multibody collisions
 
         // Optional features
+        // TODO: Implement Loader
         // TODO: Implement LCP
         // TODO: Improve willCollide for collisions without forces
         // TODO: Maybe redo some texture maps ; Maybe add in enums for every texture parameter
         // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible --> Fully implement Normal mapping (more effective)
         // TODO: Optimize VBO usage ; Review assimp code ; Rewrite the geometry shaders into for loops in the linux version
         // TODO: Better Bloom ; Implement curved surfaces rendering ; Implement reflection probes (with retroreflection) as classes
+        // TODO: Maybe improve Material hashing function
 
         // Added functionality:
         // Implemented directional shadow casting for directional lights and spot lights ; Added dynamic yaw and pitch calculation ; Implemented omnidirectional shadow casting ;
@@ -47,6 +46,7 @@ public class StandardRenderingUnit extends RenderingUnit {
         // Maybe implement timesteps outside of collisions that are RK2: When there wont be a collision in a rk2 timesteps it performs rk2 ; Implemented an index to prevent double collision checks;
         // Nearest point functions for more shapes have to be implemented: Normal tests, distance and closest points: Slow for nonpolyhedral objects though ; Implement static/dynamic objects as enum (dont check for static-static collisions)
         // Removed updateInertiaMatrix, because the functionality has essentially been replaced by objecttype ; Shadow values were moved into RenderComponent ; Decided on differentiating between render components(added from the engine) and renderables
+        // Implemented a material system for different coefficients
     }
 
     @Override

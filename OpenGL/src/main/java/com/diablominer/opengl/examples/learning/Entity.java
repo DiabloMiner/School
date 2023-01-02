@@ -6,7 +6,7 @@ import java.util.Map;
 
 public class Entity {
 
-    public static Map<String, Entity> allEntities;
+    public static Map<String, Entity> allEntities = new HashMap<>();
 
     protected Map<Component.Type, Component> components;
 
@@ -18,7 +18,7 @@ public class Entity {
     public Entity(String id, Component.Type[] types, Component[] components) {
         this.components = new HashMap<>();
         addComponents(types, components);
-        allEntities.putIfAbsent(id, this);
+        allEntities.put(id, this);
     }
 
     public void addComponent(Component.Type type, Component component) {

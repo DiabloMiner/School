@@ -21,11 +21,13 @@ public class TransformComponent implements Component {
     }
 
     public void update(Vector3d translation, Quaterniond rotation) {
-        modelMatrix.translate(translation).rotate(rotation);
+        Vector3d scaling = modelMatrix.getScale(new Vector3d());
+        modelMatrix.identity().translate(translation).rotate(rotation).scale(scaling);
     }
 
     public void update(Matrix4d matrix) {
-        modelMatrix.set(matrix);
+        Vector3d scaling = modelMatrix.getScale(new Vector3d());
+        modelMatrix.identity().translate(matrix.getTranslation(new Vector3d())).rotate(matrix.getUnnormalizedRotation(new Quaterniond())).scale(scaling);
     }
 
 }

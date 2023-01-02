@@ -7,8 +7,8 @@ import java.util.Set;
 
 public class PhysicsPolyhedron extends StandardPhysicsComponent {
 
-    public PhysicsPolyhedron(AssimpModel model, Matrix4d worldMatrix, ObjectType objectType, Vector3d velocity, Vector3d angularVelocity, Collection<Force> forces, double mass, double coefficientOfRestitution, double coefficientOfStaticFriction, double coefficientOfKineticFriction) {
-        super(objectType, new Polyhedron(worldMatrix, model), new Vector3d(0.0), velocity, worldMatrix.getNormalizedRotation(new Quaterniond()), angularVelocity, new Matrix3d(), forces, mass, 0.0, coefficientOfRestitution, coefficientOfStaticFriction, coefficientOfKineticFriction);
+    public PhysicsPolyhedron(AssimpModel model, Matrix4d worldMatrix, Material material, ObjectType objectType, Vector3d velocity, Vector3d angularVelocity, Collection<Force> forces, double mass) {
+        super(material, objectType, new Polyhedron(worldMatrix, model), new Vector3d(0.0), velocity, worldMatrix.getNormalizedRotation(new Quaterniond()), angularVelocity, new Matrix3d(), forces, mass, 0.0);
         Set<Vector3d> modelVertices = new HashSet<>(model.getAllVerticesInWorldCoordinates(worldMatrix));
         this.position.set(computeCenterOfMass(modelVertices));
         this.bodyFrameInertia.set(computeInertiaMatrix(modelVertices, mass));
