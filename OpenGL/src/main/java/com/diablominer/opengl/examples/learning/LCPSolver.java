@@ -460,8 +460,6 @@ public class LCPSolver {
         DoubleMatrix u = constructUVector(collisions);
         DoubleMatrix f = constructFVector(collisions);
 
-        // TODO: Either switch other method to 6 rows in every function or switch back to 5 rows
-        // TODO: Collision class should be rewritten for rolling resistance: Slows down linear and angular velocity
         DoubleMatrix A = J.mmul(MInv).mmul(J.transpose());
         DoubleMatrix b = applyCoefficientsOfRestitution(J, u, J.mmul(u).mul(-1.0), collisions, 6).subi(J.mmul(MInv).mmul(f).mul(timeStep));
         return new DoubleMatrix[] {A, b};
@@ -503,7 +501,7 @@ public class LCPSolver {
         DoubleMatrix jacobian = new DoubleMatrix(6 * collisions.length, 12 * collisions.length);
         for (int i = 0; i < collisions.length; i++) {
             DoubleMatrix interpenetrationJacobian = constructInterpenetrationJacobian(collisions[i].normal, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
-            DoubleMatrix frictionJacobian = constructRotationalFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
+            DoubleMatrix frictionJacobian = constructRotationalFrictionJacobian(collisions[i].normal, collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
             jacobian.put(new int[] {6 * i}, Transforms.createIndexArray(i * 12, 12), interpenetrationJacobian);
             jacobian.put(Transforms.createIndexArray(1 + 6 * i, 5), Transforms.createIndexArray(i * 12, 12), frictionJacobian);
         }
@@ -515,7 +513,7 @@ public class LCPSolver {
         DoubleMatrix jacobian = new DoubleMatrix(12, 6 * contactPoints.length);
         for (int i = 0; i < contactPoints.length; i++) {
             DoubleMatrix interpenetrationJacobian = constructInterpenetrationJacobian(normals[i], contactPoints[i], centerOfMassesA[i], centerOfMassesB[i]);
-            DoubleMatrix frictionJacobian = constructRotationalFrictionJacobian(tangentialDirectionsArrays[i], contactPoints[i], centerOfMassesA[i], centerOfMassesB[i]);
+            DoubleMatrix frictionJacobian = constructRotationalFrictionJacobian(normals[i], tangentialDirectionsArrays[i], contactPoints[i], centerOfMassesA[i], centerOfMassesB[i]);
             jacobian.put(Transforms.createIndexArray(12), new int[] {6 * i}, interpenetrationJacobian.transpose());
             jacobian.put(Transforms.createIndexArray(12), Transforms.createIndexArray(1 + 6 * i, 5), frictionJacobian.transpose());
         }
@@ -554,7 +552,7 @@ public class LCPSolver {
         DoubleMatrix muMatrix = constructDiagonalMatrix(collisions);
         DoubleMatrix E = constuctEMatrix(numOfContacts, numOfTangentialDirections);
 
-        DoubleMatrix C = new DoubleMatrix(numOfContacts * numOfTangentialDirections + muMatrix.rows + 1, numOfContacts * numOfTangentialDirections + muMatrix.columns + 1).fill(0.0);
+        DoubleMatrix C = new DoubleMatrix(numOfContacts * (2 * numOfTangentialDirections + 1) + muMatrix.rows + 1, numOfContacts * (2 * numOfTangentialDirections + 1) + muMatrix.columns + 1).fill(0.0);
         C.put(Transforms.createIndexArray(1 + E.rows, muMatrix.rows), Transforms.createIndexArray(muMatrix.columns), muMatrix);
         C.put(Transforms.createIndexArray(C.rows - numOfContacts, numOfContacts), Transforms.createIndexArray(muMatrix.columns, numOfContacts * numOfTangentialDirections), E.transpose().mul(-1.0));
         C.put(Transforms.createIndexArray(1, E.rows), Transforms.createIndexArray(C.columns - numOfContacts, E.columns), E);
@@ -600,11 +598,11 @@ public class LCPSolver {
         }
 
         int numOfTangentialDirections = collisions[0].tangentialDirections.length;
-        DoubleMatrix frictionJacobian = new DoubleMatrix(12, collisions.length * numOfTangentialDirections);
+        DoubleMatrix frictionJacobian = new DoubleMatrix(12, collisions.length * (2 * numOfTangentialDirections + 1));
         for (int i = 0; i < collisions.length; i++) {
-            DoubleMatrix jacobian = constructRotationalFrictionJacobian(collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
-            int rowBaseIndex = i * numOfTangentialDirections;
-            frictionJacobian.put(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, Transforms.createIndexArray(rowBaseIndex, numOfTangentialDirections), jacobian.transpose());
+            DoubleMatrix jacobian = constructRotationalFrictionJacobian(collisions[i].normal, collisions[i].tangentialDirections, collisions[i].point, collisions[i].A.position, collisions[i].B.position);
+            int rowBaseIndex = i * jacobian.rows;
+            frictionJacobian.put(Transforms.createIndexArray(0, jacobian.columns), Transforms.createIndexArray(rowBaseIndex, jacobian.rows), jacobian.transpose());
         }
 
         DoubleMatrix G = new DoubleMatrix(interpenetrationJacobian.rows, interpenetrationJacobian.columns + frictionJacobian.columns + 1).fill(0.0);
@@ -654,7 +652,7 @@ public class LCPSolver {
         return jacobian;
     }
 
-    public static DoubleMatrix constructRotationalFrictionJacobian(Vector3d[] tangentialDirections, Vector3d contactPoint, Vector3d centerOfMassA, Vector3d centerOfMassB) {
+    public static DoubleMatrix constructRotationalFrictionJacobian(Vector3d normal, Vector3d[] tangentialDirections, Vector3d contactPoint, Vector3d centerOfMassA, Vector3d centerOfMassB) {
         // (2 * tangential directions + 1) is needed as a size, because the normal tangential friction directions
         // and then the rotational friction directions which consist of the tangential directions and the normal direction are needed
         DoubleMatrix jacobian = new DoubleMatrix(2 * tangentialDirections.length + 1, 12);
@@ -672,8 +670,8 @@ public class LCPSolver {
             jacobian.put(new int[] {i + tangentialDirections.length + 1}, new int[] {3, 4, 5}, tD.transpose().mul(-1.0));
             jacobian.put(new int[] {i + tangentialDirections.length + 1}, new int[] {9, 10, 11}, tD.transpose());
         }
-        jacobian.put(new int[] {2}, new int[] {3, 4, 5}, Transforms.jomlVectorToJBLASVector(new Vector3d(0.0, -1.0, 0.0)).transpose());
-        jacobian.put(new int[] {2}, new int[] {9, 10, 11}, Transforms.jomlVectorToJBLASVector(new Vector3d(0.0, 1.0, 0.0)).transpose());
+        jacobian.put(new int[] {2}, new int[] {3, 4, 5}, Transforms.jomlVectorToJBLASVector(normal).transpose().mul(-1.0));
+        jacobian.put(new int[] {2}, new int[] {9, 10, 11}, Transforms.jomlVectorToJBLASVector(normal).transpose());
         return jacobian;
     }
 
@@ -801,7 +799,7 @@ public class LCPSolver {
     }
 
     public static void addSolvedCollision(Collision collision, DoubleMatrix result) {
-        solvedCollisions.putIfAbsent(collision.hashCode(), result);
+        solvedCollisions.put(collision.hashCode(), result);
     }
 
 }

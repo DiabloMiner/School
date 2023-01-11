@@ -57,7 +57,7 @@ public class Learning6 extends Engine {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-        Camera camera = new Camera(new Vector3f(0.0f, 4.0f, 0.0f), new Vector3f(0.0f, -1.0f, 0.0f), new Vector3f(0.0f, 0.0f, -1.0f));
+        Camera camera = new Camera(new Vector3f(-2.0f, 0.5f, -0.2f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         Window window = new Window(1280, 720, false, "Learning6", camera);
         Window.setFocusedWindow(window);
         GLFW.glfwMakeContextCurrent(window.getId());
@@ -169,10 +169,18 @@ public class Learning6 extends Engine {
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, -0.1143).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.0f, 0.10715f, -0.1143f).scale(0.05715f), true),
                         new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.0, 0.10715, -0.1143), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+        Entity physicsSphere3 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
+                new Component[]{new TransformComponent(new Matrix4d().translate(-0.05715, 0.10715, -0.1143 - (0.05715 * Math.sqrt(3.0))).scale(0.05715)),
+                        new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(-0.05715f, 0.10715f, -0.1143f - (0.05715f * (float) Math.sqrt(3.0))).scale(0.05715f), true),
+                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(-0.05715, 0.10715, -0.1143 - 15 * (0.05715 * Math.sqrt(3.0))), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+        Entity physicsSphere4 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
+                new Component[]{new TransformComponent(new Matrix4d().translate(0.05715, 0.10715, -0.1143 - (0.05715 * Math.sqrt(3.0))).scale(0.05715)),
+                        new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.05715f, 0.10715f, -0.1143f - (0.05715f * (float) Math.sqrt(3.0))).scale(0.05715f), true),
+                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.05715, 0.10715, -0.1143 - 15 * (0.05715 * Math.sqrt(3.0))), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
         Entity physicsSphere2 = new Entity("3", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, 0.0).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.0f, 0.10715f, 0.0f).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.0, 0.10715, 1.0), new Vector3d(0.0, 0.0, -2.0),  new Quaterniond().identity(), new Vector3d(-10.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.0, 0.10715, 1.0), new Vector3d(0.0, 0.0, -3.0),  new Quaterniond().identity(), new Vector3d(3 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
         Entity plate = new Entity("4", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(1.0, 0.5, 1.0)),
                     new AssimpModel("./src/main/resources/models/HelloWorld/billardPlate.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(1.0f, 0.5f, 1.0f), true),
@@ -188,10 +196,9 @@ public class Learning6 extends Engine {
         // Added rotational friction according to the SIGGRAPH paper though the implementation is based on essentially guessing that the resulting impulse should be applied among the direction
         // Angular velocity in willCollide and collectCollisionData was removed; Changed collision vector computation in collectCollisionData to compute from B to A instead of A to B
         // TODO: Test multi-body collisions: Test current friction some more; Just add rails + queue to test
-        // TODO: Change willCollide to timestep computation
         // TODO: Fix full screen bug: Seems like frame buffers are acting weird, Maybe quad isnt resized
         // TODO: Add billard plates: Floor + 4 rails
-        entities.addAll(Arrays.asList(helloWorld, cube, physicsSphere1, physicsSphere2, plate));
+        entities.addAll(Arrays.asList(helloWorld, cube, physicsSphere1, physicsSphere2, physicsSphere3, physicsSphere4, plate));
     }
 
     public void mainLoop() {

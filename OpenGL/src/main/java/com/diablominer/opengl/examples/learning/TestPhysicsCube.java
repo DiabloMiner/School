@@ -20,8 +20,8 @@ public class TestPhysicsCube extends PhysicsComponent {
     }
 
     @Override
-    public void performTimeStep(double timeStep) {
-        performSemiImplicitEulerTimeStep(timeStep);
+    public void performTimeStep(double timeStep, int roundingDigit) {
+        performSemiImplicitEulerTimeStep(timeStep, roundingDigit);
     }
 
     @Override
@@ -30,11 +30,25 @@ public class TestPhysicsCube extends PhysicsComponent {
     }
 
     @Override
-    public boolean willCollide(PhysicsComponent physicsComponent, double timeStep) {
-        return collisionShape.findPenetrationDepth(physicsComponent.collisionShape).length() > 0.0;
+    public Optional<Collision> getInitialCollision(PhysicsComponent B, SolutionParameters parameters, double timeStep, int roundingDigit) {
+        Vector3d collisionVector = B.collisionShape.findPenetrationDepth(this.collisionShape);
+        Vector3d collisionDirection = computeCollisionDirection(B, collisionVector);
+        double distance = Transforms.round(collisionVector.length(), roundingDigit);
+        double deltaF = new Vector3d(B.force).div(B.mass).sub(new Vector3d(this.force).div(mass)).dot(collisionDirection);
+        double deltaV = new Vector3d(B.velocity).sub(this.velocity).dot(collisionDirection);
+        double h = 0.0;
+        if (deltaF != 0.0 && deltaF != -0.0) {
+            h = Transforms.chooseSuitableSolution(parameters.min, parameters.max, parameters.standardReturnValue, Transforms.solveQuadraticEquation(deltaF, deltaV, distance, roundingDigit));
+        } else if (deltaV != 0.0 && deltaV != 0.0) {
+            h = -distance / deltaV;
+        }
+        if (h >= 0 && h < timeStep) {
+            return Optional.of(new StandardCollision(new Vector3d(this.position).add(B.position).div(2.0), collisionDirection.normalize(new Vector3d()), this, B, h, distance));
+        } else {
+            return Optional.empty();
+        }
     }
 
-    @Override
     public Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep) {
         TestPhysicsCube cube = (TestPhysicsCube) physicsComponent;
         if (this.position.distance(cube.position) < (this.edgeLength + cube.edgeLength) / 2.0) {
@@ -56,8 +70,8 @@ public class TestPhysicsCube extends PhysicsComponent {
             double h1 = (distance * f1) / new Vector3d(this.velocity).dot(thisDir);
             double h2 = (distance * f2) / new Vector3d(cube.velocity).dot(cubeDir);
             double h = (h1 + h2) / 2.0;
-            this.performTimeStep(-h);
-            cube.performTimeStep(-h);
+            this.performTimeStep(-h, 15);
+            cube.performTimeStep(-h, 15);
 
             Set<Vector3f> contactVertices = new HashSet<>();
             for (Face thisFace : this.model.getAllFaces(new Matrix4f(this.worldMatrix))) {
@@ -106,8 +120,8 @@ public class TestPhysicsCube extends PhysicsComponent {
             applyFrictionImpulse(this, normal, normalObjFrictionImpulse);
             applyFrictionImpulse(cube, normal, otherObjFrictionImpulse);
 
-            this.performTimeStep(timeStep - h);
-            cube.performTimeStep(timeStep - h);
+            this.performTimeStep(timeStep - h, 15);
+            cube.performTimeStep(timeStep - h, 15);
         }
         return new Collision[] {};
     }
@@ -128,6 +142,16 @@ public class TestPhysicsCube extends PhysicsComponent {
 
     private Vector3d computeTangentialVelocity(TestPhysicsCube physicsObject, Vector3f normal) {
         return new Vector3d(physicsObject.velocity).sub(new Vector3d(normal).normalize().mul(new Vector3d(normal).normalize().dot(new Vector3d(physicsObject.velocity))));
+    }
+
+    protected Vector3d computeCollisionDirection(PhysicsComponent object, Vector3d collisionVector) {
+        Vector3d collisionDirection;
+        if (Transforms.fixZeros(collisionVector).equals(new Vector3d(0.0))) {
+            collisionDirection = Transforms.safeNormalize(new Vector3d(this.collisionShape.findClosestPoints(object.collisionShape)[0]).sub(this.position));
+        } else {
+            collisionDirection = collisionVector.normalize(new Vector3d());
+        }
+        return collisionDirection;
     }
 
     @Override

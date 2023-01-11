@@ -1,16 +1,13 @@
 package com.diablominer.opengl.examples.learning;
 
+import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
 import java.util.*;
 
 public abstract class PhysicsComponent implements Component {
 
-    public static double epsilon = 1e-15;
-    public static double collisionTimeEpsilon = 10e-50;
     public static double massThreshold = Double.MAX_VALUE / 1e160;
-    public static int maxCollisionTimeIterations = 30;
-    public static final int roundingDigit = 15;
 
     public CollisionShape collisionShape;
     public ObjectType objectType;
@@ -61,32 +58,32 @@ public abstract class PhysicsComponent implements Component {
         return new Vector3d[] {velocity, deltaV, angularVelocity, deltaOmega};
     }
 
-    public void performRK2TimeStep(double timeStep) {
+    public void performRK2TimeStep(double timeStep, int roundingDigit) {
         if (!alreadyTimeStepped && objectType.performTimeStep) {
             determineForceAndTorque();
             // This will only work for constant/nearly-constant forces
             Vector3d[] k2 = performEulerSubStep(0.5 * timeStep);
 
             Vector3d deltaX = k2[0].mul(timeStep);
-            position.add(deltaX);
-            velocity.add(k2[1].mul(timeStep));
+            position.set(Transforms.round(position.add(deltaX), roundingDigit));
+            velocity.set(Transforms.round(velocity.add(k2[1].mul(timeStep)), roundingDigit));
 
             orientation.integrate(timeStep, k2[2].x, k2[2].y, k2[2].z).normalize();
-            angularVelocity.add(k2[3].mul(timeStep));
+            angularVelocity.set(Transforms.round(angularVelocity.add(k2[3].mul(timeStep)), roundingDigit));
 
             updateComponents();
         }
         alreadyTimeStepped = false;
     }
 
-    public void performSemiImplicitEulerTimeStep(double timeStep) {
+    public void performSemiImplicitEulerTimeStep(double timeStep, int roundingDigit) {
         if (!alreadyTimeStepped && objectType.performTimeStep) {
             determineForceAndTorque();
-            velocity.add(new Vector3d(force).div(mass).mul(timeStep));
+            velocity.set(Transforms.round(velocity.add(new Vector3d(force).div(mass).mul(timeStep)), roundingDigit));
             Vector3d deltaX = new Vector3d(velocity).mul(timeStep);
-            position.add(deltaX);
+            position.set(Transforms.round(position.add(deltaX), roundingDigit));
 
-            angularVelocity.add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep));
+            angularVelocity.set(Transforms.round(angularVelocity.add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep)), roundingDigit));
             orientation.integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z).normalize();
 
             updateComponents();
@@ -94,15 +91,15 @@ public abstract class PhysicsComponent implements Component {
         alreadyTimeStepped = false;
     }
 
-    public void performExplicitEulerTimeStep(double timeStep) {
+    public void performExplicitEulerTimeStep(double timeStep, int roundingDigit) {
         if (!alreadyTimeStepped && objectType.performTimeStep) {
             determineForceAndTorque();
             Vector3d deltaX = new Vector3d(velocity).mul(timeStep);
-            position.add(deltaX);
-            velocity.add(new Vector3d(force).div(mass).mul(timeStep));
+            position.set(Transforms.round(position.add(deltaX), roundingDigit));
+            velocity.set(Transforms.round(velocity.add(new Vector3d(force).div(mass).mul(timeStep)), roundingDigit));
 
             orientation.integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z).normalize();
-            angularVelocity.add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep));
+            angularVelocity.set(Transforms.round(angularVelocity.add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep)), roundingDigit));
 
             updateComponents();
         }
@@ -174,17 +171,11 @@ public abstract class PhysicsComponent implements Component {
         return this.collisionShape.isColliding(collisionShape);
     }
 
-    public abstract void performTimeStep(double timeStep);
+    public abstract void performTimeStep(double timeStep, int roundingDigit);
 
-    /**
-     * Only if the two objects are intersecting should this function return true. If the two objects are just touching, it should return false.
-     * It should also update useRK2 if an RK2-timestep will not lead to a collision.
-     */
-    public abstract boolean willCollide(PhysicsComponent physicsComponent, double timeStep);
+    public abstract Optional<Collision> getInitialCollision(PhysicsComponent physicsComponent, SolutionParameters parameters, double timeStep, int roundingDigit);
 
     public abstract boolean isColliding(PhysicsComponent physicsComponent);
-
-    public abstract Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep);
 
     public abstract Matrix4d predictTimeStep(double timeStep);
 

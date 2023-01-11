@@ -27,7 +27,7 @@ public class StandardRenderingUnit extends RenderingUnit {
         // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible --> Fully implement Normal mapping (more effective)
         // TODO: Optimize VBO usage ; Review assimp code ; Rewrite the geometry shaders into for loops in the linux version
         // TODO: Better Bloom ; Implement curved surfaces rendering ; Implement reflection probes (with retroreflection) as classes
-        // TODO: Maybe improve Material hashing function
+        // TODO: Maybe improve Material hashing function; Use a PhysicsEngine determined epsilon isColliding()
 
         // Added functionality:
         // Implemented directional shadow casting for directional lights and spot lights ; Added dynamic yaw and pitch calculation ; Implemented omnidirectional shadow casting ;

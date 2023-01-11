@@ -19,36 +19,36 @@ public class Camera {
     public Camera(Vector3f position, Vector3f direction, Vector3f tempUp) {
         this.position = new Vector3f(position);
         this.direction = new Vector3f(direction);
-        right = new Vector3f(tempUp).cross(direction).normalize();
-        up = new Vector3f(direction).cross(right);
-        right = new Vector3f(direction).cross(up);
+        this.right = new Vector3f(tempUp).cross(direction).normalize();
+        this.up = new Vector3f(direction).cross(right);
+        this.right = new Vector3f(direction).cross(up);
 
-        yaw = (float) Math.toDegrees(Transforms.nonzeroSignum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
-        pitch = (float) Math.toDegrees(Transforms.nonzeroSignum(up.z) * new Vector3d(up).angle(worldSpaceUp));
-        fov = firstFov;
-        near = firstNear;
-        far = firstFar;
+        this.yaw = (float) Math.toDegrees(Transforms.nonzeroSignum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
+        this.pitch = (float) Math.toDegrees(Transforms.nonzeroSignum(up.z) * new Vector3d(up).angle(worldSpaceUp));
+        this.fov = firstFov;
+        this.near = firstNear;
+        this.far = firstFar;
     }
 
     public Camera(Vector3f position, Vector3f direction, float near, float far) {
         this.position = new Vector3f(position);
         this.direction = new Vector3f(direction);
         Vector3f tempUp = new Vector3f(0.0f, 1.0f, 0.0f);
-        right = new Vector3f(tempUp).cross(direction).normalize();
-        up = new Vector3f(direction).cross(right);
-        right = new Vector3f(direction).cross(up);
+        this.right = new Vector3f(tempUp).cross(direction).normalize();
+        this.up = new Vector3f(direction).cross(right);
+        this.right = new Vector3f(direction).cross(up);
 
-        yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
-        pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));
-        fov = firstFov;
+        this.yaw = (float) Math.toDegrees(Math.signum(direction.z) * new Vector3d(direction).angle(worldSpaceRight));
+        this.pitch = (float) Math.toDegrees(new Vector3d(up).angle(worldSpaceUp));
+        this.fov = firstFov;
         this.near = near;
         this.far = far;
     }
 
     public void update(Mouse mouse) {
-        yaw += mouse.deltaX;
-        pitch += mouse.deltaY;
-        pitch = Math.clamp(-90.0f, 90.0f, pitch);
+        this.yaw += mouse.deltaX;
+        this.pitch += mouse.deltaY;
+        this.pitch = Math.clamp(-90.0f, 90.0f, pitch);
 
         if (Math.abs(pitch) < 90.0f) {
             up.set(worldSpaceUp);

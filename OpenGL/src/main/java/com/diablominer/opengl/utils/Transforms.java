@@ -516,13 +516,13 @@ public class Transforms {
         return solutions;
     }
 
-    public static double chooseSuitableSolution(double min, double max, double returnValue, double[] solutions) {
+    public static double chooseSuitableSolution(double min, double max, double standardReturnValue, double[] solutions) {
         for (double solution : solutions) {
             if (solution <= max && solution >= min) {
                 return solution;
             }
         }
-        return returnValue;
+        return standardReturnValue;
     }
 
     public static float nonzeroSignum(float number) {
