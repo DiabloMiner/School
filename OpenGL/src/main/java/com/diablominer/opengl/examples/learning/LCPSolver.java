@@ -76,44 +76,44 @@ public class LCPSolver {
         return H;
     }
 
-    private DoubleMatrix[] constructBHParts(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setA, List<Integer> setJ) {
+    private DoubleMatrix[] constructBHParts(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, DoubleMatrix mu, List<Integer> setA, List<Integer> setJ) {
         DoubleMatrix C = constructC(x, l, y, mu, setA, setJ);
         DoubleMatrix D = constructD(x, l, y, mu, setJ);
         DoubleMatrix DInv = D.dup().sub(DoubleMatrix.diag(D.diag())).neg().add(DoubleMatrix.diag(D.diag()));
         return new DoubleMatrix[] {C, D, DInv};
     }
 
-    private DoubleMatrix constructC(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setA, List<Integer> setJ) {
+    private DoubleMatrix constructC(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, DoubleMatrix mu, List<Integer> setA, List<Integer> setJ) {
         DoubleMatrix C = new DoubleMatrix(setJ.size(), setA.size());
         for (int i = 0; i < setJ.size(); i++) {
             for (int j = 0; j < setA.size(); j++) {
                 if (y.get(i) > x.get(i) - l.get(i)) {
-                    C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) + mu * Transforms.kroneckerDelta(0, setA.get(j)));
+                    C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) + mu.get(i) * Transforms.kroneckerDelta(0, setA.get(j)));
                 } else {
-                    C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) - mu * Transforms.kroneckerDelta(0, setA.get(j)));
+                    C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) - mu.get(i) * Transforms.kroneckerDelta(0, setA.get(j)));
                 }
             }
         }
         return C;
     }
 
-    private DoubleMatrix constructD(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setJ) {
+    private DoubleMatrix constructD(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, DoubleMatrix mu, List<Integer> setJ) {
         DoubleMatrix D = new DoubleMatrix(setJ.size(), setJ.size());
         for (int i = 0; i < setJ.size(); i++) {
             for (int j = 0; j < setJ.size(); j++) {
                 if (y.get(i) > x.get(i) - l.get(i)) {
-                    D.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setJ.get(j)) + mu * Transforms.kroneckerDelta(0, setJ.get(j)));
+                    D.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setJ.get(j)) + mu.get(i) * Transforms.kroneckerDelta(0, setJ.get(j)));
                 } else {
-                    D.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setJ.get(j)) - mu * Transforms.kroneckerDelta(0, setJ.get(j)));
+                    D.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setJ.get(j)) - mu.get(i) * Transforms.kroneckerDelta(0, setJ.get(j)));
                 }
             }
         }
         return D;
     }
 
-    private DoubleMatrix constructDInv(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, double mu, List<Integer> setJ) {
+    private DoubleMatrix constructDInv(DoubleMatrix x, DoubleMatrix l, DoubleMatrix y, DoubleMatrix mu, List<Integer> setJ) {
         DoubleMatrix D = constructD(x, l, y, mu, setJ);
-        return D.dup().sub(D.diag()).neg().add(D.diag());
+        return D.dup().sub(DoubleMatrix.diag(D.diag())).neg().add(DoubleMatrix.diag(D.diag()));
     }
 
     private double computePhi(DoubleMatrix H) {
@@ -262,7 +262,7 @@ public class LCPSolver {
             }
 
             if (!setA.isEmpty() && !setJ.isEmpty()) {
-                DoubleMatrix[] bhParts = constructBHParts(x, l, y, mu, setA, setJ);
+                DoubleMatrix[] bhParts = constructBHParts(x, l, y, new DoubleMatrix(new double[] {mu, mu, mu, 0.0, muR, muR}), setA, setJ);
                 DoubleMatrix C = bhParts[0], DInv = bhParts[2];
 
                 DoubleMatrix S = Transforms.getMatrixComponents(A, setA, setA).sub(Transforms.getMatrixComponents(A, setA, setJ).mmul(DInv).mmul(C));
@@ -275,7 +275,7 @@ public class LCPSolver {
                 DoubleMatrix deltaXA = Solve.pinv(S).mmul(Transforms.getVectorComponents(H, setA).neg());
                 deltaX.put(setA.stream().mapToInt(integer -> integer).toArray(), new int[] {0}, deltaXA);
             } else if (!setJ.isEmpty()) {
-                DoubleMatrix DInv = constructDInv(x, l, y, mu, setJ);
+                DoubleMatrix DInv = constructDInv(x, l, y, new DoubleMatrix(new double[] {mu, mu, mu, 0.0, muR, muR}), setJ);
                 DoubleMatrix deltaXJ = DInv.mmul(Transforms.getVectorComponents(H, setJ)).neg();
                 deltaX.put(setJ.stream().mapToInt(integer -> integer).toArray(), new int[] {0}, deltaXJ);
             }
@@ -479,8 +479,7 @@ public class LCPSolver {
     public static DoubleMatrix applyCoefficientsOfRestitution(DoubleMatrix J, DoubleMatrix u, DoubleMatrix b, Collision[] collisions, int indicesBetweenCollisions) {
         DoubleMatrix restitutionVector = new DoubleMatrix(b.rows, b.columns);
         for (int i = 0; i < collisions.length; i++) {
-            // The minus is there because b is negative in the SIGGRAPH 2021 paper used as the basis for this implementation
-            restitutionVector.put(indicesBetweenCollisions * i, 0, -collisions[i].coefficientOfRestitution * J.getColumnRange(0, 12 * i, 12 * i + 12).mmul(u.getRowRange(i * 12, i * 12 + 12, 0)).get(0));
+            restitutionVector.put(indicesBetweenCollisions * i, 0, collisions[i].coefficientOfRestitution * b.get(indicesBetweenCollisions * i));
         }
         b.addi(restitutionVector);
         return b;

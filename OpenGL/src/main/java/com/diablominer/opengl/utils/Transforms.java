@@ -9,11 +9,15 @@ import org.joml.Math;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 public class Transforms {
+
+    public static final double epsilon = 1e-16;
 
     public static Vector3f vectorToUnitVector(Vector3f vector) {
         Vector3f unitVector = new Vector3f();
@@ -149,14 +153,22 @@ public class Transforms {
     }
 
     public static Vector3d round(Vector3d vec, int digit) {
-        vec.set(new Vector3d(vec).mul(java.lang.Math.pow(10, digit)).round().div(java.lang.Math.pow(10, digit)));
+        for (int i = 0; i < 3; i++) {
+            vec.setComponent(i, round(vec.get(i), digit));
+        }
         return vec;
     }
 
     public static double round(double value, int digit) {
-        double result = Math.round(value * java.lang.Math.pow(10, digit));
+        if (value < epsilon && value > -epsilon) {
+            return Math.round(value);
+        } else {
+            BigDecimal bigDecimal = BigDecimal.valueOf(value);
+            return bigDecimal.round(new MathContext(digit, RoundingMode.HALF_DOWN)).doubleValue();
+        }
+        /*double result = Math.round(value * java.lang.Math.pow(10, digit));
         result /= java.lang.Math.pow(10, digit);
-        return result;
+        return result;*/
     }
 
     public static double ceil(double value, int digit) {
@@ -337,7 +349,7 @@ public class Transforms {
 
     /**
      * Sets -0.0s to 0.0 for the purpose of comparing them
-     * @param vec Matrix which may have false zeros
+     * @param matrix Matrix which may have false zeros
      */
     public static DoubleMatrix fixZeros(DoubleMatrix matrix) {
         for (int i = 0; i < matrix.data.length; i++) {

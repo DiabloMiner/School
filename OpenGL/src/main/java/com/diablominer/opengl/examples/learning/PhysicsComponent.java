@@ -95,11 +95,11 @@ public abstract class PhysicsComponent implements Component {
         if (!alreadyTimeStepped && objectType.performTimeStep) {
             determineForceAndTorque();
             Vector3d deltaX = new Vector3d(velocity).mul(timeStep);
-            position.set(Transforms.round(position.add(deltaX), roundingDigit));
-            velocity.set(Transforms.round(velocity.add(new Vector3d(force).div(mass).mul(timeStep)), roundingDigit));
+            position.set(Transforms.round(position.add(deltaX, new Vector3d()), roundingDigit));
+            velocity.set(Transforms.round(velocity.add(new Vector3d(force).div(mass).mul(timeStep), new Vector3d()), roundingDigit));
 
             orientation.integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z).normalize();
-            angularVelocity.set(Transforms.round(angularVelocity.add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep)), roundingDigit));
+            angularVelocity.set(Transforms.round(angularVelocity.add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep), new Vector3d()), roundingDigit));
 
             updateComponents();
         }

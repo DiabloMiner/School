@@ -57,7 +57,7 @@ public class Learning6 extends Engine {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-        Camera camera = new Camera(new Vector3f(-2.0f, 0.5f, -0.2f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
+        Camera camera = new Camera(new Vector3f(-1.5f, 0.5f, -0.2f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         Window window = new Window(1280, 720, false, "Learning6", camera);
         Window.setFocusedWindow(window);
         GLFW.glfwMakeContextCurrent(window.getId());
@@ -166,17 +166,17 @@ public class Learning6 extends Engine {
                 new Component[]{new TransformComponent(new Matrix4d().identity().translate(new Vector3d(3.4, -1.5, -4.4))),
                         new AssimpModel("./src/main/resources/models/HelloWorld/cube3.obj", new Matrix4f().identity().translate(new Vector3f(3.4f, -1.5f, -4.4f)), true)});
         Entity physicsSphere1 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
-                new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, -0.1143).scale(0.05715)),
+                new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, 200 * -0.1143).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.0f, 0.10715f, -0.1143f).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.0, 0.10715, -0.1143), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.0, 0.10715, 200 * -0.1143), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
         Entity physicsSphere3 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(-0.05715, 0.10715, -0.1143 - (0.05715 * Math.sqrt(3.0))).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(-0.05715f, 0.10715f, -0.1143f - (0.05715f * (float) Math.sqrt(3.0))).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(-0.05715, 0.10715, -0.1143 - 15 * (0.05715 * Math.sqrt(3.0))), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(-0.05715, 0.10715, -0.1143 - 1 * (0.05715 * Math.sqrt(3.0))), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
         Entity physicsSphere4 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.05715, 0.10715, -0.1143 - (0.05715 * Math.sqrt(3.0))).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.05715f, 0.10715f, -0.1143f - (0.05715f * (float) Math.sqrt(3.0))).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.05715, 0.10715, -0.1143 - 15 * (0.05715 * Math.sqrt(3.0))), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+                        new PhysicsSphere(Material.Ball, ObjectType.DYNAMIC, new Vector3d(0.05715, 0.10715, -0.1143 - 1 * (0.05715 * Math.sqrt(3.0))), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
         Entity physicsSphere2 = new Entity("3", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, 0.0).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/sphere2.obj", new Matrix4f().translate(0.0f, 0.10715f, 0.0f).scale(0.05715f), true),

@@ -4,6 +4,7 @@ import com.diablominer.opengl.utils.Transforms;
 import org.joml.Vector3d;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public abstract class Collision {
@@ -108,8 +109,8 @@ public abstract class Collision {
         Vector3d normImpulse = new Vector3d(normal).mul(normalImpulse);
         Vector3d rA = Transforms.round(new Vector3d(point).sub(A.position), roundingDigit);
         Vector3d rB = Transforms.round(new Vector3d(point).sub(B.position), roundingDigit);
-        Vector3d kA = Transforms.safeNormalize(new Vector3d(rA).cross(new Vector3d(normal)));
-        Vector3d kB = Transforms.safeNormalize(new Vector3d(rB).cross(new Vector3d(normal)));
+        Vector3d kA = Transforms.safeNormalize(Transforms.round(new Vector3d(rA).cross(new Vector3d(normal)), 6));
+        Vector3d kB = Transforms.safeNormalize(Transforms.round(new Vector3d(rB).cross(new Vector3d(normal)), 6));
 
         // Add normal impulses
         if (A.objectType.performTimeStep) {
@@ -152,8 +153,19 @@ public abstract class Collision {
         return normal.negate(new Vector3d()).dot(bVelocity.sub(aVelocity));
     }
 
+    public double getRelativeLinearVelocity(double timeStep) {
+        Vector3d bVelocity = (B.velocity.add(B.force.mul(timeStep, new Vector3d()), new Vector3d()));
+        Vector3d aVelocity = (A.velocity.add(A.force.mul(timeStep, new Vector3d()), new Vector3d()));
+        Vector3d normal = new Vector3d(this.normal).mul((new Vector3d(A.position).sub(B.position)).dot(this.normal)).normalize();
+        return normal.negate(new Vector3d()).dot(bVelocity.sub(aVelocity));
+    }
+
+    public double getRelativeForce() {
+        Vector3d normal = new Vector3d(this.normal).mul((new Vector3d(A.position).sub(B.position)).dot(this.normal)).normalize();
+        return normal.negate(new Vector3d()).dot(new Vector3d(B.force).sub(new Vector3d(A.force)));
+    }
+
     public boolean containsActivePhysicsComponents(PhysicsComponent A, PhysicsComponent B) {
-        // return (A.equals(this.A) || A.equals(this.B)) || (B.equals(this.A) || B.equals(this.B));
         if (A.objectType.performTimeStep && !B.objectType.performTimeStep) {
             return A.equals(this.A) || A.equals(this.B);
         } else if (!A.objectType.performTimeStep && B.objectType.performTimeStep) {
@@ -161,6 +173,19 @@ public abstract class Collision {
         } else {
             return (A.equals(this.A) || A.equals(this.B)) || (B.equals(this.A) || B.equals(this.B));
         }
+    }
+
+    public boolean containsActivePhysicsComponents(List<PhysicsComponent> aComps, List<PhysicsComponent> bComps) {
+        for (int i = 0; i < aComps.size(); i++) {
+            if (containsActivePhysicsComponents(aComps.get(i), bComps.get(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasStaticPhysicsComponents() {
+        return !A.objectType.performTimeStep || !B.objectType.performTimeStep;
     }
 
     @Override

@@ -20,9 +20,9 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
 
     @Override
     public void performTimeStep(double timeStep, int roundingDigit) {
-        if (objectType.equals(ObjectType.DYNAMIC) && Math.signum(angularVelocity.x) * angularVelocity.length() > 0) {
+        if (objectType.equals(ObjectType.DYNAMIC) && Math.signum(angularVelocity.x) * angularVelocity.length() > 0 && timeStep == 0.01) {
             // TODO: Remove
-            System.out.println(position.y + "  |  " + velocity.y);
+            System.out.println(velocity.y);
             // System.out.println(velocity.y);
             // System.out.println(angularVelocity.length() + "  |  " + velocity.z);
         }
