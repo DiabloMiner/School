@@ -29,12 +29,12 @@ public class MainRenderingEngine extends RenderingEngine {
         ShaderProgram simpleShaderProgram = shaderProgramManager.addShaderProgram(new ShaderProgram("L6SVS", "L6SFS"), false, false);
 
         lightManager.addDirectionalLight(new DirectionalLight(new Vector3f(-0.7f, 1.0f, 2.9f), new Vector3f(0.0f, 0.0f, 1.0f), 1024));
-        lightManager.addRenderablePointLight(new RenderablePointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(0.0f, 50.0f, 38.0f), 1024));
+        lightManager.addPointLight(new PointLight(new Vector3f(0.0f, 5.0f, 0.0f), new Vector3f(50.0f, 38.0f, 0.0f), 1024));
         lightManager.addSpotLight(new CameraUpdatedSpotLight(new Vector3f(camera.position), new Vector3f(camera.direction), new Vector3f(0.8f, 0.0f, 0.0f), 1024, camera));
 
         RenderingUnit standardRenderingUnit = new StandardRenderingUnit(shaderProgram, Entity.getRenderComponents(renderComponentManager.allEntities));
         RenderingUnit lightRenderingUnit = new LightRenderingUnit(lsShaderProgram, lightManager.allRenderableLights);
-        RenderingUnit skyboxRenderingUnit = new SkyboxRenderingUnit(skyboxManager.addSkybox(new Skybox("./src/main/resources/textures/skybox", ".jpg", false)));
+        RenderingUnit skyboxRenderingUnit = new SkyboxRenderingUnit(skyboxManager.addSkybox(new Skybox("./src/main/resources/models/HelloWorld/wooden_lounge_4k.hdr", 4000, true)));
         mainRenderer = new SingleFramebufferRenderer(framebufferManager.addFramebuffer(new Framebuffer(new FramebufferTexture2D[] {new FramebufferMSAATexture2D(window.width, window.height, Texture.InternalFormat.RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT0), new FramebufferMSAATexture2D(window.width, window.height, Texture.InternalFormat.RGBA16F, 4, FramebufferAttachment.COLOR_ATTACHMENT1)},
                 new FramebufferRenderbuffer[] {new FramebufferMSAARenderbuffer(window.width, window.height, Renderbuffer.InternalFormat.DEPTH24_STENCIL8, 4, FramebufferAttachment.DEPTH_AND_STENCIL_ATTACHMENT)})),
                 new RenderingUnit[] {standardRenderingUnit, lightRenderingUnit, skyboxRenderingUnit});

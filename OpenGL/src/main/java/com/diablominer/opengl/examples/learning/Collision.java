@@ -124,6 +124,9 @@ public abstract class Collision {
 
         // Add Coulomb friction impulses
         for (int i = 0; i < frictionImpulses.length; i++) {
+            if (frictionImpulses[i] != 0.0 && frictionImpulses[i] != -0.0 && B.objectType.performTimeStep) {
+                System.out.print("");
+            }
             if (A.objectType.performTimeStep) {
                 A.velocity.add(Transforms.round(new Vector3d(tangentialDirections[i]).mul(frictionImpulses[i] / A.mass), roundingDigit));
                 A.angularVelocity.add(Transforms.round(rA.cross(tangentialDirections[i], new Vector3d()).mul(frictionImpulses[i]).mul(A.worldFrameInertiaInv), roundingDigit));
@@ -134,8 +137,16 @@ public abstract class Collision {
             }
         }
 
-        // Add rolling resistance impulses
-        for (int i = 0; i < rollingFrictionImpulses.length; i++) {
+        // Add normal rolling resistance impulses
+        if (A.objectType.performTimeStep) {
+            A.angularVelocity.add(Transforms.round(new Vector3d(normal).mul(rollingFrictionImpulses[rollingFrictionImpulses.length - 1]).mul(A.worldFrameInertiaInv), roundingDigit));
+        }
+        if (B.objectType.performTimeStep) {
+            B.angularVelocity.add(Transforms.round(new Vector3d(normal).mul(rollingFrictionImpulses[rollingFrictionImpulses.length - 1]).mul(B.worldFrameInertiaInv), roundingDigit));
+        }
+
+        // Add tangential rolling resistance impulses
+        for (int i = 0; i < (rollingFrictionImpulses.length - 1); i++) {
             if (A.objectType.performTimeStep) {
                 A.angularVelocity.add(Transforms.round(new Vector3d(tangentialDirections[i]).mul(rollingFrictionImpulses[i]).mul(A.worldFrameInertiaInv), roundingDigit));
             }

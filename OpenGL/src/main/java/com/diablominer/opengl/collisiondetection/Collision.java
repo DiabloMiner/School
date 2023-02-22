@@ -23,12 +23,6 @@ public class Collision {
         this.normalObj = normalObj;
         this.otherObj = otherObj;
         this.face = face;
-
-        // TODO: Remove
-        /*Vector3f newPoint = new Vector3f(point).add(normal);
-        if (normalObj.position.distance(newPoint) < normalObj.position.distance(point)) {
-            this.normal.mul(-1.0f);
-        }*/
     }
 
     public Collision(Vector3f point, Vector3f normal, PhysicsObject normalObj, PhysicsObject otherObj) {

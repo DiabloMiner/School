@@ -5,6 +5,8 @@ import org.jblas.DoubleMatrix;
 import org.joml.Math;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class PhysicsEngine implements SubEngine {
@@ -79,10 +81,6 @@ public abstract class PhysicsEngine implements SubEngine {
                 }
             }
         }
-        // TODO: Remove
-        if (collisions.size() == 5) {
-            System.out.print("");
-        }
         return collisions;
     }
 
@@ -98,20 +96,9 @@ public abstract class PhysicsEngine implements SubEngine {
             sortedCollisions.put(i, sortedCollisionList.get(i));
         }
 
-        // TODO: Some time after the two balls collide, they go into an endless resolution loop with ground
-        // TODO: Multiple ball collision doesn't work: In collision between first ball and two adjacent balls angular vel about axis is added while it isnt at the other one
-        // TODO: Through the rotation of the balls a lot of y velocity is added for all balls and after main resolution only two balls are colliding for some time
-        // TODO: Error: Two balls, B3 and B4, fall through ground
-        // TODO: B2 removed --> No collision between B1 and B3/B4: Changed alreadySearched functionality
-        // TODO: Some errors seem to occur during collision handling because of a lack of precision: Ball isnt near enough to other balls; Also weird jittering with the ground
         // Collision resolution loop
-        // TODO: Remove
-        if (collisions.size() == 2) {
-            System.out.print("");
-        }
         double currentTime = 0.0;
         boolean multipleIterations = false;
-        setUseRK2(physicsObjectsFromCollisions(sortedCollisionList), false);
         HashMap<PhysicsComponent, List<Double>> timeSteps = new HashMap<>();
         physicsObjectsFromCollisions(sortedCollisionList).forEach(physicsComponent -> timeSteps.put(physicsComponent, new ArrayList<>()));
         List<Collision> fullyTimeSteppedCollisions = new ArrayList<>();
@@ -146,20 +133,17 @@ public abstract class PhysicsEngine implements SubEngine {
 
                     // Timestep backwards to last impulse and resolve for new time
                     for (Integer k : indexList) {
-                        // TODO: Current time is updated multiple times which makes this method invalid; Store the time collisions are timestepped to somewhere or store maximumtime
-                        // TODO: B1 isnt timestepped correctly and lands at a different position
-                        // TODO: After resolving it should be checked if sublist can still be solved and otherwise it should jump back into resolution loop
                         // Reverse timesteps and former solution
                         performReverseTimeSteps(sortedCollisions.get(k).A, timeSteps.get(sortedCollisions.get(k).A), sortedCollisions.get(k).collisionTime, currentTime);
                         performReverseTimeSteps(sortedCollisions.get(k).B, timeSteps.get(sortedCollisions.get(k).B), sortedCollisions.get(k).collisionTime, currentTime);
                         DoubleMatrix x = LCPSolver.solvedCollisions.get(sortedCollisions.get(k).hashCode()).neg();
-                        sortedCollisions.get(k).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)}, new double[] {x.get(4), x.get(5)}, roundingDigit);
+                        sortedCollisions.get(k).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)}, new double[] {x.get(4), x.get(5), x.get(3)}, roundingDigit);
+                        LCPSolver.solvedCollisions.remove(sortedCollisions.get(k).hashCode());
 
                         // Resolve and timestep
                         processCollisionSubList(Collections.singletonList(sortedCollisions.get(k)), currentTime - sortedCollisions.get(k).collisionTime);
                         sortedCollisions.get(k).A.performSemiImplicitEulerTimeStep(currentTime - sortedCollisions.get(k).collisionTime, roundingDigit);
                         sortedCollisions.get(k).B.performSemiImplicitEulerTimeStep(currentTime - sortedCollisions.get(k).collisionTime, roundingDigit);
-                        // TODO: Test and solve problems: B1 has a lower position than it should have, some error causes this
                         timeSteps.get(sortedCollisions.get(k).A).add(currentTime - sortedCollisions.get(k).collisionTime);
                         timeSteps.get(sortedCollisions.get(k).B).add(currentTime - sortedCollisions.get(k).collisionTime);
                     }
@@ -179,13 +163,59 @@ public abstract class PhysicsEngine implements SubEngine {
                         sortedCollisions.put(k, newSortedCollisions.get(k));
                     }
 
-                    // Repeat iteration and set multiple iterations to false
-                    i--;
+                    i = lastIndex;
                     multipleIterations = false;
+
+                    // Find next biggest timestep to solve to, set the collision time and solve the collision
+                    double maximumTime = timeStep;
+                    for (int k = (lastIndex + 1); k < sortedCollisions.size(); k++) {
+                        if (sortedCollisions.get(k).collisionTime < maximumTime && sortedCollisions.get(k).collisionTime > currentTime && sortedCollisions.get(k).containsActivePhysicsComponents(sortedCollisions.get(i).A, sortedCollisions.get(i).B)) {
+                            maximumTime = sortedCollisions.get(k).collisionTime;
+                        }
+                    }
+                    sublist.forEach(Collision::finalizeCollisionData);
+                    processCollisionSubList(sublist, maximumTime - currentTime);
+
+                    // If the collision should be stepped to the end of the timestep, perform timestep now and add it to fullyTimeSteppedCollisions
+                    // The timestep is performed now to avoid having multiple timesteps to get to the end of the timestep as the number of timesteps changes the result of the timestep(s)
+                    if (maximumTime == timeStep) {
+                        // Check for further collisions in connectedCollisions until timestep ends
+                        if (indexList.size() > 0) {
+                            // Get all connected physics components and check for further collisions until the timestep
+                            Set<PhysicsComponent> connectedPhysicsComponents = new HashSet<>(physicsObjectsFromCollisions(sublist));
+                            for (Integer k : indexList) {
+                                connectedPhysicsComponents.add(sortedCollisions.get(k).A);
+                                connectedPhysicsComponents.add(sortedCollisions.get(k).B);
+                            }
+                            checkForFurtherCollisions(connectedPhysicsComponents, maximumTime - currentTime);
+                            setAlreadyTimeSteppedObjects(connectedPhysicsComponents, false);
+
+                            // Inform the engine of the connected physicComponents' fully timestepped nature
+                            for (Integer k : indexList) {
+                                fullyTimeSteppedCollisions.add(sortedCollisions.get(k));
+                                removeFromTimeSteps(timeSteps, sortedCollisions.get(k).A);
+                                removeFromTimeSteps(timeSteps, sortedCollisions.get(k).B);
+                            }
+                            for (int k = i; k > (i - sublist.size()); k--) {
+                                fullyTimeSteppedCollisions.add(sortedCollisions.get(k));
+                                removeFromTimeSteps(timeSteps, sortedCollisions.get(k).A);
+                                removeFromTimeSteps(timeSteps, sortedCollisions.get(k).B);
+                            }
+                        } else {
+                            // If there are no connected collisions, this collision can just be timestepped to the end
+                            sortedCollisions.get(i).A.performSemiImplicitEulerTimeStep(maximumTime - currentTime, roundingDigit);
+                            sortedCollisions.get(i).B.performSemiImplicitEulerTimeStep(maximumTime - currentTime, roundingDigit);
+
+                            fullyTimeSteppedCollisions.add(sortedCollisions.get(i));
+                            removeFromTimeSteps(timeSteps, sortedCollisions.get(i).A);
+                            removeFromTimeSteps(timeSteps, sortedCollisions.get(i).B);
+                        }
+                    }
+
                 } else {
                     i = lastIndex;
 
-                    // Find next biggest timestep to solve to and set the collision time
+                    // Find next biggest timestep to solve to, set the collision time and solve the collision
                     double maximumTime = timeStep;
                     for (int k = (lastIndex + 1); k < sortedCollisions.size(); k++) {
                         if (sortedCollisions.get(k).collisionTime < maximumTime && sortedCollisions.get(k).collisionTime > currentTime && sortedCollisions.get(k).containsActivePhysicsComponents(sortedCollisions.get(i).A, sortedCollisions.get(i).B)) {
@@ -201,8 +231,8 @@ public abstract class PhysicsEngine implements SubEngine {
                         fullyTimeSteppedCollisions.add(sortedCollisions.get(i));
                         sortedCollisions.get(i).A.performSemiImplicitEulerTimeStep(maximumTime - currentTime, roundingDigit);
                         sortedCollisions.get(i).B.performSemiImplicitEulerTimeStep(maximumTime - currentTime, roundingDigit);
-                        timeSteps.remove(sortedCollisions.get(i).A);
-                        timeSteps.remove(sortedCollisions.get(i).B);
+                        removeFromTimeSteps(timeSteps, sortedCollisions.get(i).A);
+                        removeFromTimeSteps(timeSteps, sortedCollisions.get(i).B);
                     }
                 }
             } else {
@@ -234,18 +264,19 @@ public abstract class PhysicsEngine implements SubEngine {
             }
         }
         // Perform a timestep back to the current time for collisions that should be timestepped to the full timestep
-        double finalCurrentTime = currentTime;
-        fullyTimeSteppedCollisions.forEach(collision -> {
-            collision.A.performExplicitEulerTimeStep(finalCurrentTime - timeStep, roundingDigit);
-            collision.B.performExplicitEulerTimeStep(finalCurrentTime - timeStep, roundingDigit);
-        });
+        for (PhysicsComponent physicsComponent : physicsObjectsFromCollisions(fullyTimeSteppedCollisions)) {
+            physicsComponent.performExplicitEulerTimeStep(currentTime - timeStep, roundingDigit);
+        }
 
         // Check if any further collisions arise in the remaining timestep
         checkForFurtherCollisions(physicsObjectsFromCollisions(sortedCollisionList), Transforms.round(timeStep - currentTime, roundingDigit));
-        sortedCollisionList.forEach(collision -> {
-            collision.A.alreadyTimeStepped = true;
-            collision.B.alreadyTimeStepped = true;
-        });
+        setAlreadyTimeSteppedCollisions(sortedCollisionList, true);
+    }
+
+    protected void removeFromTimeSteps(Map<PhysicsComponent, List<Double>> timeSteps, PhysicsComponent toBeRemoved) {
+        if (toBeRemoved.objectType.performTimeStep) {
+            timeSteps.remove(toBeRemoved);
+        }
     }
 
     protected void performReverseTimeSteps(PhysicsComponent physicsComponent, List<Double> timeSteps, double collisionTime, double currentTime) {
@@ -289,7 +320,7 @@ public abstract class PhysicsEngine implements SubEngine {
             DoubleMatrix APrime = matrices[0].get(Transforms.createIndexArray(i * size, size), Transforms.createIndexArray(i * size, size));
             DoubleMatrix bPrime = matrices[1].get(Transforms.createIndexArray(i * size, size), new int[] {0});
             DoubleMatrix x = solveLCP(APrime, bPrime, subList.get(i)).x;
-            subList.get(i).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)}, new double[] {x.get(4), x.get(5)}, roundingDigit);
+            subList.get(i).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)}, new double[] {x.get(4), x.get(5), x.get(3)}, roundingDigit);
             LCPSolver.addSolvedCollision(subList.get(i), x);
         }
     }
@@ -366,16 +397,20 @@ public abstract class PhysicsEngine implements SubEngine {
             toBeUpdated.removeAll(physicsObjectsFromCollisions(new ArrayList<>(collisions)));
             performTimeStep(toBeUpdated, timeStep);
         } else {
-            setUseRK2(physicsComponents, false);
             performTimeStep(new ArrayList<>(physicsComponents), timeStep);
         }
     }
 
-    protected void setUseRK2(Collection<PhysicsComponent> physicsComponents, boolean useRK2) {
+    protected void setAlreadyTimeSteppedObjects(Collection<PhysicsComponent> physicsComponents, boolean timeStepped) {
         for (PhysicsComponent physicsComponent : physicsComponents) {
-            if (physicsComponent instanceof StandardPhysicsComponent) {
-                ((StandardPhysicsComponent) physicsComponent).useRK2 = useRK2;
-            }
+            physicsComponent.alreadyTimeStepped = timeStepped;
+        }
+    }
+
+    protected void setAlreadyTimeSteppedCollisions(Collection<Collision> collisions, boolean timeStepped) {
+        for (Collision collision : collisions) {
+            collision.A.alreadyTimeStepped = timeStepped;
+            collision.B.alreadyTimeStepped = timeStepped;
         }
     }
 

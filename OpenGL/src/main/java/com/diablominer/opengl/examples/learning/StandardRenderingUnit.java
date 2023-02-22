@@ -16,13 +16,13 @@ public class StandardRenderingUnit extends RenderingUnit {
     public void update() {
         update(this.shaderProgram);
         // Essential features
-            // TODO: Engine: Why would objects later in time be updated to this timeStep? ; Should now be updated properly but has to be tested
-        // TODO: Test billard / Proceed to multibody collisions
+        // TODO: Fix full screen bug: Seems like frame buffers are acting weird, Maybe quad isnt resized
 
         // Optional features
         // TODO: Implement Loader
         // TODO: Implement LCP
         // TODO: Improve willCollide for collisions without forces
+        // TODO: Maybe test in general if loaded solutions are better than guessed solutions
         // TODO: Maybe redo some texture maps ; Maybe add in enums for every texture parameter
         // TODO: Introduce array with a maxsize in shaders so dynamic arrays are possible --> Fully implement Normal mapping (more effective)
         // TODO: Optimize VBO usage ; Review assimp code ; Rewrite the geometry shaders into for loops in the linux version
@@ -46,7 +46,17 @@ public class StandardRenderingUnit extends RenderingUnit {
         // Maybe implement timesteps outside of collisions that are RK2: When there wont be a collision in a rk2 timesteps it performs rk2 ; Implemented an index to prevent double collision checks;
         // Nearest point functions for more shapes have to be implemented: Normal tests, distance and closest points: Slow for nonpolyhedral objects though ; Implement static/dynamic objects as enum (dont check for static-static collisions)
         // Removed updateInertiaMatrix, because the functionality has essentially been replaced by objecttype ; Shadow values were moved into RenderComponent ; Decided on differentiating between render components(added from the engine) and renderables
-        // Implemented a material system for different coefficients
+        // Implemented a material system for different coefficients; Changed the sorting algorithm because a smaller timestep was sorted after a larger one; Original desynchronization of objects comes from different forces applied when timestep > 0
+        // Change the update of earlier objects to actually work; Added rounding in application of impulse to prevent numerical errors; Moved coefficient determination and tangent generation to collision
+        // Changed tangent generation: Made to be abstract in collision; Allowed the camera to have a pitch of 90 degrees and start in position looking down; Changed calculation of angular velocity in Collision to normalize the direction vectors
+        // Added rotational friction according to the SIGGRAPH paper though the implementation is based on essentially guessing that the resulting impulse should be applied among the direction; Angular velocity in willCollide and collectCollisionData was removed; Changed collision vector computation in collectCollisionData to compute from B to A instead of A to B
+        // Tested multi-body collisions: Test current friction some more; Just add rails + queue to test; Added billard plates: Floor + 4 rails
+        // Done: Only put dynamic objects in timeSteps
+        // Done: Current time is updated multiple times which makes this method invalid; Store the time collisions are timestepped to somewhere
+        // Done: After resolving it should be checked if sublist can still be solved and otherwise it should jump back into resolution loop
+        // Done: Maybe remove solution after using it (in timestepping backwards to the last impulse and solving for the new time) because it might not be valid anymore
+        // Done: Rounded velocity in generateTangentialDirections
+        // Done: Removed the possibility of stepping an object back twice at the end of resolveCollisions, set alreadyTimeStepped to false after checkForFurtherCollisions and set useRK2 to false in checkForFurtherCollisions in the case of collisions
     }
 
     @Override

@@ -50,32 +50,6 @@ public abstract class PhysicsComponent implements Component {
         determineForceAndTorque();
     }
 
-    protected Vector3d[] performEulerSubStep(double timeStep) {
-        Vector3d velocity = new Vector3d(this.velocity).add(new Vector3d(force).div(mass).mul(timeStep));
-        Vector3d deltaV = new Vector3d(new Vector3d(force).div(mass));
-        Vector3d angularVelocity = new Vector3d(this.angularVelocity).add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(timeStep));
-        Vector3d deltaOmega = new Vector3d(torque).mul(worldFrameInertiaInv);
-        return new Vector3d[] {velocity, deltaV, angularVelocity, deltaOmega};
-    }
-
-    public void performRK2TimeStep(double timeStep, int roundingDigit) {
-        if (!alreadyTimeStepped && objectType.performTimeStep) {
-            determineForceAndTorque();
-            // This will only work for constant/nearly-constant forces
-            Vector3d[] k2 = performEulerSubStep(0.5 * timeStep);
-
-            Vector3d deltaX = k2[0].mul(timeStep);
-            position.set(Transforms.round(position.add(deltaX), roundingDigit));
-            velocity.set(Transforms.round(velocity.add(k2[1].mul(timeStep)), roundingDigit));
-
-            orientation.integrate(timeStep, k2[2].x, k2[2].y, k2[2].z).normalize();
-            angularVelocity.set(Transforms.round(angularVelocity.add(k2[3].mul(timeStep)), roundingDigit));
-
-            updateComponents();
-        }
-        alreadyTimeStepped = false;
-    }
-
     public void performSemiImplicitEulerTimeStep(double timeStep, int roundingDigit) {
         if (!alreadyTimeStepped && objectType.performTimeStep) {
             determineForceAndTorque();
@@ -137,20 +111,6 @@ public abstract class PhysicsComponent implements Component {
         Matrix3d rotationMatrix = worldMatrix.get3x3(new Matrix3d());
         worldFrameInertia.set(new Matrix3d(rotationMatrix).mul(bodyFrameInertia).mul(rotationMatrix.transpose(new Matrix3d())));
         worldFrameInertia.invert(worldFrameInertiaInv);
-    }
-
-    public Matrix4d predictRK2TimeStep(double timeStep) {
-        if (objectType.performTimeStep) {
-            Vector3d velocity = new Vector3d(this.velocity).add(new Vector3d(force).div(mass).mul(0.5 * timeStep));
-            Vector3d position = new Vector3d(this.position).add(new Vector3d(velocity).mul(timeStep));
-
-            Vector3d angularVelocity = new Vector3d(this.angularVelocity).add(new Vector3d(torque).mul(worldFrameInertiaInv).mul(0.5 * timeStep));
-            Quaterniond orientation = new Quaterniond(this.orientation).integrate(timeStep, angularVelocity.x, angularVelocity.y, angularVelocity.z).normalize();
-
-            return new Matrix4d().identity().translate(position).rotate(orientation);
-        } else {
-            return worldMatrix;
-        }
     }
 
     public Matrix4d predictEulerTimeStep(double timeStep) {
