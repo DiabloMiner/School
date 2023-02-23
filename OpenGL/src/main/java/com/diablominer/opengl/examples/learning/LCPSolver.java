@@ -87,7 +87,6 @@ public class LCPSolver {
         DoubleMatrix C = new DoubleMatrix(setJ.size(), setA.size());
         for (int i = 0; i < setJ.size(); i++) {
             for (int j = 0; j < setA.size(); j++) {
-                // TODO: Remove A if there are any bugs
                 if (y.get(i) > (x.get(i) - l.get(i))) {
                     C.put(i, j, Transforms.kroneckerDelta(setJ.get(i), setA.get(j)) + mu.get(i) * Transforms.kroneckerDelta(0, setA.get(j)));
                 } else if ((x.get(i) - u.get(i)) > y.get(i)) {
@@ -265,7 +264,6 @@ public class LCPSolver {
             }
 
             if (!setA.isEmpty() && !setJ.isEmpty()) {
-                // TODO: is first mu correct?
                 DoubleMatrix[] bhParts = constructBHParts(A, x, l, u, y, new DoubleMatrix(new double[] {0.0, mu, mu, muR, muR, muR}), setA, setJ);
                 DoubleMatrix C = bhParts[0], DInv = bhParts[2];
 
