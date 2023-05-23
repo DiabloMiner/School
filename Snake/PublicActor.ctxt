@@ -1,0 +1,13 @@
+#BlueJ class context
+comment0.target=PublicActor
+comment1.params=dx\ dy\ cls
+comment1.target=greenfoot.Actor\ getOneObjectAtOffsetP(int,\ int,\ java.lang.Class)
+comment2.params=cls
+comment2.target=boolean\ isTouchingP(java.lang.Class)
+comment3.params=cls
+comment3.target=void\ removeTouchingP(java.lang.Class)
+comment4.params=cls
+comment4.target=java.util.List\ getIntersectingObjectsP(java.lang.Class)
+comment5.params=cls
+comment5.target=greenfoot.Actor\ getOneIntersectingObjectP(java.lang.Class)
+numComments=6

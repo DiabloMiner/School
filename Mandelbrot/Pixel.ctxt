@@ -1,0 +1,5 @@
+#BlueJ class context
+comment0.target=Pixel
+comment1.params=x\ y\ cRe\ cIm\ maxMagnitude\ maxIterations
+comment1.target=Pixel(int,\ int,\ double,\ double,\ double,\ int)
+numComments=2

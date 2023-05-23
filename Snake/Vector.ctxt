@@ -1,0 +1,19 @@
+#BlueJ class context
+comment0.target=Vector
+comment1.params=
+comment1.target=Vector()
+comment2.params=x_new\ y_new
+comment2.target=Vector(double,\ double)
+comment3.params=x_new\ y_new
+comment3.target=void\ set(double,\ double)
+comment4.params=v
+comment4.target=Vector\ add(Vector)
+comment5.params=v
+comment5.target=Vector\ sub(Vector)
+comment6.params=d
+comment6.target=Vector\ mul(double)
+comment7.params=v
+comment7.target=double\ dot(Vector)
+comment8.params=
+comment8.target=double\ length()
+numComments=9
