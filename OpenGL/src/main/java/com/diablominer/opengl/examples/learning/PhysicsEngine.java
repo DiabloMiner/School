@@ -2,8 +2,13 @@ package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.Transforms;
 import org.jblas.DoubleMatrix;
+import org.jblas.ranges.IndicesRange;
+import org.jblas.ranges.Range;
 import org.joml.Math;
+import org.joml.Matrix3d;
+import org.joml.Matrix4d;
 
+import java.nio.DoubleBuffer;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -34,36 +39,53 @@ public abstract class PhysicsEngine implements SubEngine {
         this.leftOverTime = 0.0;
     }
 
-    public void performTimeStep(double timeStep) {
+    public void timeStep(double dT) {
+        int n = entities.size();
+        DoubleMatrix MInv = new DoubleMatrix(n * 6, n * 6), q = new DoubleMatrix(n * 7, 1), u = new DoubleMatrix(n * 6, 1),
+                qNext = new DoubleMatrix(n * 7, 1), uNext = new DoubleMatrix(n * 6, 1), Fext = new DoubleMatrix(n * 6, 1),
+                H = new DoubleMatrix(n * 7, n * 6);
+        for (int i = 0; i < n; i++) {
+            Entity entity = entities.get(i);
+            PhysicsComponent physComp = entity.getPhysicsComponent();
+            physComp.assertCorrectValues();
+
+            MInv.put(new int[] {i, i + 1, i + 2}, new int[] {i, i + 1, i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(physComp.massInv)));
+            MInv.put(new int[] {i + 3, i + 4, i + 5}, new int[] {i + 3, i + 4, i + 5}, Transforms.jomlMatrixToJBLASMatrix(physComp.worldFrameInertiaInv));
+
+            u.put(new int[] {i, i + 1, i + 2}, 0, Transforms.jomlVectorToJBLASVector3(physComp.velocity));
+        }
+    }
+
+    /*public void performTimeStep(double timeStep) {
         for (Entity entity : entities) {
             entity.getPhysicsComponent().performTimeStep(timeStep, roundingDigit);
         }
-    }
+    }*/
 
-    public void performExplicitEulerTimeStep(double timeStep) {
+    /*public void performExplicitEulerTimeStep(double timeStep) {
         for (Entity entity : entities) {
             entity.getPhysicsComponent().performExplicitEulerTimeStep(timeStep, roundingDigit);
         }
-    }
+    }*/
 
-    public void performTimeStep(List<PhysicsComponent> physicsComponents, double timeStep) {
+    /*public void performTimeStep(List<PhysicsComponent> physicsComponents, double timeStep) {
         for (PhysicsComponent physicsComponent : physicsComponents) {
             physicsComponent.performTimeStep(timeStep, roundingDigit);
         }
-    }
+    }*/
 
-    public void performExplicitEulerTimeStep(List<PhysicsComponent> physicsComponents, double timeStep) {
+    /*public void performExplicitEulerTimeStep(List<PhysicsComponent> physicsComponents, double timeStep) {
         for (PhysicsComponent physicsComponent : physicsComponents) {
             physicsComponent.performExplicitEulerTimeStep(timeStep, roundingDigit);
         }
-    }
+    }*/
 
-    public void checkForCollisions(double timeStep) {
+    /*public void checkForCollisions(double timeStep) {
         Set<Collision> collisions = findCollisions(new SolutionParameters(0.0, timeStep, -1.0), timeStep);
         if (collisions.size() > 0) { resolveCollisions(collisions, timeStep); }
-    }
+    }*/
 
-    protected Set<Collision> findCollisions(SolutionParameters parameters, double timeStep) {
+    /*protected Set<Collision> findCollisions(SolutionParameters parameters, double timeStep) {
         Set<Collision> collisions = new HashSet<>();
         Map<Integer, Boolean> alreadySearched = new HashMap<>();
         for (Entity object1 : entities) {
@@ -82,13 +104,13 @@ public abstract class PhysicsEngine implements SubEngine {
             }
         }
         return collisions;
-    }
+    }*/
 
-    protected int indexKey(Entity object1, Entity object2) {
+    /*protected int indexKey(Entity object1, Entity object2) {
         return Objects.hash(object1, object2);
-    }
+    }*/
 
-    protected void resolveCollisions(Set<Collision> collisions, double timeStep) {
+    /*protected void resolveCollisions(Set<Collision> collisions, double timeStep) {
         List<Collision> sortedCollisionList = new ArrayList<>(collisions);
         sortedCollisionList.sort(Comparator.comparingDouble(c -> c.collisionTime));
         HashMap<Integer, Collision> sortedCollisions = new LinkedHashMap<>();
@@ -271,15 +293,15 @@ public abstract class PhysicsEngine implements SubEngine {
         // Check if any further collisions arise in the remaining timestep
         checkForFurtherCollisions(physicsObjectsFromCollisions(sortedCollisionList), Transforms.round(timeStep - currentTime, roundingDigit));
         setAlreadyTimeSteppedCollisions(sortedCollisionList, true);
-    }
+    }*/
 
-    protected void removeFromTimeSteps(Map<PhysicsComponent, List<Double>> timeSteps, PhysicsComponent toBeRemoved) {
+    /*protected void removeFromTimeSteps(Map<PhysicsComponent, List<Double>> timeSteps, PhysicsComponent toBeRemoved) {
         if (toBeRemoved.objectType.performTimeStep) {
             timeSteps.remove(toBeRemoved);
         }
-    }
+    }*/
 
-    protected void performReverseTimeSteps(PhysicsComponent physicsComponent, List<Double> timeSteps, double collisionTime, double currentTime) {
+    /*protected void performReverseTimeSteps(PhysicsComponent physicsComponent, List<Double> timeSteps, double collisionTime, double currentTime) {
         // Perform multiple reverse time steps and remove these timesteps from the list storing timesteps for this physics component
         double tempTime = currentTime;
         List<Double> backsteps = new ArrayList<>();
@@ -294,13 +316,13 @@ public abstract class PhysicsEngine implements SubEngine {
             tempTime -= h;
         }
         timeSteps.removeAll(backsteps);
-    }
+    }*/
 
     /**
      * Perform a timestep in the collision resolution loop for all non-solved collisions, changing the currentTime variable, updating all collision data for non-solved collisions, and actually performing a timestep.
      * @return The updated value of currentTime
      */
-    protected double performResolutionTimeStep(List<Collision> collisions, Map<PhysicsComponent, List<Double>> timeSteps, double currentTime, double maximumTime, double deltaTime, int currentIndex) {
+    /*protected double performResolutionTimeStep(List<Collision> collisions, Map<PhysicsComponent, List<Double>> timeSteps, double currentTime, double maximumTime, double deltaTime, int currentIndex) {
         // Only the collisions that are not solved yet i.e. the ones that are relevant are timestepped
         LinkedList<Collision> relevantCollisions = new LinkedList<>(collisions);
         relevantCollisions.removeIf(collision -> collisions.indexOf(collision) < currentIndex);
@@ -311,9 +333,9 @@ public abstract class PhysicsEngine implements SubEngine {
             collisions.get(i).updateCollisionTime(collisions.get(i).updateTimeStepEstimate(maximumTime, currentTime, collisionTimeEpsilon, 20));
         }
         return (currentTime + deltaTime);
-    }
+    }*/
 
-    protected void processCollisionSubList(List<Collision> subList, double timeStep) {
+    /*protected void processCollisionSubList(List<Collision> subList, double timeStep) {
         DoubleMatrix[] matrices = createMatrices(subList, timeStep);
         int size = matrices[0].rows / subList.size();
         for (int i = 0; i < subList.size(); i++) {
@@ -323,18 +345,18 @@ public abstract class PhysicsEngine implements SubEngine {
             subList.get(i).applyImpulse(x.get(0), new double[] {x.get(1), x.get(2)}, new double[] {x.get(4), x.get(5), x.get(3)}, roundingDigit);
             LCPSolver.addSolvedCollision(subList.get(i), x);
         }
-    }
+    }*/
 
-    protected DoubleMatrix[] createMatrices(List<Collision> subList, double timeStep) {
+    /*protected DoubleMatrix[] createMatrices(List<Collision> subList, double timeStep) {
         if (solverConfig.solverChoice.forBLCP) {
             return LCPSolver.constructBLCPMatrices(subList.toArray(new Collision[0]), timeStep);
         } else {
             subList.forEach(Collision::generateAdditionalTangentialDirections);
             return LCPSolver.constructLCPMatrices(subList.toArray(new Collision[0]), timeStep);
         }
-    }
+    }*/
 
-    protected LCPSolverResult solveLCP(DoubleMatrix APrime, DoubleMatrix bPrime, Collision currentCollision) {
+    /*protected LCPSolverResult solveLCP(DoubleMatrix APrime, DoubleMatrix bPrime, Collision currentCollision) {
         if (LCPSolver.solvedCollisions.get(currentCollision.hashCode()) != null) {
             DoubleMatrix x0 = LCPSolver.solvedCollisions.get(currentCollision.hashCode());
             if (solverConfig.solverChoice.equals(LCPSolverChoice.LCP_MIN_MAP_NEWTON)) {
@@ -381,9 +403,9 @@ public abstract class PhysicsEngine implements SubEngine {
                 }
             }
         }
-    }
+    }*/
 
-    protected void checkForFurtherCollisions(Collection<PhysicsComponent> physicsComponents, double timeStep) {
+    /*protected void checkForFurtherCollisions(Collection<PhysicsComponent> physicsComponents, double timeStep) {
         Set<Collision> collisions = findCollisions(new SolutionParameters(0.0, timeStep, -1.0), timeStep);
         if (collisions.size() > 0) {
             leftOverTime = this.simulationTimeStep;
@@ -399,24 +421,24 @@ public abstract class PhysicsEngine implements SubEngine {
         } else {
             performTimeStep(new ArrayList<>(physicsComponents), timeStep);
         }
-    }
+    }*/
 
-    protected void setAlreadyTimeSteppedObjects(Collection<PhysicsComponent> physicsComponents, boolean timeStepped) {
+    /*protected void setAlreadyTimeSteppedObjects(Collection<PhysicsComponent> physicsComponents, boolean timeStepped) {
         for (PhysicsComponent physicsComponent : physicsComponents) {
             physicsComponent.alreadyTimeStepped = timeStepped;
         }
-    }
+    }*/
 
-    protected void setAlreadyTimeSteppedCollisions(Collection<Collision> collisions, boolean timeStepped) {
+    /*protected void setAlreadyTimeSteppedCollisions(Collection<Collision> collisions, boolean timeStepped) {
         for (Collision collision : collisions) {
             collision.A.alreadyTimeStepped = timeStepped;
             collision.B.alreadyTimeStepped = timeStepped;
         }
-    }
+    }*/
 
-    protected void setSimulationTimeStep(double newTimeStep) {
+    /*protected void setSimulationTimeStep(double newTimeStep) {
         simulationTimeStep = Math.min(Math.max(newTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
-    }
+    }*/
 
     protected void updateTimeStep() {
         if (simulationTimeStep < Learning6.maxTimeStep || simulationTimeStep == Learning6.minTimeStep) {
@@ -438,19 +460,19 @@ public abstract class PhysicsEngine implements SubEngine {
 
     abstract void update();
 
-    public void updateEntities() {
+    /*public void updateEntities() {
         for (Entity entity : entities) {
             entity.getTransformComponent().update(entity.getPhysicsComponent().worldMatrix);
         }
-    }
+    }*/
 
-    public static List<PhysicsComponent> physicsObjectsFromCollisions(List<Collision> collisions) {
+    /*public static List<PhysicsComponent> physicsObjectsFromCollisions(List<Collision> collisions) {
         Set<PhysicsComponent> physicsComponents = new HashSet<>();
         collisions.forEach(collision -> {
             physicsComponents.add(collision.A);
             physicsComponents.add(collision.B);
         });
         return new ArrayList<>(physicsComponents);
-    }
+    }*/
 
 }

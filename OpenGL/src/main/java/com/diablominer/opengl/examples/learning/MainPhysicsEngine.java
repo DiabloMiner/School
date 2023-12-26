@@ -15,8 +15,8 @@ public class MainPhysicsEngine extends PhysicsEngine {
     @Override
     public void update() {
         updateTimeStep();
-        checkForCollisions(simulationTimeStep);
-        performTimeStep(simulationTimeStep);
+        /*checkForCollisions(simulationTimeStep);
+        performTimeStep(simulationTimeStep);*/
     }
 
     @Override

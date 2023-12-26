@@ -761,9 +761,11 @@ public class LCPSolver {
     public static Vector3d[] constructTotalTorque(Collision collision) {
         PhysicsComponent A = collision.A, B = collision.B;
         Vector3d ATotalTorque = new Vector3d(A.torque);
-        if (A.objectType.performTimeStep) { ATotalTorque.sub(new Vector3d(A.angularVelocity).cross(new Vector3d(A.angularVelocity).mul(A.worldFrameInertia))); }
+        // if (A.objectType.performTimeStep) { ATotalTorque.sub(new Vector3d(A.angularVelocity).cross(new Vector3d(A.angularVelocity).mul(A.worldFrameInertia))); }
+        ATotalTorque.sub(new Vector3d(A.angularVelocity).cross(new Vector3d(A.angularVelocity).mul(A.worldFrameInertia)));
         Vector3d BTotalTorque = new Vector3d(B.torque);
-        if (B.objectType.performTimeStep) { BTotalTorque.sub(new Vector3d(B.angularVelocity).cross(new Vector3d(B.angularVelocity).mul(B.worldFrameInertia)));}
+        // if (B.objectType.performTimeStep) { BTotalTorque.sub(new Vector3d(B.angularVelocity).cross(new Vector3d(B.angularVelocity).mul(B.worldFrameInertia)));}
+        BTotalTorque.sub(new Vector3d(B.angularVelocity).cross(new Vector3d(B.angularVelocity).mul(B.worldFrameInertia)));
         return new Vector3d[] {ATotalTorque, BTotalTorque};
     }
 

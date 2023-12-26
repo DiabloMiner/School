@@ -13,23 +13,23 @@ public class TestPhysicsCube extends PhysicsComponent {
 
     private final double edgeLength;
 
-    public TestPhysicsCube(AssimpModel model, Material material, ObjectType objectType, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
-        super(material, objectType, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)));
+    public TestPhysicsCube(AssimpModel model, Material material, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
+        super(material, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)));
         this.edgeLength = edgeLength;
         this.model = model;
     }
 
-    @Override
+    /*@Override
     public void performTimeStep(double timeStep, int roundingDigit) {
         performSemiImplicitEulerTimeStep(timeStep, roundingDigit);
-    }
+    }*/
 
     @Override
     public boolean isColliding(PhysicsComponent physicsComponent) {
         return areCollisionShapesColliding(physicsComponent.collisionShape);
     }
 
-    @Override
+    /*@Override
     public Optional<Collision> getInitialCollision(PhysicsComponent B, SolutionParameters parameters, double timeStep, int roundingDigit) {
         Vector3d collisionVector = B.collisionShape.findPenetrationDepth(this.collisionShape);
         Vector3d collisionDirection = computeCollisionDirection(B, collisionVector);
@@ -47,9 +47,9 @@ public class TestPhysicsCube extends PhysicsComponent {
         } else {
             return Optional.empty();
         }
-    }
+    }*/
 
-    public Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep) {
+    /*public Collision[] getCollisions(PhysicsComponent physicsComponent, double timeStep) {
         TestPhysicsCube cube = (TestPhysicsCube) physicsComponent;
         if (this.position.distance(cube.position) < (this.edgeLength + cube.edgeLength) / 2.0) {
             double distance = (this.edgeLength + cube.edgeLength) / 2.0;
@@ -105,11 +105,11 @@ public class TestPhysicsCube extends PhysicsComponent {
             double otherObjFrictionImpulse = computeFrictionImpulse(cube, normal, Material.coefficientsOfKineticFriction.get(Material.hash(this.material, physicsComponent.material)));
 
             // DoubleMatrix[] lcpMatrices = LCPSolver.constructLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {(this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0}, 4, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, -1.0, 0.0), new Vector3d(0.0, 0.0, 1.0), new Vector3d(0.0, 0.0, -1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});
-            /*DoubleMatrix[] blcpMatrices = LCPSolver.constructBLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {coefficientOfRestitution}, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, 0.0, 1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});
+            *//*DoubleMatrix[] blcpMatrices = LCPSolver.constructBLCPMatrices(timeStep, new double[] {this.mass, cube.mass}, new double[] {coefficientOfRestitution}, new Vector3d[] {new Vector3d(contactVertex)}, new Vector3d[]{new Vector3d(this.position)}, new Vector3d[]{new Vector3d(cube.position)}, new Vector3d[]{new Vector3d(normal)}, new Vector3d[][]{{new Vector3d(0.0, 1.0, 0.0), new Vector3d(0.0, 0.0, 1.0)}}, new Vector3d[]{new Vector3d(this.velocity), new Vector3d(cube.velocity)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Vector3d[]{new Vector3d(0.0), new Vector3d(0.0)}, new Matrix3d[]{worldFrameInertia, cube.worldFrameInertia});
             LCPSolver.getInstance().solveBLCPWithPSOR(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 1.0, 10e-6, 100);
             LCPSolver.getInstance().solveBLCPWithNNCG(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0,1000);
             LCPSolver.getInstance().solveBLCPWithPGS(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 10e-6, 100);
-            LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 10e-4, 0.5, 10e-30, 10e-10, 10e-20, 250);*/
+            LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(blcpMatrices[0], blcpMatrices[1], (this.coefficientOfKineticFriction + cube.coefficientOfKineticFriction) / 2.0, 10e-4, 0.5, 10e-30, 10e-10, 10e-20, 250);*//*
             // LCPSolver.getInstance().solveLCPWithMinimumMapNewton(lcpMatrices[0], lcpMatrices[1], 10e-4, 0.5, 10e-30, 10e-10, 100);
 
             this.velocity.add(new Vector3f().set(new Vector3d(impulse).div(mass)));
@@ -124,7 +124,7 @@ public class TestPhysicsCube extends PhysicsComponent {
             cube.performTimeStep(timeStep - h, 15);
         }
         return new Collision[] {};
-    }
+    }*/
 
     private void applyFrictionImpulse(TestPhysicsCube physicsObject, Vector3f normal, double frictionImpulse) {
         Vector3d tangentialVelDir = Transforms.safeNormalize(computeTangentialVelocity(physicsObject, normal));

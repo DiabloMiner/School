@@ -374,7 +374,15 @@ public class Transforms {
         return new DoubleMatrix(3, 3, mat.get(new double[9]));
     }
 
-    public static DoubleMatrix jomlVectorToJBLASVector(Vector4d vec) {
+    public static DoubleMatrix jomlVectorToJBLASVector3(Vector3d vec) {
+        DoubleMatrix result = new DoubleMatrix(3, 1);
+        for (int i = 0; i < 3; i++) {
+            result.put(i, 0, vec.get(i));
+        }
+        return result;
+    }
+
+    public static DoubleMatrix jomlVectorToJBLASVector4(Vector4d vec) {
         DoubleMatrix result = new DoubleMatrix(4, 1);
         for (int i = 0; i < 4; i++) {
             result.put(i, 0, vec.get(i));

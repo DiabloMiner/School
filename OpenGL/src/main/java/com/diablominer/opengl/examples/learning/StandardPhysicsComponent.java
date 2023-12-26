@@ -11,16 +11,16 @@ import java.util.Optional;
 
 public abstract class StandardPhysicsComponent extends PhysicsComponent {
 
-    public StandardPhysicsComponent(Material material, ObjectType objectType, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius) {
-        super(material, objectType, collisionShape, position, velocity, orientation, angularVelocity, bodyFrameInertia, forces, mass, radius);
+    public StandardPhysicsComponent(Material material, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius) {
+        super(material, collisionShape, position, velocity, orientation, angularVelocity, bodyFrameInertia, forces, mass, radius);
     }
 
-    @Override
+    /*@Override
     public void performTimeStep(double timeStep, int roundingDigit) {
         performSemiImplicitEulerTimeStep(timeStep, roundingDigit);
-    }
+    }*/
 
-    @Override
+    /*@Override
     public Optional<Collision> getInitialCollision(PhysicsComponent B, SolutionParameters parameters, double timeStep, int roundingDigit) {
         // This will only work for constant/nearly-constant forces
 
@@ -43,14 +43,14 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
         } else {
             return Optional.empty();
         }
-    }
+    }*/
 
     @Override
     public boolean isColliding(PhysicsComponent physicsComponent) {
         return areCollisionShapesColliding(physicsComponent.collisionShape);
     }
 
-    protected Vector3d computeCollisionDirection(PhysicsComponent object, Vector3d collisionVector) {
+    /*protected Vector3d computeCollisionDirection(PhysicsComponent object, Vector3d collisionVector) {
         Vector3d collisionDirection;
         if (Transforms.fixZeros(collisionVector).equals(new Vector3d(0.0))) {
             collisionDirection = Transforms.safeNormalize(new Vector3d(this.collisionShape.findClosestPoints(object.collisionShape)[0]).sub(this.position));
@@ -58,7 +58,7 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
             collisionDirection = collisionVector.normalize(new Vector3d());
         }
         return collisionDirection;
-    }
+    }*/
 
     @Override
     public Matrix4d predictTimeStep(double timeStep) {

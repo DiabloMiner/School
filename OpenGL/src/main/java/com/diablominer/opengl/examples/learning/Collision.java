@@ -105,7 +105,7 @@ public abstract class Collision {
         return coefficientOfStaticFriction;
     }
 
-    public void applyImpulse(double normalImpulse, double[] frictionImpulses, double[] rollingFrictionImpulses, int roundingDigit) {
+    /*public void applyImpulse(double normalImpulse, double[] frictionImpulses, double[] rollingFrictionImpulses, int roundingDigit) {
         Vector3d normImpulse = new Vector3d(normal).mul(normalImpulse);
         Vector3d rA = Transforms.round(new Vector3d(point).sub(A.position), roundingDigit);
         Vector3d rB = Transforms.round(new Vector3d(point).sub(B.position), roundingDigit);
@@ -154,7 +154,7 @@ public abstract class Collision {
                 B.angularVelocity.add(Transforms.round(new Vector3d(tangentialDirections[i]).mul(rollingFrictionImpulses[i]).mul(B.worldFrameInertiaInv), roundingDigit));
             }
         }
-    }
+    }*/
 
     public double getRelativeVelocity(double timeStep) {
         // This implements equation 14 in 'Contact and Friction Simulation for Computer Graphics', but added velocity in the timestep to be taken is taken into account
@@ -176,7 +176,7 @@ public abstract class Collision {
         return normal.negate(new Vector3d()).dot(new Vector3d(B.force).sub(new Vector3d(A.force)));
     }
 
-    public boolean containsActivePhysicsComponents(PhysicsComponent A, PhysicsComponent B) {
+    /*public boolean containsActivePhysicsComponents(PhysicsComponent A, PhysicsComponent B) {
         if (A.objectType.performTimeStep && !B.objectType.performTimeStep) {
             return A.equals(this.A) || A.equals(this.B);
         } else if (!A.objectType.performTimeStep && B.objectType.performTimeStep) {
@@ -184,9 +184,9 @@ public abstract class Collision {
         } else {
             return (A.equals(this.A) || A.equals(this.B)) || (B.equals(this.A) || B.equals(this.B));
         }
-    }
+    }*/
 
-    public boolean containsActivePhysicsComponents(List<PhysicsComponent> aComps, List<PhysicsComponent> bComps) {
+    /*public boolean containsActivePhysicsComponents(List<PhysicsComponent> aComps, List<PhysicsComponent> bComps) {
         for (int i = 0; i < aComps.size(); i++) {
             if (containsActivePhysicsComponents(aComps.get(i), bComps.get(i))) {
                 return true;
@@ -197,7 +197,7 @@ public abstract class Collision {
 
     public boolean hasStaticPhysicsComponents() {
         return !A.objectType.performTimeStep || !B.objectType.performTimeStep;
-    }
+    }*/
 
     @Override
     public boolean equals(Object o) {

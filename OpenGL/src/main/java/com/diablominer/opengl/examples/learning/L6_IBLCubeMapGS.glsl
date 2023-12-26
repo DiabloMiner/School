@@ -11,7 +11,6 @@ in VS_OUT {
 } gsIn[];
 
 out vec3 localPos;
-out int gl_Layer;
 
 void main() {
     for (int i = 0; i < 3; i++) {
