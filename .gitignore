@@ -9,5 +9,10 @@ OpenGL/src/main/resources/META-INF
 OpenGL/OpenGL.jar
 OpenGL/OpenGL.bat
 OpenGL/OpenGL.iml
+Basics/
+FunctionPlotter/
+Mandelbrot/
+Physics/
+Schieberegler/
 *.class
 *.zip
