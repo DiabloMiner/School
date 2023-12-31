@@ -7,7 +7,11 @@ import org.jblas.ranges.Range;
 import org.joml.Math;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
+import org.joml.Vector3d;
 
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.nio.DoubleBuffer;
 import java.util.*;
 import java.util.function.Consumer;
@@ -20,39 +24,110 @@ public abstract class PhysicsEngine implements SubEngine {
     public static double collisionTimeEpsilon = 10e-50;
     public static final int roundingDigit = 20;
 
-    public LCPSolverConfiguration solverConfig;
+    // public LCPSolverConfiguration solverConfig;
     public double simulationTimeStep;
     protected List<Entity> entities;
     protected double leftOverTime;
 
-    public PhysicsEngine(LCPSolverConfiguration solverConfig, double simulationTimeStep) {
+    public PhysicsEngine(double simulationTimeStep) {
         this.entities = new ArrayList<>();
-        this.solverConfig = solverConfig;
+        // this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.leftOverTime = 0.0;
     }
 
-    public PhysicsEngine(LCPSolverConfiguration solverConfig, List<Entity> entities, double simulationTimeStep) {
+    public PhysicsEngine(List<Entity> entities, double simulationTimeStep) {
         this.entities = new ArrayList<>(entities);
-        this.solverConfig = solverConfig;
+        // this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.leftOverTime = 0.0;
     }
 
-    public void timeStep(double dT) {
+    public void timeStep(double dt) {
         int n = entities.size();
+
+        // -------------------------------------------------------------------------------------------------------------
+        // Step 1: Construct matrices describing the system from entities
+        // -------------------------------------------------------------------------------------------------------------
+
         DoubleMatrix MInv = new DoubleMatrix(n * 6, n * 6), q = new DoubleMatrix(n * 7, 1), u = new DoubleMatrix(n * 6, 1),
-                qNext = new DoubleMatrix(n * 7, 1), uNext = new DoubleMatrix(n * 6, 1), Fext = new DoubleMatrix(n * 6, 1),
-                H = new DoubleMatrix(n * 7, n * 6);
+                qNext, uNext, fExt = new DoubleMatrix(n * 6, 1), H = new DoubleMatrix(n * 7, n * 6);
+        readEntityData(u, q, fExt, MInv, H);
+
+        // -------------------------------------------------------------------------------------------------------------
+        // Step 2: Solve system
+        // -------------------------------------------------------------------------------------------------------------
+
+
+        uNext = u.addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(n * 6, 1));
+        qNext = q.addi(H.mmuli(uNext, new DoubleMatrix(n * 7, 1)).mul(dt), new DoubleMatrix(n * 7, 1));
+
+        // -------------------------------------------------------------------------------------------------------------
+        // Step 3: Reinject values into entities
+        // -------------------------------------------------------------------------------------------------------------
+
+        writeEntityData(uNext, qNext);
+
+        // Implement unit test scenario for falling and turning motions
+        // Add feature to allow non simulation of physics objects
+    }
+
+    public void readEntityData(DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {
+        int n = entities.size();
+
+        u.assertSameSize(new DoubleMatrix(n * 6, 1));
+        q.assertSameSize(new DoubleMatrix(n * 7, 1));
+        fExt.assertSameSize(new DoubleMatrix(n * 6, 1));
+        MInv.assertSameSize(new DoubleMatrix(n * 6, n * 6));
+        H.assertSameSize(new DoubleMatrix(n * 7, n * 6));
+
         for (int i = 0; i < n; i++) {
             Entity entity = entities.get(i);
             PhysicsComponent physComp = entity.getPhysicsComponent();
+            physComp.determineForceAndTorque();
             physComp.assertCorrectValues();
 
-            MInv.put(new int[] {i, i + 1, i + 2}, new int[] {i, i + 1, i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(physComp.massInv)));
-            MInv.put(new int[] {i + 3, i + 4, i + 5}, new int[] {i + 3, i + 4, i + 5}, Transforms.jomlMatrixToJBLASMatrix(physComp.worldFrameInertiaInv));
+            MInv.put(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, new int[] {6 * i, 6 * i + 1, 6 * i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(physComp.massInv)));
+            MInv.put(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, Transforms.jomlMatrixToJBLASMatrix(physComp.worldFrameInertiaInv));
 
-            u.put(new int[] {i, i + 1, i + 2}, 0, Transforms.jomlVectorToJBLASVector3(physComp.velocity));
+            u.put(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.velocity));
+            u.put(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, 0, Transforms.jomlVectorToJBLASVector(physComp.angularVelocity));
+
+            fExt.put(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.force));
+            // Formula is given in 'Contact and Friction Simulation for Computer Graphics' (SIGGRAPH 2022), p. 37
+            Vector3d torque = new Vector3d(physComp.torque).sub(physComp.angularVelocity.cross(physComp.angularVelocity.mul(physComp.worldFrameInertia, new Vector3d()), new Vector3d()));
+            fExt.put(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, 0, Transforms.jomlVectorToJBLASVector(torque));
+
+            q.put(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.position));
+            q.put(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, 0, Transforms.jomlQuaternionToJBLASVector(physComp.orientation));
+
+            DoubleMatrix Hi = Transforms.createHMatrix(physComp.orientation);
+            H.put(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, new int[] {6 * i, 6 * i + 1, 6 * i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity()));
+            H.put(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, Hi);
+        }
+    }
+
+    public void writeEntityData(DoubleMatrix uNext, DoubleMatrix qNext) {
+        int n = entities.size();
+
+        uNext.assertSameSize(new DoubleMatrix(n * 6, 1));
+        qNext.assertSameSize(new DoubleMatrix(n * 7, 1));
+
+        for (int i = 0; i < n; i++) {
+            Entity entity = entities.get(i);
+            PhysicsComponent physComp = entity.getPhysicsComponent();
+
+            physComp.velocity.set(Transforms.jblasVectorToJomlVector(uNext.get(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, 0)));
+            physComp.angularVelocity.set(Transforms.jblasVectorToJomlVector(uNext.get(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, 0)));
+
+            physComp.position.set(Transforms.jblasVectorToJomlVector(qNext.get(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, 0)));
+            physComp.orientation.set(Transforms.jblasVectorToJomlQuaternion(qNext.get(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, 0))).normalize();
+
+            physComp.worldMatrix.set(new Matrix4d().identity().translate(physComp.position).rotate(physComp.orientation));
+            physComp.computeWorldFrameInertia(physComp.worldMatrix);
+            physComp.collisionShape.update(physComp.worldMatrix);
+
+            physComp.assertCorrectValues();
         }
     }
 

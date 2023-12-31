@@ -374,24 +374,16 @@ public class Transforms {
         return new DoubleMatrix(3, 3, mat.get(new double[9]));
     }
 
-    public static DoubleMatrix jomlVectorToJBLASVector3(Vector3d vec) {
-        DoubleMatrix result = new DoubleMatrix(3, 1);
-        for (int i = 0; i < 3; i++) {
-            result.put(i, 0, vec.get(i));
-        }
-        return result;
+    public static DoubleMatrix jomlVectorToJBLASVector(Vector3d vec) {
+        return new DoubleMatrix(3, 1, vec.x, vec.y, vec.z);
     }
 
-    public static DoubleMatrix jomlVectorToJBLASVector4(Vector4d vec) {
+    public static DoubleMatrix jomlVectorToJBLASVector(Vector4d vec) {
         DoubleMatrix result = new DoubleMatrix(4, 1);
         for (int i = 0; i < 4; i++) {
             result.put(i, 0, vec.get(i));
         }
         return result;
-    }
-
-    public static DoubleMatrix jomlVectorToJBLASVector(Vector3d vec) {
-        return new DoubleMatrix(3, 1, vec.x, vec.y, vec.z);
     }
 
     public static DoubleMatrix jomlVectorsToJBLASVector(Vector3d[] vecs) {
@@ -401,6 +393,36 @@ public class Transforms {
             result.put(i * 3 + 1, 0, vecs[i].get(1));
             result.put(i * 3 + 2, 0, vecs[i].get(2));
         }
+        return result;
+    }
+
+    public static DoubleMatrix jomlQuaternionToJBLASVector(Quaterniond q) {
+        return new DoubleMatrix(4, 1, q.x(), q.y(), q.z(), q.w());
+    }
+
+    public static Vector3d jblasVectorToJomlVector(DoubleMatrix doubleMatrix) {
+        assert doubleMatrix.length == 3 : "The JBLAS vector provided to Transforms is too long/short to be converted to a 3d Joml vector";
+        return new Vector3d(doubleMatrix.get(0), doubleMatrix.get(1), doubleMatrix.get(2));
+    }
+
+    public static Quaterniond jblasVectorToJomlQuaternion(DoubleMatrix doubleMatrix) {
+        assert doubleMatrix.length == 4 : "The JBLAS vector provided to Transforms is too long/short to be converted to a Joml quaternion";
+        return new Quaterniond(doubleMatrix.get(0), doubleMatrix.get(1), doubleMatrix.get(2), doubleMatrix.get(3));
+    }
+
+    /**
+     * Based on 'Contact and Friction Simulation for Computer Graphics' (SIGGRAPH 2022), p. 37.
+     * Generates a matrix that is used to map angular velocity (vector) into the change of orientation (quaternion).
+     */
+    public static DoubleMatrix createHMatrix(Quaterniond q) {
+        double[][] data = new double[][] {
+                {-q.y(), -q.z(), -q.w()},
+                {q.x(), q.w(), -q.z()},
+                {-q.w(), q.x(), q.y()},
+                {q.z(), -q.y(), q.x()}
+        };
+        DoubleMatrix result = new DoubleMatrix(data);
+        result.mul(0.5);
         return result;
     }
 

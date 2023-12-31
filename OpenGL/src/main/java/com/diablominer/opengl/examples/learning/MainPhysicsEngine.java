@@ -4,17 +4,18 @@ import java.util.List;
 
 public class MainPhysicsEngine extends PhysicsEngine {
 
-    public MainPhysicsEngine(LCPSolverConfiguration solverConfig, double simulationTimeStep) {
-        super(solverConfig, simulationTimeStep);
+    public MainPhysicsEngine(double simulationTimeStep) {
+        super(simulationTimeStep);
     }
 
-    public MainPhysicsEngine(LCPSolverConfiguration solverConfig, List<Entity> entities, double simulationTimeStep) {
-        super(solverConfig, entities, simulationTimeStep);
+    public MainPhysicsEngine(List<Entity> entities, double simulationTimeStep) {
+        super(entities, simulationTimeStep);
     }
 
     @Override
     public void update() {
         updateTimeStep();
+        timeStep(simulationTimeStep);
         /*checkForCollisions(simulationTimeStep);
         performTimeStep(simulationTimeStep);*/
     }

@@ -82,13 +82,7 @@ public abstract class PhysicsComponent implements Component {
         alreadyTimeStepped = false;
     }*/
 
-    private void updateComponents() {
-        worldMatrix.set(new Matrix4d().identity().translate(position).rotate(orientation));
-        computeWorldFrameInertia(worldMatrix);
-        collisionShape.update(worldMatrix);
-    }
-
-    protected void determineForceAndTorque() {
+    public void determineForceAndTorque() {
         checkForces();
         force = new Vector3d(0.0);
         torque = new Vector3d(0.0);
@@ -126,79 +120,79 @@ public abstract class PhysicsComponent implements Component {
     }
 
     public void assertCorrectValues() {
-        assert Objects.isNull(radius) : "Radius of rigid body is null";
-        assert Double.isNaN(radius) : "Radius of rigid body is NaN";
+        assert !Objects.isNull(radius) : "Radius of rigid body is null";
+        assert !Double.isNaN(radius) : "Radius of rigid body is NaN";
         assert Double.isFinite(radius) : "Radius of rigid body is not finite";
-        assert Objects.isNull(mass) : "Mass of rigid body is null";
-        assert Double.isNaN(mass) : "Mass of rigid body is NaN";
-        assert Objects.isNull(massInv) : "Inverse mass of rigid body is null";
-        assert Double.isNaN(massInv) : "Inverse mass of rigid body is NaN";
+        assert !Objects.isNull(mass) : "Mass of rigid body is null";
+        assert !Double.isNaN(mass) : "Mass of rigid body is NaN";
+        assert !Objects.isNull(massInv) : "Inverse mass of rigid body is null";
+        assert !Double.isNaN(massInv) : "Inverse mass of rigid body is NaN";
         assert Double.isFinite(massInv) : "Inverse mass of rigid body is not finite";
 
-        assert Objects.isNull(position) : "Position of rigid body is null";
+        assert !Objects.isNull(position) : "Position of rigid body is null";
         assert position.isFinite() : "Position of rigid body is not finite";
         for (int i = 0; i < 3; i++) {
-            assert Double.isNaN(position.get(i)) : "Position component of rigid body is NaN";
+            assert !Double.isNaN(position.get(i)) : "Position component of rigid body is NaN";
         }
-        assert Objects.isNull(velocity) : "Velocity of rigid body is null";
+        assert !Objects.isNull(velocity) : "Velocity of rigid body is null";
         assert velocity.isFinite() : "Velocity of rigid body is not finite";
         for (int i = 0; i < 3; i++) {
-            assert Double.isNaN(velocity.get(i)) : "Velocity component of rigid body is NaN";
+            assert !Double.isNaN(velocity.get(i)) : "Velocity component of rigid body is NaN";
         }
-        assert Objects.isNull(angularVelocity) : "Angular velocity  of rigid body is null";
+        assert !Objects.isNull(angularVelocity) : "Angular velocity  of rigid body is null";
         assert angularVelocity.isFinite() : "Angular velocity of rigid body is not finite";
         for (int i = 0; i < 3; i++) {
-            assert Double.isNaN(angularVelocity.get(i)) : "Angular velocity component of rigid body is NaN";
+            assert !Double.isNaN(angularVelocity.get(i)) : "Angular velocity component of rigid body is NaN";
         }
-        assert Objects.isNull(force) : "Force  of rigid body is null";
+        assert !Objects.isNull(force) : "Force  of rigid body is null";
         assert force.isFinite() : "Force of rigid body is not finite";
         for (int i = 0; i < 3; i++) {
-            assert Double.isNaN(force.get(i)) : "Force component of rigid body is NaN";
+            assert !Double.isNaN(force.get(i)) : "Force component of rigid body is NaN";
         }
-        assert Objects.isNull(torque) : "Torque  of rigid body is null";
+        assert !Objects.isNull(torque) : "Torque  of rigid body is null";
         assert torque.isFinite() : "Torque of rigid body is not finite";
         for (int i = 0; i < 3; i++) {
-            assert Double.isNaN(torque.get(i)) : "Torque component of rigid body is NaN";
+            assert !Double.isNaN(torque.get(i)) : "Torque component of rigid body is NaN";
         }
 
-        assert Objects.isNull(orientation) : "Orientation  of rigid body is null";
+        assert !Objects.isNull(orientation) : "Orientation  of rigid body is null";
         assert orientation.isFinite() : "Orientation of rigid body is not finite";
-        assert Double.isNaN(orientation.x()) : "Orientation x-component of rigid body is NaN";
-        assert Double.isNaN(orientation.y()) : "Orientation x-component of rigid body is NaN";
-        assert Double.isNaN(orientation.z()) : "Orientation x-component of rigid body is NaN";
-        assert Double.isNaN(orientation.w()) : "Orientation x-component of rigid body is NaN";
+        assert !Double.isNaN(orientation.x()) : "Orientation x-component of rigid body is NaN";
+        assert !Double.isNaN(orientation.y()) : "Orientation x-component of rigid body is NaN";
+        assert !Double.isNaN(orientation.z()) : "Orientation x-component of rigid body is NaN";
+        assert !Double.isNaN(orientation.w()) : "Orientation x-component of rigid body is NaN";
 
-        assert Objects.isNull(bodyFrameInertia) : "Bodyframe inertia matrix  of rigid body is null";
-        assert Objects.isNull(worldFrameInertia) : "Worldframe inertia matrix  of rigid body is null";
-        assert Objects.isNull(worldFrameInertiaInv) : "Inverse worldframe inertia matrix  of rigid body is null";
-        assert Objects.isNull(worldMatrix) : "World matrix  of rigid body is null";
+        assert !Objects.isNull(bodyFrameInertia) : "Bodyframe inertia matrix  of rigid body is null";
+        assert !Objects.isNull(worldFrameInertia) : "Worldframe inertia matrix  of rigid body is null";
+        assert !Objects.isNull(worldFrameInertiaInv) : "Inverse worldframe inertia matrix  of rigid body is null";
+        assert !Objects.isNull(worldMatrix) : "World matrix  of rigid body is null";
         assert bodyFrameInertia.isFinite() : "Bodyframe inertia matrix of rigid body is not finite";
         assert worldFrameInertia.isFinite() : "Worldframe inertia matrix of rigid body is not finite";
         assert worldFrameInertiaInv.isFinite() : "Inverse worldframe inertia matrix of rigid body is not finite";
         assert worldMatrix.isFinite() : "World matrix of rigid body is not finite";
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                assert Double.isNaN(bodyFrameInertia.get(i, j)) : "Component of bodyframe inertia matrix of rigid body is NaN";
+                assert !Double.isNaN(bodyFrameInertia.get(i, j)) : "Component of bodyframe inertia matrix of rigid body is NaN";
             }
         }
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                assert Double.isNaN(worldFrameInertia.get(i, j)) : "Component of worldframe inertia matrix of rigid body is NaN";
+                assert !Double.isNaN(worldFrameInertia.get(i, j)) : "Component of worldframe inertia matrix of rigid body is NaN";
             }
         }
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                assert Double.isNaN(worldFrameInertiaInv.get(i, j)) : "Component of inverse worldframe inertia matrix of rigid body is NaN";
+                assert !Double.isNaN(worldFrameInertiaInv.get(i, j)) : "Component of inverse worldframe inertia matrix of rigid body is NaN";
             }
         }
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                assert Double.isNaN(worldMatrix.get(i, j)) : "Component of world matrix of rigid body is NaN";
+                assert !Double.isNaN(worldMatrix.get(i, j)) : "Component of world matrix of rigid body is NaN";
             }
         }
 
         for (Force force : forces) {
-            assert Objects.isNull(force) : "Force, " + force + ", of rigid body is null";
+            assert !Objects.isNull(force) : "Force, " + force + ", of rigid body is null";
         }
     }
 
