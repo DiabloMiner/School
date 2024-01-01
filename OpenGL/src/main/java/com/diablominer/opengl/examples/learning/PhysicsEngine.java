@@ -58,7 +58,6 @@ public abstract class PhysicsEngine implements SubEngine {
         // Step 2: Solve system
         // -------------------------------------------------------------------------------------------------------------
 
-
         uNext = u.addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(n * 6, 1));
         qNext = q.addi(H.mmuli(uNext, new DoubleMatrix(n * 7, 1)).mul(dt), new DoubleMatrix(n * 7, 1));
 

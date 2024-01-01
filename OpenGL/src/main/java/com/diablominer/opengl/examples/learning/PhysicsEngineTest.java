@@ -8,9 +8,7 @@ import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -202,6 +200,55 @@ public class PhysicsEngineTest {
             assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp.worldFrameInertia).toArray(), wfi[i], epsilon);
             assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp.worldFrameInertiaInv).toArray(), wfii[i], epsilon);
         }
+    }
+
+    @Test
+    public void testTimeStepSingle() {
+        Force gravityTorque = new Force() {
+            final double accelerationConstant = 9.81;
+
+            @Override
+            public boolean isFulfilled(PhysicsComponent physicsComponent) {
+                return true;
+            }
+
+            @Override
+            public Map.Entry<Vector3d, Vector3d> applyForce(PhysicsComponent physicsComponent) {
+                return new AbstractMap.SimpleEntry<>(new Vector3d(0.0, -accelerationConstant, 0.0).mul(physicsComponent.mass), new Vector3d(0.0, -25.0, 0.0));
+            }
+        };
+        PhysicsComponent testPhysComp = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715);
+        Entity testEntity = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp});
+        PhysicsEngine testEngine = new PhysicsEngine(Collections.singletonList(testEntity), 0.0) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        // TODO: Find out why joml orientation integration and my orientation integration yield different results ; Add test for multiple entites
+        /*testPhysComp.determineForceAndTorque();
+        Vector3d force = testPhysComp.force;
+        Vector3d torque = testPhysComp.torque;;
+
+        Vector3d v = testPhysComp.velocity.add(force.mul(0.01, new Vector3d()).div(testPhysComp.mass), new Vector3d());
+        Vector3d av = testPhysComp.angularVelocity.add(torque.mul(testPhysComp.worldFrameInertiaInv, new Vector3d()).mul(0.01), new Vector3d());
+
+        Vector3d x = testPhysComp.position.add(v.mul(0.01, new Vector3d()), new Vector3d());
+        Quaterniond q = new Quaterniond(testPhysComp.orientation).integrate(0.01, av.x, av.y, av.z);
+        DoubleMatrix H = Transforms.createHMatrix(testPhysComp.orientation);
+        DoubleMatrix q2 = H.mmul(Transforms.jomlVectorToJBLASVector(av)).mul(0.01).add(Transforms.jomlQuaternionToJBLASVector(testPhysComp.orientation));
+        Quaterniond q3 = Transforms.jblasVectorToJomlQuaternion(q2);*/
+
+        testEngine.update();
+
+
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp.velocity).toArray(), new double[] {0.0, 9.9019, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp.angularVelocity).toArray(), new double[] {52.493438320209975, -1173.9779595593425, 0.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp.position).toArray(), new double[] {0.0, 0.206169, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp.orientation).toArray(), new double[] {0.0, -0.9954043406738886, -0.044508668953586766, 0.08478901435658279}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp.worldMatrix).toArray(), new double[] {-0.9856216460888781, -0.007547692341796117, 0.16879870586400633, 0.0, 0.007547692341796117, 0.9960379567759597, 0.08860824454803483, 0.0, -0.16879870586400633, 0.08860824454803483, -0.9816596028648382, 0.0, 0.0, 0.206169, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp.worldFrameInertia).toArray(), new double[] {2.1295118699999995E-4, -4.2351647362715017E-22, -6.776263578034403E-21, -6.352747104407253E-22, 2.1295118699999986E-4, 3.705769144237564E-22, 0.0, 4.2351647362715017E-22, 2.129511869999999E-4}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 9.339210784461518E-15, 1.4942737255138426E-13, 1.4008816176692276E-14, 4695.911838237374, -8.17180943640383E-15, -2.7860677887856486E-32, -9.33921078446152E-15, 4695.911838237373}, epsilon);
     }
 
 }
