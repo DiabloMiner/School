@@ -422,7 +422,7 @@ public class Transforms {
                 {q.z(), -q.y(), q.x()}
         };
         DoubleMatrix result = new DoubleMatrix(data);
-        result.mul(0.5);
+        result.muli(0.5);
         return result;
     }
 

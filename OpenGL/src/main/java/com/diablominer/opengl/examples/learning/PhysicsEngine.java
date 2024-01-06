@@ -57,9 +57,12 @@ public abstract class PhysicsEngine implements SubEngine {
         // -------------------------------------------------------------------------------------------------------------
         // Step 2: Solve system
         // -------------------------------------------------------------------------------------------------------------
+        // Note that integration is performed per semi implicit euler integration and has an error proportional to the size of the timestep
+        // Also note that computing the change of orientation via the H-matrix is an approximation of the real change
+        // whose error is also proportional to the size of the timestep (See 'Foundations of Physically Based Modeling and Animation' p. 200)
 
         uNext = u.addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(n * 6, 1));
-        qNext = q.addi(H.mmuli(uNext, new DoubleMatrix(n * 7, 1)).mul(dt), new DoubleMatrix(n * 7, 1));
+        qNext = q.addi(H.mmul(uNext).mul(dt), new DoubleMatrix(n * 7, 1));
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 3: Reinject values into entities
@@ -100,6 +103,8 @@ public abstract class PhysicsEngine implements SubEngine {
             q.put(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.position));
             q.put(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, 0, Transforms.jomlQuaternionToJBLASVector(physComp.orientation));
 
+            // Computing the change of orientation via the H-matrix uses an approximation
+            // whose error is dependent on the timestep (See 'Foundations of Physically Based Modeling and Animation' p. 200)
             DoubleMatrix Hi = Transforms.createHMatrix(physComp.orientation);
             H.put(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, new int[] {6 * i, 6 * i + 1, 6 * i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity()));
             H.put(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, Hi);
