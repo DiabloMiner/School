@@ -162,31 +162,31 @@ public class Learning6 extends Engine {
         Entity physicsSphere1 = new Entity("1", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, -0.1143).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardBall1.obj", new Matrix4f().translate(0.0f, 0.10715f, -0.1143f).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity physicsSphere2 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, 0.0).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardBall2.obj", new Matrix4f().translate(0.0f, 0.10715f, 0.0f).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715)});
+                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity plate = new Entity("3", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(0.5, 0.5, 0.5)),
                     new AssimpModel("./src/main/resources/models/HelloWorld/billardPlate.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(0.5f, 0.5f, 0.5f), true),
-                    new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24)});
+                    new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
         Entity backRail = new Entity("4", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(0.5, 1.0, 0.5)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardRailBack.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(0.5f, 1.0f, 0.5f), true),
-                        new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, -2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24)});
+                        new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, -2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
         Entity frontRail = new Entity("5", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(0.5, 1.0, 0.5)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardRailFront.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(0.5f, 1.0f, 0.5f), true),
-                        new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, 2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24)});
+                        new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, 2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
         Entity rightRail = new Entity("6", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(0.5, 1.0, 0.5)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardRailRight.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(0.5f, 1.0f, 0.5f), true),
-                        new PhysicsBox(new Matrix4d().translate(1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24)});
+                        new PhysicsBox(new Matrix4d().translate(1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
         Entity leftRail = new Entity("7", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(0.5, 1.0, 0.5)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardRailLeft.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(0.5f, 1.0f, 0.5f), true),
-                        new PhysicsBox(new Matrix4d().translate(-1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24)});
+                        new PhysicsBox(new Matrix4d().translate(-1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
         entities.addAll(Arrays.asList(physicsSphere1, physicsSphere2, plate, backRail, frontRail, rightRail, leftRail));
     }
 

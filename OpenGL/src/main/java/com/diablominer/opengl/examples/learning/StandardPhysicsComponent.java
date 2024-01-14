@@ -1,18 +1,16 @@
 package com.diablominer.opengl.examples.learning;
 
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 
 import java.util.Collection;
-import java.util.Optional;
 
 public abstract class StandardPhysicsComponent extends PhysicsComponent {
 
-    public StandardPhysicsComponent(Material material, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius) {
-        super(material, collisionShape, position, velocity, orientation, angularVelocity, bodyFrameInertia, forces, mass, radius);
+    public StandardPhysicsComponent(Material material, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius, boolean isStatic) {
+        super(material, collisionShape, position, velocity, orientation, angularVelocity, bodyFrameInertia, forces, mass, radius, isStatic);
     }
 
     /*@Override

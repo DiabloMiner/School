@@ -1,6 +1,5 @@
 package com.diablominer.opengl.examples.learning;
 
-import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
 import java.util.*;
@@ -12,17 +11,18 @@ public abstract class PhysicsComponent implements Component {
     public CollisionShape collisionShape;
     public Material material;
 
-    protected double radius;
     protected final double mass, massInv;
-    protected Vector3d position, velocity, force, angularVelocity, torque;
     protected final Quaterniond orientation;
     protected final Matrix3d bodyFrameInertia;
-    protected Matrix3d worldFrameInertia, worldFrameInertiaInv;
     protected final Matrix4d worldMatrix;
     protected final Set<Force> forces;
+    protected double radius;
+    protected Vector3d position, velocity, force, angularVelocity, torque;
+    protected Matrix3d worldFrameInertia, worldFrameInertiaInv;
+    protected boolean isStatic;
     // protected boolean alreadyTimeStepped;
 
-    public PhysicsComponent(Material material, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius) {
+    public PhysicsComponent(Material material, CollisionShape collisionShape, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Matrix3d bodyFrameInertia, Collection<Force> forces, double mass, double radius, boolean isStatic) {
         this.material = material;
         this.collisionShape = collisionShape;
         this.mass = mass;
@@ -36,6 +36,7 @@ public abstract class PhysicsComponent implements Component {
         this.worldMatrix = new Matrix4d().translate(position).rotate(orientation);
         this.forces = new HashSet<>(forces);
         this.radius = radius;
+        this.isStatic = isStatic;
         if (mass < massThreshold  && !Double.isInfinite(mass)) {
             Matrix3d rotationMatrix = worldMatrix.get3x3(new Matrix3d());
             this.worldFrameInertia = new Matrix3d(rotationMatrix).mul(bodyFrameInertia).mul(rotationMatrix.transpose(new Matrix3d()));
@@ -119,6 +120,10 @@ public abstract class PhysicsComponent implements Component {
         return new Matrix4d().identity().translate(position).rotate(orientation);
     }
 
+    protected boolean areCollisionShapesColliding(CollisionShape collisionShape) {
+        return this.collisionShape.isColliding(collisionShape);
+    }
+
     public void assertCorrectValues() {
         assert !Objects.isNull(radius) : "Radius of rigid body is null";
         assert !Double.isNaN(radius) : "Radius of rigid body is NaN";
@@ -196,8 +201,8 @@ public abstract class PhysicsComponent implements Component {
         }
     }
 
-    protected boolean areCollisionShapesColliding(CollisionShape collisionShape) {
-        return this.collisionShape.isColliding(collisionShape);
+    public boolean isStatic() {
+        return isStatic;
     }
 
     /*public abstract void performTimeStep(double timeStep, int roundingDigit);*/

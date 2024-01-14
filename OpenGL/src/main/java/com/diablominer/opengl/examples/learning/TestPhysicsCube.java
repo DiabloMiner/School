@@ -13,8 +13,8 @@ public class TestPhysicsCube extends PhysicsComponent {
 
     private final double edgeLength;
 
-    public TestPhysicsCube(AssimpModel model, Material material, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength) {
-        super(material, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)));
+    public TestPhysicsCube(AssimpModel model, Material material, Vector3d position, Vector3d velocity, Quaterniond orientation, Vector3d angularVelocity, Set<Force> forces, double mass, double edgeLength, boolean isStatic) {
+        super(material, new AABB(new Matrix4d().translate(position).rotate(orientation), position, edgeLength), position, velocity, orientation, angularVelocity, new Matrix3d().identity().scale((mass / 6.0) * edgeLength * edgeLength), forces, mass, Math.sqrt(3 * (edgeLength / 2) * (edgeLength / 2)), isStatic);
         this.edgeLength = edgeLength;
         this.model = model;
     }

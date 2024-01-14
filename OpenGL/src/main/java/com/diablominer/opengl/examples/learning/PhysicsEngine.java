@@ -44,7 +44,8 @@ public abstract class PhysicsEngine implements SubEngine {
     }
 
     public void timeStep(double dt) {
-        int n = entities.size();
+        List<Entity> dynamicEntities = entities.stream().filter(entity -> !entity.getPhysicsComponent().isStatic()).collect(Collectors.toList());
+        int n = dynamicEntities.size();
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 1: Construct matrices describing the system from entities
@@ -52,7 +53,7 @@ public abstract class PhysicsEngine implements SubEngine {
 
         DoubleMatrix MInv = new DoubleMatrix(n * 6, n * 6), q = new DoubleMatrix(n * 7, 1), u = new DoubleMatrix(n * 6, 1),
                 qNext, uNext, fExt = new DoubleMatrix(n * 6, 1), H = new DoubleMatrix(n * 7, n * 6);
-        readEntityData(u, q, fExt, MInv, H);
+        readEntityData(dynamicEntities, u, q, fExt, MInv, H);
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 2: Solve system
@@ -68,13 +69,10 @@ public abstract class PhysicsEngine implements SubEngine {
         // Step 3: Reinject values into entities
         // -------------------------------------------------------------------------------------------------------------
 
-        writeEntityData(uNext, qNext);
-
-        // Implement unit test scenario for falling and turning motions
-        // Add feature to allow non simulation of physics objects
+        writeEntityData(dynamicEntities, uNext, qNext);
     }
 
-    public void readEntityData(DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {
+    public void readEntityData(List<Entity> entities, DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {
         int n = entities.size();
 
         u.assertSameSize(new DoubleMatrix(n * 6, 1));
@@ -111,7 +109,7 @@ public abstract class PhysicsEngine implements SubEngine {
         }
     }
 
-    public void writeEntityData(DoubleMatrix uNext, DoubleMatrix qNext) {
+    public void writeEntityData(List<Entity> entities, DoubleMatrix uNext, DoubleMatrix qNext) {
         int n = entities.size();
 
         uNext.assertSameSize(new DoubleMatrix(n * 6, 1));
