@@ -70,6 +70,8 @@ public abstract class PhysicsEngine implements SubEngine {
         // -------------------------------------------------------------------------------------------------------------
 
         writeEntityData(dynamicEntities, uNext, qNext);
+
+        // TODO: Implement constraint and constraint creation logic
     }
 
     public void readEntityData(List<Entity> entities, DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {

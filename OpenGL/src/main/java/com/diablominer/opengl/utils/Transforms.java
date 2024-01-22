@@ -426,6 +426,13 @@ public class Transforms {
         return result;
     }
 
+    /**
+     * Based on 'Contact and Friction Simulation for Computer Graphics' (SIGGRAPH 2022), p. 17.
+     */
+    public static Matrix3d crossProductMatrix(Vector3d r) {
+        return new Matrix3d(0.0, r.z, -r.y, -r.z, 0.0, r.x, r.y, -r.x, 0.0);
+    }
+
     public static Matrix3d createCrossProductMatrix(Vector3d vec) {
         Matrix3d result = new Matrix3d().scaling(0.0);
         result.set(1, 0, -vec.z).set(2, 0, vec.y).set(0, 1, vec.z).set(2, 1, -vec.x).set(0, 2, -vec.y).set(1, 2, vec.x);
