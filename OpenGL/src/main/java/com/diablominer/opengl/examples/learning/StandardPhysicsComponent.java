@@ -6,6 +6,7 @@ import org.joml.Quaterniond;
 import org.joml.Vector3d;
 
 import java.util.Collection;
+import java.util.Optional;
 
 public abstract class StandardPhysicsComponent extends PhysicsComponent {
 
@@ -46,6 +47,19 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
     @Override
     public boolean isColliding(PhysicsComponent physicsComponent) {
         return areCollisionShapesColliding(physicsComponent.collisionShape);
+    }
+
+    @Override
+    public Optional<Contact> getContact(PhysicsComponent physicsComponent) {
+        if (this.isColliding(physicsComponent)) {
+            Vector3d[] closestPoints = collisionShape.findClosestPoints(physicsComponent.collisionShape);
+            Vector3d point = closestPoints[0].add(closestPoints[1], new Vector3d()).mul(0.5);
+            Vector3d normal = closestPoints[1].sub(closestPoints[0], new Vector3d()).normalize();
+            Contact contact = new Contact(this, physicsComponent, point, normal);
+            return Optional.of(contact);
+        } else {
+            return Optional.empty();
+        }
     }
 
     /*protected Vector3d computeCollisionDirection(PhysicsComponent object, Vector3d collisionVector) {

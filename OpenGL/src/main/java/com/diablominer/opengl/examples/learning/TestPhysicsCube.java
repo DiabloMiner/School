@@ -1,6 +1,5 @@
 package com.diablominer.opengl.examples.learning;
 
-import com.diablominer.opengl.collisiondetection.Face;
 import com.diablominer.opengl.utils.Transforms;
 import org.joml.*;
 
@@ -152,6 +151,20 @@ public class TestPhysicsCube extends PhysicsComponent {
             collisionDirection = collisionVector.normalize(new Vector3d());
         }
         return collisionDirection;
+    }
+
+
+    @Override
+    public Optional<Contact> getContact(PhysicsComponent physicsComponent) {
+        if (this.isColliding(physicsComponent)) {
+            Vector3d[] closestPoints = collisionShape.findClosestPoints(physicsComponent.collisionShape);
+            Vector3d point = closestPoints[0].add(closestPoints[1], new Vector3d()).mul(0.5);
+            Vector3d normal = closestPoints[1].sub(closestPoints[0], new Vector3d()).normalize();
+            Contact contact = new Contact(this, physicsComponent, point, normal);
+            return Optional.of(contact);
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override

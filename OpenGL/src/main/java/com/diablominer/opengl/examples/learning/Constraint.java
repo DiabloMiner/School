@@ -2,6 +2,8 @@ package com.diablominer.opengl.examples.learning;
 
 import org.jblas.DoubleMatrix;
 
+import java.util.Optional;
+
 public abstract class Constraint {
 
     // Implement a derived contact constraint
@@ -18,29 +20,9 @@ public abstract class Constraint {
         this.equality = equality;
     }
 
-    public abstract DoubleMatrix getJacobian();
-    // For ContactConstraint:
-    // If (colliding):
-    //      ContactConstraint CreateContactConstraints(Rigidbody r0, Rigidbody r1) {
-    //          return new ContactConstraint(r0.normal (points to r1), r0.r x r0.normal (in matrix form)),
-    //                 new ContactConstraint(-r0.normal (points to r1), -(r1.r x r0.normal) (in matrix form));
-    //      }
-    //      getJacobian(Rigidbody r, Vector r) {
-    //          return new DoubleMatrix(r.normal (points to r1), r x r.normal (in matrix form));
-    //      }
-    //
-    //
-    //      createRMatrix(Rigidbody r, Vector r) {
-    //          Vector a = r x r.normal;
-    //          new DoubleMatrix(0.0, a.z, -a.y, -a.z, 0.0, a.x, a.y, -a.x, 0.0);
-    //      }
-    //
-    //      getPenalty(Vector normal) {
-    //          return new DoubleMatrix(normal);
-    //      }
-    //
+    public abstract Optional<DoubleMatrix> getJacobian(PhysicsComponent physicsComponent);
 
-    public abstract DoubleMatrix getPenalty();
+    public abstract Optional<DoubleMatrix> getPenalty(PhysicsComponent physicsComponent);
 
     public boolean isEquality() {
         return equality;

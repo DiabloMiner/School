@@ -44,16 +44,20 @@ public abstract class PhysicsEngine implements SubEngine {
     }
 
     public void timeStep(double dt) {
+        // TODO: Currently assuming all constraints are contact constraints, adjust row sizes for J and e accordingly
         List<Entity> dynamicEntities = entities.stream().filter(entity -> !entity.getPhysicsComponent().isStatic()).collect(Collectors.toList());
-        int n = dynamicEntities.size();
+        List<Contact> contacts = getContacts();
+        int nBodies = dynamicEntities.size();
+        int nContacts = contacts.size();
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 1: Construct matrices describing the system from entities
         // -------------------------------------------------------------------------------------------------------------
 
-        DoubleMatrix MInv = new DoubleMatrix(n * 6, n * 6), q = new DoubleMatrix(n * 7, 1), u = new DoubleMatrix(n * 6, 1),
-                qNext, uNext, fExt = new DoubleMatrix(n * 6, 1), H = new DoubleMatrix(n * 7, n * 6);
+        DoubleMatrix MInv = new DoubleMatrix(nBodies * 6, nBodies * 6), q = new DoubleMatrix(nBodies * 7, 1), u = new DoubleMatrix(nBodies * 6, 1),
+                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies), e = new DoubleMatrix(3 * nContacts, 1);
         readEntityData(dynamicEntities, u, q, fExt, MInv, H);
+        computeConstraints(contacts, J, e);
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 2: Solve system
@@ -62,8 +66,8 @@ public abstract class PhysicsEngine implements SubEngine {
         // Also note that computing the change of orientation via the H-matrix is an approximation of the real change
         // whose error is also proportional to the size of the timestep (See 'Foundations of Physically Based Modeling and Animation' p. 200)
 
-        uNext = u.addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(n * 6, 1));
-        qNext = q.addi(H.mmul(uNext).mul(dt), new DoubleMatrix(n * 7, 1));
+        uNext = u.addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(nBodies * 6, 1));
+        qNext = q.addi(H.mmul(uNext).mul(dt), new DoubleMatrix(nBodies * 7, 1));
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 3: Reinject values into entities
@@ -72,6 +76,26 @@ public abstract class PhysicsEngine implements SubEngine {
         writeEntityData(dynamicEntities, uNext, qNext);
 
         // TODO: Implement constraint and constraint creation logic
+    }
+
+    public List<Contact> getContacts() {
+        Set<Contact> collisions = new HashSet<>();
+        Map<Integer, Boolean> alreadySearched = new HashMap<>();
+        for (Entity e1 : entities) {
+            List<Entity> toBeSearched = new ArrayList<>(entities);
+            toBeSearched.remove(e1);
+
+            for (Entity e2 : toBeSearched) {
+                if (!e1.getPhysicsComponent().isStatic() || !e2.getPhysicsComponent().isStatic()) {
+                    if (!alreadySearched.containsKey(key(e1, e2))) {
+                        e1.getPhysicsComponent().getContact(e2.getPhysicsComponent()).ifPresent(collisions::add);
+                    }
+                    alreadySearched.putIfAbsent(key(e1, e2), true);
+                    alreadySearched.putIfAbsent(key(e2, e1), true);
+                }
+            }
+        }
+        return new ArrayList<>(collisions);
     }
 
     public void readEntityData(List<Entity> entities, DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {
@@ -133,6 +157,32 @@ public abstract class PhysicsEngine implements SubEngine {
 
             physComp.assertCorrectValues();
         }
+    }
+
+    public void computeConstraints(List<Contact> contacts, DoubleMatrix J, DoubleMatrix e) {
+        // This function implicitly assumes only contact constraints are used
+        // The penalty function will overwrite itself for the same collision
+        for (int i = 0; i < contacts.size(); i++) {
+            Contact contact = contacts.get(i);
+            Constraint[] constraints = ContactConstraint.generateConstraints(contact);
+
+            for (int j = 0; j < entities.size(); j++) {
+                Entity entity = entities.get(j);
+                PhysicsComponent physComp = entity.getPhysicsComponent();;
+                for (Constraint constraint : constraints) {
+                    if (constraint.getJacobian(physComp).isPresent()) {
+                        J.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
+                    }
+                    if (constraint.getPenalty(physComp).isPresent()) {
+                        e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, constraint.getPenalty(physComp).get());
+                    }
+                }
+            }
+        }
+    }
+
+    protected int key(Entity object1, Entity object2) {
+        return Objects.hash(object1, object2);
     }
 
     /*public void performTimeStep(double timeStep) {

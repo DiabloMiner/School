@@ -211,6 +211,8 @@ public abstract class PhysicsComponent implements Component {
 
     public abstract boolean isColliding(PhysicsComponent physicsComponent);
 
+    public abstract Optional<Contact> getContact(PhysicsComponent physicsComponent);
+
     public abstract Matrix4d predictTimeStep(double timeStep);
 
 }

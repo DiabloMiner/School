@@ -299,4 +299,65 @@ public class PhysicsEngineTest {
         }
     }
 
+    /**
+     * Test if contacts are generated and retrieved correctly
+     */
+    @Test
+    public void testGetContacts() {
+        Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+        Entity testEntity2 = new Entity("3", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0) {
+            @Override void update() {
+                List<Contact> contacts = getContacts();
+
+                assert contacts.size() == 1;
+
+                Contact contact = contacts.get(0);
+                assert contact.A == testEntity1.getPhysicsComponent();
+                assert contact.B == testEntity2.getPhysicsComponent();
+                assertEquals(contact.point.x, testEntity1.getPhysicsComponent().position.x, epsilon);
+                assertEquals(contact.point.y, testEntity1.getPhysicsComponent().position.y - testEntity1.getPhysicsComponent().radius, epsilon);
+                assertEquals(contact.point.z, testEntity1.getPhysicsComponent().position.z, epsilon);
+                assertEquals(contact.normal.dot(new Vector3d(0.0, -1.0, 0.0)), 1.0, epsilon);
+                // If A and B are correct, the coefficients are implicitly also correct
+            }
+            @Override public void destroy() { }
+        };
+
+        testEngine.update();
+    }
+
+    /**
+     * Test if a single constraint is computed correctly
+     */
+    @Test
+    public void testComputeConstraints() {
+        Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+        Entity testEntity2 = new Entity("3", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0) {
+            @Override void update() {
+                List<Contact> contacts = getContacts();
+                Contact contact = contacts.get(0);
+                Vector3d rA = contact.point.sub(contact.A.position, new Vector3d()), rB = contact.point.sub(contact.B.position, new Vector3d());
+                Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal.negate(new Vector3d()));
+
+                DoubleMatrix J = new DoubleMatrix(3, 6 * 2), e = new DoubleMatrix(3, 1);
+                computeConstraints(contacts, J, e);
+
+                assertArrayEquals(J.toArray(), new double[] {
+                        contact.normal.x, 0.0, 0.0, 0.0, contact.normal.y, 0.0, 0.0, 0.0, contact.normal.z, 0.0, -aA.z, aA.y, aA.z, 0.0, -aA.x, -aA.y, aA.x, 0.0,
+                        -contact.normal.x, 0.0, 0.0, 0.0, -contact.normal.y, 0.0, 0.0, 0.0, -contact.normal.z, 0.0, aB.z, -aB.y, -aB.z, 0.0, aB.x, aB.y, -aB.x, 0.0,
+                }, epsilon);
+                assertEquals(Math.abs(e.dot(new DoubleMatrix(new double[] {-contact.normal.x, -contact.normal.y, -contact.normal.z}))), 1.0, epsilon);
+            }
+            @Override public void destroy() { }
+        };
+
+        testEngine.update();
+    }
+
 }

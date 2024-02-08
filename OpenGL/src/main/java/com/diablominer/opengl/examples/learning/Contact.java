@@ -17,7 +17,7 @@ public class Contact {
         this.point = point;
         // The difference of the positions of A and B is projected onto the normal to find the correct sign of the direction
         // The resulting normal direction is then normalized
-        this.normal = new Vector3d(normal).mul((new Vector3d(A.position).sub(B.position)).dot(normal)).normalize();
+        this.normal = new Vector3d(normal).mul((new Vector3d(B.position).sub(A.position)).dot(normal)).normalize();
         this.cor = Material.coefficientsOfRestitution.get(Material.hash(A.material, B.material));
         this.cosf = Material.coefficientsOfStaticFriction.get(Material.hash(A.material, B.material));
         this.cokf = Material.coefficientsOfKineticFriction.get(Material.hash(A.material, B.material));
