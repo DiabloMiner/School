@@ -14,7 +14,45 @@ public class LCPSolver {
 
     private LCPSolver() {}
 
-    private DoubleMatrix initializeX(int rows) {
+    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, int maxIter) {
+        int n = x.getRows();
+
+        double sum;
+        while (maxIter > 0) {
+            for (int i = 0; i < n; i++) {
+                sum = b.get(i);
+                for (int j = 0; j < n; j++) {
+                    if (i != j) {
+                        sum = sum - (A.get(i, j)) * x.get(j);
+                    }
+                }
+                if (A.get(i, i) != 0.0) {
+                    x.put(i, sum / A.get(i, i));
+                } else {
+                    // This is a hacky solution to solve ill conditioned systems
+                    x.put(i, 0.0);
+                }
+            }
+
+            for (int i = 0; i < n; i++) {
+                if (!lo.isEmpty()) {
+                    assert lo.getColumns() ==1;
+                    assert lo.getRows() == n;
+                    if (x.get(i) < lo.get(i)) x.put(i, lo.get(i));
+                }
+                if (!hi.isEmpty()) {
+                    assert hi.getColumns() ==1;
+                    assert hi.getRows() == n;
+                    if (x.get(i) > hi.get(i)) x.put(i, hi.get(i));
+                }
+            }
+
+
+            maxIter--;
+        }
+    }
+
+    /*private DoubleMatrix initializeX(int rows) {
         DoubleMatrix x0 = new DoubleMatrix(rows, 1);
         for (int i = 0; i < rows; i++) {
             x0.put(i, 0, Math.random() * 10.0);
@@ -158,10 +196,10 @@ public class LCPSolver {
         return tau;
     }
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     private double projectedLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double mu, double muR, double alpha, double beta, double delta, int iterations) {
         double meritValue0 = computePhi(H);
         double deltaMeritValue0 = computeDeltaPhi(H);
@@ -223,10 +261,10 @@ public class LCPSolver {
         return new LCPSolverResult(x, LCPResultFlag.MAX_ITERATIONS_REACHED);
     }
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     private void setBounds(DoubleMatrix u, DoubleMatrix l, double normalImpulse, double mu, double muR) {
         u.put(new int[] {1, 2}, new int[] {0}, mu * Math.abs(normalImpulse));
         u.put(new int[] {3, 4, 5}, new int[] {0}, muR * Math.abs(normalImpulse));
@@ -235,19 +273,19 @@ public class LCPSolver {
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
         return solveBLCPWithMinimumMapNewton(solveBLCPWithPGS(A, b, mu, muR, epsilonRelative, 2, roundingDigit).x, A, b, mu, muR, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(b.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(b.rows, 1).fill(0.0);
         setBounds(u, l, x.get(0), mu, muR);
@@ -302,19 +340,19 @@ public class LCPSolver {
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
         return solveBLCPWithNNCG(initializeX(b), A, b, mu, muR, iterations, roundingDigit);
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
         DoubleMatrix x1 = solveBLCPWithPGS(APrime, bPrime, b, mu, muR, 10e-10, 1).x;
@@ -370,10 +408,10 @@ public class LCPSolver {
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithPGS(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
@@ -416,19 +454,19 @@ public class LCPSolver {
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double omega, double epsilon, int iterations, int roundingDigit) {
         return solveBLCPWithPSOR(initializeX(b), A, b, mu, muR, omega, epsilon, iterations, roundingDigit);
     }
 
 
-    /**
+    *//**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     */
+     *//*
     public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double omega, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix U = Transforms.strictUpperTriangular(A), L = Transforms.strictLowerTriangular(A), D = DoubleMatrix.diag(A.diag());
 
@@ -805,6 +843,6 @@ public class LCPSolver {
 
     public static void addSolvedCollision(Collision collision, DoubleMatrix result) {
         solvedCollisions.put(collision.hashCode(), result);
-    }
+    }*/
 
 }

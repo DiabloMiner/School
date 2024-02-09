@@ -9,6 +9,7 @@ import org.joml.Vector3d;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -203,7 +204,7 @@ public class PhysicsEngineTest {
     }
 
     /**
-     * Tests if a timestep for a single entity produces correct results.
+     * Tests if a timestep for a single entity without collisions produces correct results.
      */
     @Test
     public void testTimeStepSingle() {
@@ -240,7 +241,7 @@ public class PhysicsEngineTest {
     }
 
     /**
-     * Tests if a timestep for a multiple entities produces correct results.
+     * Tests if a timestep for a multiple entities without collisions produces correct results.
      */
     @Test
     public void testTimeStepMultiple() {
@@ -262,15 +263,15 @@ public class PhysicsEngineTest {
         Entity testEntity2 = new Entity("2", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false)});
         Entity testEntity3 = new Entity("3", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 50.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity4 = new Entity("4", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, -2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 25.136 - 0.05, -2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity5 = new Entity("5", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, 2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, -25.136 - 0.05, 2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity6 = new Entity("6", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsBox(new Matrix4d().translate(1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+                new Component[]{new PhysicsBox(new Matrix4d().translate(1.324 / 2, -50.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity7 = new Entity("7", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsBox(new Matrix4d().translate(-1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
+                new Component[]{new PhysicsBox(new Matrix4d().translate(-1.324 / 2, 100.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3, testEntity4, testEntity5, testEntity6, testEntity7), 0.0) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
@@ -280,9 +281,9 @@ public class PhysicsEngineTest {
 
         double[][] v = new double[][] {{0.0, 9.9019, 1.0}, {0.0, 9.9019, -0.8}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
         double[][] av = new double[][] {{52.493438320209975, -295.05284265823724, 0.0}, {-41.99475065616798, -295.05284265823724, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-        double[][] x = new double[][] {{0.0, 0.206169, -0.49}, {0.0, 0.206169, 0.492}, {0.0, 0.0, 0.0}, {0.0, 0.08600000000000001, -1.297}, {0.0, 0.08600000000000001, 1.297}, {0.662, 0.08600000000000001, 0.0}, {-0.662, 0.08600000000000001, 0.0}};
+        double[][] x = new double[][] {{0.0, 0.206169, -0.49}, {0.0, 0.206169, 0.492}, {0.0, 50.0, 0.0}, {0.0, 25.08600000000000001, -1.297}, {0.0, -25.18600000000000001, 1.297}, {0.662, -50.18600000000000001, 0.0}, {-0.662, 100.08600000000000001, 0.0}};
         double[][] q = new double[][] {{0.0, -0.8189225230900957, -0.14569613553818284, 0.5551022764004766}, {0.0, -0.822069613773467, 0.11700483256288079, 0.5572355150807198}, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}};
-        double[][] wm = new double[][] {{-0.3837229254700178, -0.16175251299999535, 0.909171513525868, 0.0, 0.16175251299999535, 0.957545272178479, 0.2386276938388105, 0.0, -0.909171513525868, 0.2386276938388105, -0.34126819764849675, 0.0, 0.0, 0.206169, -0.49, 1.0}, {-0.37897716146544985, 0.1303984962802205, 0.9161727693265325, 0.0, -0.1303984962802205, 0.9726197383138645, -0.19237223502919315, 0.0, -0.9161727693265325, -0.19237223502919315, -0.3515968997793143, 0.0, 0.0, 0.206169, 0.492, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.08600000000000001, -1.297, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.08600000000000001, 1.297, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.662, 0.08600000000000001, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.662, 0.08600000000000001, 0.0, 1.0}};
+        double[][] wm = new double[][] {{-0.3837229254700178, -0.16175251299999535, 0.909171513525868, 0.0, 0.16175251299999535, 0.957545272178479, 0.2386276938388105, 0.0, -0.909171513525868, 0.2386276938388105, -0.34126819764849675, 0.0, 0.0, 0.206169, -0.49, 1.0}, {-0.37897716146544985, 0.1303984962802205, 0.9161727693265325, 0.0, -0.1303984962802205, 0.9726197383138645, -0.19237223502919315, 0.0, -0.9161727693265325, -0.19237223502919315, -0.3515968997793143, 0.0, 0.0, 0.206169, 0.492, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 50.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 25.086, -1.297, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -25.186, 1.297, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.662, -50.186, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.662, 100.086, 0.0, 1.0}};
         double[][] wfi = new double[][] {{2.1295118700000005E-4, 0.0, 0.0, 5.082197683525802E-21, 2.1295118700000003E-4, -6.776263578034403E-21, 1.3552527156068805E-20, -1.3552527156068805E-20, 2.1295118700000005E-4}, {2.1295118700000003E-4, -3.3881317890172014E-21, 1.3552527156068805E-20, 0.0, 2.1295118700000005E-4, -6.776263578034403E-21, 0.0, -1.0164395367051604E-20, 2.1295118700000003E-4}, {3.49467873748E24, 0.0, 0.0, 0.0, 4.43474324881E24, 0.0, 0.0, 0.0, 9.500181613299999E23}, {9.4762132241E23, 0.0, 0.0, 0.0, 9.464925784999998E23, 0.0, 0.0, 0.0, 4.0312282499999995E21}, {9.4762132241E23, 0.0, 0.0, 0.0, 9.464925784999998E23, 0.0, 0.0, 0.0, 4.0312282499999995E21}, {4.0312282499999995E21, 0.0, 0.0, 0.0, 3.21229965917E24, 0.0, 0.0, 0.0, 3.2134284030799997E24}, {4.0312282499999995E21, 0.0, 0.0, 0.0, 3.21229965917E24, 0.0, 0.0, 0.0, 3.2134284030799997E24}};
         double[][] wfii = new double[][] {{4695.911838237369, -0.0, -0.0, -1.1207052941353807E-13, 4695.91183823737, 1.494273725513841E-13, -2.9885474510276816E-13, 2.988547451027682E-13, 4695.911838237369}, {4695.91183823737, 7.471368627569203E-14, -2.9885474510276826E-13, -0.0, 4695.91183823737, 1.494273725513841E-13, -0.0, 2.2414105882707617E-13, 4695.91183823737}, {2.8614933592467965E-25, 0.0, 0.0, 0.0, 2.254921973821902E-25, 0.0, 0.0, 0.0, 1.0526114559747226E-24}, {1.0552738486896748E-24, 0.0, 0.0, 0.0, 1.0565323201844843E-24, 0.0, 0.0, 0.0, 2.4806335389220395E-22}, {1.0552738486896748E-24, 0.0, 0.0, 0.0, 1.0565323201844843E-24, 0.0, 0.0, 0.0, 2.4806335389220395E-22}, {2.4806335389220395E-22, 0.0, 0.0, 0.0, 3.1130346048051504E-25, 0.0, 0.0, 0.0, 3.1119411250660576E-25}, {2.4806335389220395E-22, 0.0, 0.0, 0.0, 3.1130346048051504E-25, 0.0, 0.0, 0.0, 3.1119411250660576E-25}};
 
@@ -338,26 +339,85 @@ public class PhysicsEngineTest {
                 new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity2 = new Entity("3", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0) {
+        Entity testEntity3 = new Entity("3", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, -1.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
+        Entity testEntity4 = new Entity("4", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, -2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
+        Entity testEntity5 = new Entity("5", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, 2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
+        Entity testEntity6 = new Entity("6", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
+        Entity testEntity7 = new Entity("7", new Component.Type[]{Component.Type.Physics},
+                new Component[]{new PhysicsBox(new Matrix4d().translate(-1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true)});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3, testEntity4, testEntity5, testEntity6, testEntity7), 0.0) {
             @Override void update() {
+                List<Entity> dynamicEntities = entities.stream().filter(entity -> !entity.getPhysicsComponent().isStatic()).collect(Collectors.toList());
                 List<Contact> contacts = getContacts();
+
+                DoubleMatrix J = new DoubleMatrix(3, 6 * 2), e = new DoubleMatrix(3, 1);
+                computeConstraints(dynamicEntities, contacts, J, e);
                 Contact contact = contacts.get(0);
                 Vector3d rA = contact.point.sub(contact.A.position, new Vector3d()), rB = contact.point.sub(contact.B.position, new Vector3d());
                 Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal.negate(new Vector3d()));
 
-                DoubleMatrix J = new DoubleMatrix(3, 6 * 2), e = new DoubleMatrix(3, 1);
-                computeConstraints(contacts, J, e);
 
                 assertArrayEquals(J.toArray(), new double[] {
                         contact.normal.x, 0.0, 0.0, 0.0, contact.normal.y, 0.0, 0.0, 0.0, contact.normal.z, 0.0, -aA.z, aA.y, aA.z, 0.0, -aA.x, -aA.y, aA.x, 0.0,
                         -contact.normal.x, 0.0, 0.0, 0.0, -contact.normal.y, 0.0, 0.0, 0.0, -contact.normal.z, 0.0, aB.z, -aB.y, -aB.z, 0.0, aB.x, aB.y, -aB.x, 0.0,
                 }, epsilon);
-                assertEquals(Math.abs(e.dot(new DoubleMatrix(new double[] {-contact.normal.x, -contact.normal.y, -contact.normal.z}))), 1.0, epsilon);
+                assertArrayEquals(e.toArray(), Transforms.jomlVectorToJBLASVector(new Vector3d(contact.normal)).toArray(), epsilon);
             }
             @Override public void destroy() { }
         };
 
         testEngine.update();
+    }
+
+    /**
+     * Test if a timestep is performed correctly if there is one simple collision
+     */
+    @Test
+    public void testSingleCollisionTimestep() {
+        Force torque = new Force() {
+            @Override
+            public boolean isFulfilled(PhysicsComponent physicsComponent) {
+                return true;
+            }
+
+            @Override
+            public Map.Entry<Vector3d, Vector3d> applyForce(PhysicsComponent physicsComponent) {
+                return new AbstractMap.SimpleEntry<>(new Vector3d(0.0), new Vector3d(0.0, -2 * Math.PI, 0.0));
+            }
+        };
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, -10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.05, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        testEngine.update();
+
+        // TODO: Enter correct comparison values & find out why penalty works in the false direction
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.velocity).toArray(), new double[] {0.0, 0.05, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.angularVelocity).toArray(), new double[] {0.0, -295.05284265823724, 0.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.position).toArray(), new double[] {0.0, 0.206169, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp1.orientation).toArray(), new double[] {0.0, -0.8277551782105788, 0.0, 0.5610894446927096}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.206169, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
+
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.velocity).toArray(), new double[] {0.0, -0.05, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.angularVelocity).toArray(), new double[] {0.0, -295.05284265823724, 0.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.position).toArray(), new double[] {0.0, 0.206169, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp2.orientation).toArray(), new double[] {0.0, -0.8277551782105788, 0.0, 0.5610894446927096}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.206169, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
     }
 
 }

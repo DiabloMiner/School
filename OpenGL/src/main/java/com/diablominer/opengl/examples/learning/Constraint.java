@@ -22,8 +22,6 @@ public abstract class Constraint {
 
     public abstract Optional<DoubleMatrix> getJacobian(PhysicsComponent physicsComponent);
 
-    public abstract Optional<DoubleMatrix> getPenalty(PhysicsComponent physicsComponent);
-
     public boolean isEquality() {
         return equality;
     }

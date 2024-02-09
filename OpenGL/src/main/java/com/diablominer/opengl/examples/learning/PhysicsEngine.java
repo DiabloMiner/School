@@ -9,20 +9,19 @@ import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.nio.DoubleBuffer;
+import javax.naming.spi.DirObjectFactory;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class PhysicsEngine implements SubEngine {
 
     public static double epsilon = 1e-15;
-    public static double collisionTimeEpsilon = 10e-50;
-    public static final int roundingDigit = 20;
+    // public static double collisionTimeEpsilon = 10e-50;
+    // public static final int roundingDigit = 20;
+
+    // Should be moved into a solver config
+    public static double beta = 0.1;
+    public static int maxIter = 20;
 
     // public LCPSolverConfiguration solverConfig;
     public double simulationTimeStep;
@@ -56,8 +55,9 @@ public abstract class PhysicsEngine implements SubEngine {
 
         DoubleMatrix MInv = new DoubleMatrix(nBodies * 6, nBodies * 6), q = new DoubleMatrix(nBodies * 7, 1), u = new DoubleMatrix(nBodies * 6, 1),
                 qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies), e = new DoubleMatrix(3 * nContacts, 1);
+        if (nContacts == 0) { J = new DoubleMatrix(3, 6 * nBodies).fill(0.0); e = new DoubleMatrix(3, 1).fill(0.0); }
         readEntityData(dynamicEntities, u, q, fExt, MInv, H);
-        computeConstraints(contacts, J, e);
+        computeConstraints(dynamicEntities, contacts, J, e);
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 2: Solve system
@@ -66,7 +66,16 @@ public abstract class PhysicsEngine implements SubEngine {
         // Also note that computing the change of orientation via the H-matrix is an approximation of the real change
         // whose error is also proportional to the size of the timestep (See 'Foundations of Physically Based Modeling and Animation' p. 200)
 
-        uNext = u.addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(nBodies * 6, 1));
+        DoubleMatrix Jt = J.transpose();
+        DoubleMatrix A = J.mmul(MInv).mmul(Jt);
+        DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(beta));
+        DoubleMatrix x = new DoubleMatrix(A.getRows(), b.getColumns()).fill(0.0);
+        DoubleMatrix lo = new DoubleMatrix(0, 0), hi = new DoubleMatrix(0, 0);
+
+        // Solve for x
+        LCPSolver.gaussSeidel(A, b, x, lo, hi, maxIter);
+
+        uNext = u.subi(MInv.mmul(Jt).mmul(x)).addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(nBodies * 6, 1));
         qNext = q.addi(H.mmul(uNext).mul(dt), new DoubleMatrix(nBodies * 7, 1));
 
         // -------------------------------------------------------------------------------------------------------------
@@ -74,8 +83,6 @@ public abstract class PhysicsEngine implements SubEngine {
         // -------------------------------------------------------------------------------------------------------------
 
         writeEntityData(dynamicEntities, uNext, qNext);
-
-        // TODO: Implement constraint and constraint creation logic
     }
 
     public List<Contact> getContacts() {
@@ -159,7 +166,7 @@ public abstract class PhysicsEngine implements SubEngine {
         }
     }
 
-    public void computeConstraints(List<Contact> contacts, DoubleMatrix J, DoubleMatrix e) {
+    public void computeConstraints(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix e) {
         // This function implicitly assumes only contact constraints are used
         // The penalty function will overwrite itself for the same collision
         for (int i = 0; i < contacts.size(); i++) {
@@ -173,11 +180,9 @@ public abstract class PhysicsEngine implements SubEngine {
                     if (constraint.getJacobian(physComp).isPresent()) {
                         J.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
                     }
-                    if (constraint.getPenalty(physComp).isPresent()) {
-                        e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, constraint.getPenalty(physComp).get());
-                    }
                 }
             }
+            e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.normal)));
         }
     }
 

@@ -31,15 +31,6 @@ public class ContactConstraint extends Constraint {
         }
     }
 
-    @Override
-    public Optional<DoubleMatrix>  getPenalty(PhysicsComponent physicsComponent) {
-        if (this.physicsComponent == physicsComponent) {
-            return Optional.of(Transforms.jomlVectorToJBLASVector(normal));
-        } else {
-            return Optional.empty();
-        }
-    }
-
     public static ContactConstraint[] generateConstraints(Contact contact) {
         return new ContactConstraint[] {
             new ContactConstraint(contact.A, contact.normal, contact.point.sub(contact.A.position, new Vector3d()), false),
