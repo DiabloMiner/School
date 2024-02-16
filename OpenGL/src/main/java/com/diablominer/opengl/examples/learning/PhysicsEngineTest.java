@@ -365,7 +365,7 @@ public class PhysicsEngineTest {
                         contact.normal.x, 0.0, 0.0, 0.0, contact.normal.y, 0.0, 0.0, 0.0, contact.normal.z, 0.0, -aA.z, aA.y, aA.z, 0.0, -aA.x, -aA.y, aA.x, 0.0,
                         -contact.normal.x, 0.0, 0.0, 0.0, -contact.normal.y, 0.0, 0.0, 0.0, -contact.normal.z, 0.0, aB.z, -aB.y, -aB.z, 0.0, aB.x, aB.y, -aB.x, 0.0,
                 }, epsilon);
-                assertArrayEquals(e.toArray(), Transforms.jomlVectorToJBLASVector(new Vector3d(contact.normal)).toArray(), epsilon);
+                assertArrayEquals(e.toArray(), Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)).toArray(), epsilon);
             }
             @Override public void destroy() { }
         };
@@ -395,27 +395,29 @@ public class PhysicsEngineTest {
                 new Component[]{testPhysComp1});
         Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp2});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0) {
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 0.1, 10e-15) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
 
+        Contact contact = testEngine.getContacts().get(0);
+        double c = contact.penetration.length();
+
         testEngine.update();
 
-        // TODO: Enter correct comparison values & find out why penalty works in the false direction
-        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.velocity).toArray(), new double[] {0.0, 0.05, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.velocity).toArray(), new double[] {0.0, 0.1 * c / (0.01 * 2), 1.0}, epsilon);
         assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.angularVelocity).toArray(), new double[] {0.0, -295.05284265823724, 0.0}, epsilon);
-        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.position).toArray(), new double[] {0.0, 0.206169, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.position).toArray(), new double[] {0.0, 0.10715 + 0.1 * c / 2, -0.49}, epsilon);
         assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp1.orientation).toArray(), new double[] {0.0, -0.8277551782105788, 0.0, 0.5610894446927096}, epsilon);
-        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.206169, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.10715 + 0.1 * c / 2, -0.49, 1.0}, epsilon);
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
 
-        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.velocity).toArray(), new double[] {0.0, -0.05, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.velocity).toArray(), new double[] {0.0, 0.1 * -c / (0.01 * 2), 1.0}, epsilon);
         assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.angularVelocity).toArray(), new double[] {0.0, -295.05284265823724, 0.0}, epsilon);
-        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.position).toArray(), new double[] {0.0, 0.206169, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.position).toArray(), new double[] {0.0, 0.05 - 0.1 * c / 2, -0.49}, epsilon);
         assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp2.orientation).toArray(), new double[] {0.0, -0.8277551782105788, 0.0, 0.5610894446927096}, epsilon);
-        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.206169, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.05 - 0.1 * c / 2, -0.49, 1.0}, epsilon);
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
     }

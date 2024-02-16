@@ -492,6 +492,18 @@ public class Transforms {
         return upper;
     }
 
+    public static DoubleMatrix identity(int rows, int cols) {
+        DoubleMatrix result = new DoubleMatrix(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (i == j) {
+                    result.put(i, j, 1.0);
+                }
+            }
+        }
+        return result;
+    }
+
     public static void putVectorIndexed(DoubleMatrix vec1, DoubleMatrix vec2, List<Integer> indices) {
         int[] array = indices.stream().mapToInt(i -> i).toArray();
         vec1.put(array, new int[] {0}, Transforms.getVectorComponents(vec2, indices));

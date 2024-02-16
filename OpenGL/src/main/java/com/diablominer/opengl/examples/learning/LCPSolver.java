@@ -26,12 +26,8 @@ public class LCPSolver {
                         sum = sum - (A.get(i, j)) * x.get(j);
                     }
                 }
-                if (A.get(i, i) != 0.0) {
-                    x.put(i, sum / A.get(i, i));
-                } else {
-                    // This is a hacky solution to solve ill conditioned systems
-                    x.put(i, 0.0);
-                }
+                assert A.get(i, i) != 0.0;
+                x.put(i, sum / A.get(i, i));
             }
 
             for (int i = 0; i < n; i++) {

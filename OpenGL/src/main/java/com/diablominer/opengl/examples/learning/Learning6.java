@@ -151,7 +151,7 @@ public class Learning6 extends Engine {
         List<Entity> renderedEntities = entities.stream().filter(entity -> entity.hasComponent(Component.Type.Render)).collect(Collectors.toList());
         List<Entity> physicsEntities = entities.stream().filter(entity -> entity.hasComponent(Component.Type.Physics)).collect(Collectors.toList());
         // mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false), physicsEntities, 0.01);
-        mainPhysicsEngine = new MainPhysicsEngine(physicsEntities, 0.01);
+        mainPhysicsEngine = new MainPhysicsEngine(physicsEntities, 0.01, 0.0001, 0.1);
         mainRenderingEngine = new MainRenderingEngine(renderedEntities, window, camera);
         mainIOEngine = new MainIOEngine(new Window[]{window}, new Camera[]{camera}, new RenderingEngine[]{mainRenderingEngine});
 

@@ -2,14 +2,11 @@ package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.Transforms;
 import org.jblas.DoubleMatrix;
-import org.jblas.ranges.IndicesRange;
-import org.jblas.ranges.Range;
 import org.joml.Math;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import javax.naming.spi.DirObjectFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,25 +17,64 @@ public abstract class PhysicsEngine implements SubEngine {
     // public static final int roundingDigit = 20;
 
     // Should be moved into a solver config
-    public static double beta = 0.1;
     public static int maxIter = 20;
 
     // public LCPSolverConfiguration solverConfig;
     public double simulationTimeStep;
+    protected double erp, cfm;
     protected List<Entity> entities;
     protected double leftOverTime;
 
+    /**
+     * @param simulationTimeStep - Simulation timestep
+     */
     public PhysicsEngine(double simulationTimeStep) {
         this.entities = new ArrayList<>();
         // this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
+        this.erp = 0.1;
+        this.cfm = 0.0001;
         this.leftOverTime = 0.0;
     }
-
+    /**
+     * @param entities - All entities simulated by this physics-engine
+     * @param simulationTimeStep - Simulation timestep
+     */
     public PhysicsEngine(List<Entity> entities, double simulationTimeStep) {
         this.entities = new ArrayList<>(entities);
         // this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
+        this.erp = 0.1;
+        this.cfm = 0.0001;
+        this.leftOverTime = 0.0;
+    }
+
+    /**
+     * @param simulationTimeStep - Simulation timestep
+     * @param cfm - Constraint force mixing term (0 < cfm < 1): determines how much constraint force is mixed into the kinematic constraint in each timestep
+     * @param erp - Error reduction parameter (0 < erp < 1): determines how much constraint error is reduced in each timestep
+     */
+    public PhysicsEngine(double simulationTimeStep, double cfm, double erp) {
+        this.entities = new ArrayList<>();
+        // this.solverConfig = solverConfig;
+        this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
+        this.erp = erp;
+        this.cfm = cfm;
+        this.leftOverTime = 0.0;
+    }
+
+    /**
+     * @param entities - All entities simulated by this physics-engine
+     * @param simulationTimeStep - Simulation timestep
+     * @param cfm - Constraint force mixing term (0 < cfm < 1): determines how much constraint force is mixed into the kinematic constraint in each timestep
+     * @param erp - Error reduction parameter (0 < erp < 1): determines how much constraint error is reduced in each timestep
+     */
+    public PhysicsEngine(List<Entity> entities, double simulationTimeStep, double cfm, double erp) {
+        this.entities = new ArrayList<>(entities);
+        // this.solverConfig = solverConfig;
+        this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
+        this.erp = erp;
+        this.cfm = cfm;
         this.leftOverTime = 0.0;
     }
 
@@ -50,12 +86,18 @@ public abstract class PhysicsEngine implements SubEngine {
         int nContacts = contacts.size();
 
         // -------------------------------------------------------------------------------------------------------------
-        // Step 1: Construct matrices describing the system from entities
+        // Step 1: Construct the matrices that describe the system
         // -------------------------------------------------------------------------------------------------------------
 
         DoubleMatrix MInv = new DoubleMatrix(nBodies * 6, nBodies * 6), q = new DoubleMatrix(nBodies * 7, 1), u = new DoubleMatrix(nBodies * 6, 1),
-                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies), e = new DoubleMatrix(3 * nContacts, 1);
-        if (nContacts == 0) { J = new DoubleMatrix(3, 6 * nBodies).fill(0.0); e = new DoubleMatrix(3, 1).fill(0.0); }
+                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies),
+                e = new DoubleMatrix(3 * nContacts, 1), epsilon = Transforms.identity(3 * nContacts, 3 * nContacts);
+        if (nContacts == 0) {
+            J = new DoubleMatrix(3, 6 * nBodies).fill(0.0);
+            e = new DoubleMatrix(3, 1).fill(0.0);
+            epsilon = Transforms.identity(3, 3);
+        }
+
         readEntityData(dynamicEntities, u, q, fExt, MInv, H);
         computeConstraints(dynamicEntities, contacts, J, e);
 
@@ -67,8 +109,8 @@ public abstract class PhysicsEngine implements SubEngine {
         // whose error is also proportional to the size of the timestep (See 'Foundations of Physically Based Modeling and Animation' p. 200)
 
         DoubleMatrix Jt = J.transpose();
-        DoubleMatrix A = J.mmul(MInv).mmul(Jt);
-        DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(beta));
+        DoubleMatrix A = J.mmul(MInv).mmul(Jt).add(epsilon.mul(cfm));
+        DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(erp / dt));
         DoubleMatrix x = new DoubleMatrix(A.getRows(), b.getColumns()).fill(0.0);
         DoubleMatrix lo = new DoubleMatrix(0, 0), hi = new DoubleMatrix(0, 0);
 
@@ -83,9 +125,11 @@ public abstract class PhysicsEngine implements SubEngine {
         // -------------------------------------------------------------------------------------------------------------
 
         writeEntityData(dynamicEntities, uNext, qNext);
+
+        // TODO: Test more complicated collision scenarios & test multi body collision after that & implement friction after that
     }
 
-    public List<Contact> getContacts() {
+    protected List<Contact> getContacts() {
         Set<Contact> collisions = new HashSet<>();
         Map<Integer, Boolean> alreadySearched = new HashMap<>();
         for (Entity e1 : entities) {
@@ -168,7 +212,6 @@ public abstract class PhysicsEngine implements SubEngine {
 
     public void computeConstraints(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix e) {
         // This function implicitly assumes only contact constraints are used
-        // The penalty function will overwrite itself for the same collision
         for (int i = 0; i < contacts.size(); i++) {
             Contact contact = contacts.get(i);
             Constraint[] constraints = ContactConstraint.generateConstraints(contact);
@@ -182,7 +225,7 @@ public abstract class PhysicsEngine implements SubEngine {
                     }
                 }
             }
-            e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.normal)));
+            e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)));
         }
     }
 
