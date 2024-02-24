@@ -127,6 +127,13 @@ public abstract class PhysicsEngine implements SubEngine {
         writeEntityData(dynamicEntities, uNext, qNext);
 
         // TODO: Test more complicated collision scenarios & test multi body collision after that & implement friction after that
+        // TODO: Test why collision with two billiard balls fails (error correction)
+
+        /*Entity e0 = entities.get(0);
+        Entity e1 = entities.get(1);
+
+        System.out.println(i + ", " + e0.getPhysicsComponent().position.y + ", " + e1.getPhysicsComponent().position.y);
+        i++;*/
     }
 
     protected List<Contact> getContacts() {
