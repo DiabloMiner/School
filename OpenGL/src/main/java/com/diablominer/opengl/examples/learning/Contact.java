@@ -19,7 +19,7 @@ public class Contact {
         // The resulting normal direction is then normalized
         this.normal = new Vector3d(normal).mul((new Vector3d(B.position).sub(A.position)).dot(normal)).normalize();
         this.penetration = penetration;
-        penetration.mul(Math.signum(penetration.dot(normal)));
+        penetration.mul(Math.signum(penetration.dot(this.normal)));
 
         this.cor = Material.coefficientsOfRestitution.get(Material.hash(A.material, B.material));
         this.cosf = Material.coefficientsOfStaticFriction.get(Material.hash(A.material, B.material));

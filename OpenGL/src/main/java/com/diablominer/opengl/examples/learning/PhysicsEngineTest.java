@@ -423,7 +423,7 @@ public class PhysicsEngineTest {
     }
 
     /**
-     * Test if a timestep is performed correctly if there is sustained contact (1000 iterations) between a ball affected by gravity and the ground
+     * Test if sustained contact by a ball affected by gravity and the ground is performed correctly (the ball doesn't fall into the table or fly above it) for 1000 iterations
      */
     @Test
     public void testSustainedContact() {
@@ -444,6 +444,45 @@ public class PhysicsEngineTest {
             assert (testPhysComp1.velocity.y <= epsilon && testPhysComp1.velocity.y >= -epsilon) : "Test failed at iteration " + i;
             assert (testPhysComp1.position.y <= 0.10715 + epsilon && testPhysComp1.position.y >= 0.10715 - epsilon) : "Test failed at iteration " + i;
         }
+    }
+
+    /**
+     * Test if a collision during sustained contact is performed correctly (both stay at the correct height and they do not go through each other)
+     */
+    @Test
+    public void testCollisionDuringSustainedContact() {
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.0), new Vector3d(0.0, 0.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.04715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(50, 0.05, 50), new Vector3d(100, 0.1, 100), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3), 0.0, 10e-20, 0.1) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+        Vector3d[] closestPoints = testPhysComp1.collisionShape.findClosestPoints(testPhysComp2.collisionShape);
+        double initialPen = closestPoints[1].sub(closestPoints[0], new Vector3d()).length();
+
+
+        testEngine.update();
+
+
+        assertEquals(testPhysComp1.velocity.y, 0.0, epsilon);
+        assertEquals(testPhysComp2.velocity.y, 0.0, epsilon);
+        assertEquals(testPhysComp1.position.y, 0.10715, epsilon);
+        assertEquals(testPhysComp2.position.y, 0.10715, epsilon);
+
+        closestPoints = testPhysComp1.collisionShape.findClosestPoints(testPhysComp2.collisionShape);
+        double newPen = closestPoints[1].sub(closestPoints[0], new Vector3d()).length();
+        assert testPhysComp1.position.z < testPhysComp2.position.z;
+        assert initialPen > newPen;
+        assertEquals(newPen, 0.9 * initialPen, epsilon);
+
+        // TODO: Maybe compare vel values to model ones
     }
 
 }

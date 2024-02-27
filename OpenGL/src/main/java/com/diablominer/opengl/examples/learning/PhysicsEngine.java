@@ -126,7 +126,7 @@ public abstract class PhysicsEngine implements SubEngine {
 
         writeEntityData(dynamicEntities, uNext, qNext);
 
-        // TODO: Test more complicated collision scenarios & test multi body collision after that & implement friction after that
+        // TODO: Test more complicated collision scenarios & test multi body collision after that & implement elastic collisions & friction after that
         // TODO: Test why collision with two billiard balls fails (error correction)
 
         /*Entity e0 = entities.get(0);
@@ -137,7 +137,7 @@ public abstract class PhysicsEngine implements SubEngine {
     }
 
     protected List<Contact> getContacts() {
-        Set<Contact> collisions = new HashSet<>();
+        Set<Contact> contacts = new HashSet<>();
         Map<Integer, Boolean> alreadySearched = new HashMap<>();
         for (Entity e1 : entities) {
             List<Entity> toBeSearched = new ArrayList<>(entities);
@@ -146,14 +146,14 @@ public abstract class PhysicsEngine implements SubEngine {
             for (Entity e2 : toBeSearched) {
                 if (!e1.getPhysicsComponent().isStatic() || !e2.getPhysicsComponent().isStatic()) {
                     if (!alreadySearched.containsKey(key(e1, e2))) {
-                        e1.getPhysicsComponent().getContact(e2.getPhysicsComponent()).ifPresent(collisions::add);
+                        e1.getPhysicsComponent().getContact(e2.getPhysicsComponent()).ifPresent(contacts::add);
                     }
                     alreadySearched.putIfAbsent(key(e1, e2), true);
                     alreadySearched.putIfAbsent(key(e2, e1), true);
                 }
             }
         }
-        return new ArrayList<>(collisions);
+        return new ArrayList<>(contacts);
     }
 
     public void readEntityData(List<Entity> entities, DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {
@@ -218,7 +218,7 @@ public abstract class PhysicsEngine implements SubEngine {
     }
 
     public void computeConstraints(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix e) {
-        // This function implicitly assumes only contact constraints are used
+        // TODO: This function implicitly assumes only contact constraints are used
         for (int i = 0; i < contacts.size(); i++) {
             Contact contact = contacts.get(i);
             Constraint[] constraints = ContactConstraint.generateConstraints(contact);
