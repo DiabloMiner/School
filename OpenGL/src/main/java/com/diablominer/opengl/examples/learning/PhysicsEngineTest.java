@@ -482,7 +482,12 @@ public class PhysicsEngineTest {
         assert initialPen > newPen;
         assertEquals(newPen, 0.9 * initialPen, epsilon);
 
-        // TODO: Maybe compare vel values to model ones
+        // Similar to general inelastic collision the compensation velocity for the penetration (v = dx * dt) is split up
+        // between the two bodies: The rightmost one's velocity is increased while the other one's is reduced to ultimately reduce their penetration
+        double vel = testPhysComp2.velocity.z + testPhysComp1.velocity.z;
+        double velGap = 0.1 * initialPen / 0.01;
+        assertEquals(testPhysComp2.velocity.z, (vel + velGap) / 2.0, epsilon);
+        assertEquals(testPhysComp1.velocity.z, (vel - velGap) / 2.0, epsilon);
     }
 
 }
