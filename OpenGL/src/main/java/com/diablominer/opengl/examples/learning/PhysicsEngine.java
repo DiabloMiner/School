@@ -91,15 +91,16 @@ public abstract class PhysicsEngine implements SubEngine {
 
         DoubleMatrix MInv = new DoubleMatrix(nBodies * 6, nBodies * 6), q = new DoubleMatrix(nBodies * 7, 1), u = new DoubleMatrix(nBodies * 6, 1),
                 qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies),
-                e = new DoubleMatrix(3 * nContacts, 1), epsilon = Transforms.identity(3 * nContacts, 3 * nContacts);
+                e = new DoubleMatrix(3 * nContacts, 1), epsilon = Transforms.identity(3 * nContacts, 3 * nContacts), bounce = new DoubleMatrix(3 * nContacts, 1);
         if (nContacts == 0) {
             J = new DoubleMatrix(3, 6 * nBodies).fill(0.0);
             e = new DoubleMatrix(3, 1).fill(0.0);
             epsilon = Transforms.identity(3, 3);
+            bounce = new DoubleMatrix(3, 1).fill(0.0);
         }
 
         readEntityData(dynamicEntities, u, q, fExt, MInv, H);
-        computeConstraints(dynamicEntities, contacts, J, e);
+        computeConstraints(dynamicEntities, contacts, J, e, bounce);
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 2: Solve system
@@ -110,7 +111,7 @@ public abstract class PhysicsEngine implements SubEngine {
 
         DoubleMatrix Jt = J.transpose();
         DoubleMatrix A = J.mmul(MInv).mmul(Jt).add(epsilon.mul(cfm));
-        DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(erp / dt));
+        DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(erp / dt)).add(bounce);
         DoubleMatrix x = new DoubleMatrix(A.getRows(), b.getColumns()).fill(0.0);
         DoubleMatrix lo = new DoubleMatrix(0, 0), hi = new DoubleMatrix(0, 0);
 
@@ -127,7 +128,6 @@ public abstract class PhysicsEngine implements SubEngine {
         writeEntityData(dynamicEntities, uNext, qNext);
 
         // TODO: Test more complicated collision scenarios & test multi body collision after that & implement elastic collisions & friction after that
-        // TODO: Test why collision with two billiard balls fails (error correction)
 
         /*Entity e0 = entities.get(0);
         Entity e1 = entities.get(1);
@@ -217,7 +217,7 @@ public abstract class PhysicsEngine implements SubEngine {
         }
     }
 
-    public void computeConstraints(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix e) {
+    public void computeConstraints(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix e, DoubleMatrix bounce) {
         // TODO: This function implicitly assumes only contact constraints are used
         for (int i = 0; i < contacts.size(); i++) {
             Contact contact = contacts.get(i);
@@ -225,7 +225,7 @@ public abstract class PhysicsEngine implements SubEngine {
 
             for (int j = 0; j < entities.size(); j++) {
                 Entity entity = entities.get(j);
-                PhysicsComponent physComp = entity.getPhysicsComponent();;
+                PhysicsComponent physComp = entity.getPhysicsComponent();
                 for (Constraint constraint : constraints) {
                     if (constraint.getJacobian(physComp).isPresent()) {
                         J.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
@@ -233,6 +233,11 @@ public abstract class PhysicsEngine implements SubEngine {
                 }
             }
             e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)));
+
+            DoubleMatrix c = new DoubleMatrix(3, 12);
+            c.put(new int[]{0, 1, 2}, new int[]{0, 1, 2, 3, 4, 5}, constraints[0].getJacobian(contact.A).get());
+            c.put(new int[]{0, 1, 2}, new int[]{6, 7, 8, 9, 10, 11}, constraints[1].getJacobian(contact.B).get());
+            bounce.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, 0, c.mmul(contact.getU()).mul(contact.cor));
         }
     }
 

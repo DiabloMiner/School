@@ -14,11 +14,11 @@ public class LCPSolver {
 
     private LCPSolver() {}
 
-    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, int maxIter) {
+    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, int iter) {
         int n = x.getRows();
 
         double sum;
-        while (maxIter > 0) {
+        while (iter > 0) {
             for (int i = 0; i < n; i++) {
                 sum = b.get(i);
                 for (int j = 0; j < n; j++) {
@@ -44,7 +44,7 @@ public class LCPSolver {
             }
 
 
-            maxIter--;
+            iter--;
         }
     }
 

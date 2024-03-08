@@ -23,7 +23,7 @@ public class PhysicsEngineTest {
     @Test
     public void testReadEntityDataFalseSize() {
         Entity testEntity = new Entity("", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         PhysicsEngine testEngine = new PhysicsEngine(Collections.singletonList(testEntity), 0.0) {
             @Override
             void update() {
@@ -48,7 +48,7 @@ public class PhysicsEngineTest {
     @Test
     public void testReadEntityDataSingle() {
         Entity testEntity = new Entity("", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         DoubleMatrix MInv = new DoubleMatrix(6, 6), q = new DoubleMatrix(7, 1), u = new DoubleMatrix(6, 1),
                 fExt = new DoubleMatrix(6, 1), H = new DoubleMatrix(7, 6);
         PhysicsEngine testEngine = new PhysicsEngine(Collections.singletonList(testEntity), 0.0) {@Override void update() {} @Override public void destroy() {}};
@@ -83,9 +83,9 @@ public class PhysicsEngineTest {
     @Test
     public void testReadEntityDataMultiple() {
         Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity2 = new Entity("2", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity3 = new Entity("3", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity4 = new Entity("4", new Component.Type[]{Component.Type.Physics},
@@ -116,7 +116,7 @@ public class PhysicsEngineTest {
     @Test
     public void testWriteEntityDataFalseSize() {
         Entity testEntity = new Entity("", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         PhysicsEngine testEngine = new PhysicsEngine(Collections.singletonList(testEntity), 0.0) {
             @Override
             void update() {
@@ -140,7 +140,7 @@ public class PhysicsEngineTest {
      */
     @Test
     public void testWriteEntityDataSingle() {
-        PhysicsComponent testPhysComp = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         Entity testEntity = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp});
         PhysicsEngine testEngine = new PhysicsEngine(Collections.singletonList(testEntity), 0.0) {@Override void update() {} @Override public void destroy() {}};
@@ -164,9 +164,9 @@ public class PhysicsEngineTest {
     @Test
     public void testWriteEntityDataMultiple() {
         Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity2 = new Entity("2", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity3 = new Entity("3", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity4 = new Entity("4", new Component.Type[]{Component.Type.Physics},
@@ -221,7 +221,7 @@ public class PhysicsEngineTest {
                 return new AbstractMap.SimpleEntry<>(new Vector3d(0.0, -accelerationConstant, 0.0).mul(physicsComponent.mass), new Vector3d(0.0, -2 * Math.PI, 0.0));
             }
         };
-        PhysicsComponent testPhysComp = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false);
         Entity testEntity = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp});
         PhysicsEngine testEngine = new PhysicsEngine(Collections.singletonList(testEntity), 0.0) {
@@ -259,9 +259,9 @@ public class PhysicsEngineTest {
             }
         };
         Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false)});
         Entity testEntity2 = new Entity("2", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(gravityTorque)), 0.163, 0.05715, false)});
         Entity testEntity3 = new Entity("3", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 50.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity4 = new Entity("4", new Component.Type[]{Component.Type.Physics},
@@ -306,7 +306,7 @@ public class PhysicsEngineTest {
     @Test
     public void testGetContacts() {
         Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity2 = new Entity("3", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0) {
@@ -336,7 +336,7 @@ public class PhysicsEngineTest {
     @Test
     public void testComputeConstraints() {
         Entity testEntity1 = new Entity("1", new Component.Type[]{Component.Type.Physics},
-                new Component[]{new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                new Component[]{new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity testEntity2 = new Entity("3", new Component.Type[]{Component.Type.Physics},
                 new Component[]{new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, false)});
         Entity testEntity3 = new Entity("3", new Component.Type[]{Component.Type.Physics},
@@ -354,8 +354,8 @@ public class PhysicsEngineTest {
                 List<Entity> dynamicEntities = entities.stream().filter(entity -> !entity.getPhysicsComponent().isStatic()).collect(Collectors.toList());
                 List<Contact> contacts = getContacts();
 
-                DoubleMatrix J = new DoubleMatrix(3, 6 * 2), e = new DoubleMatrix(3, 1);
-                computeConstraints(dynamicEntities, contacts, J, e);
+                DoubleMatrix J = new DoubleMatrix(3, 6 * 2), e = new DoubleMatrix(3, 1), bounce = new DoubleMatrix(3, 1);
+                computeConstraints(dynamicEntities, contacts, J, e, bounce);
                 Contact contact = contacts.get(0);
                 Vector3d rA = contact.point.sub(contact.A.position, new Vector3d()), rB = contact.point.sub(contact.B.position, new Vector3d());
                 Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal.negate(new Vector3d()));
@@ -374,10 +374,10 @@ public class PhysicsEngineTest {
     }
 
     /**
-     * Test if a timestep is performed correctly if there is one simple collision
+     * Test if a timestep is performed correctly if there is one simple inelastic collision
      */
     @Test
-    public void testSingleCollisionTimestep() {
+    public void testSingleCollision() {
         Force torque = new Force() {
             @Override
             public boolean isFulfilled(PhysicsComponent physicsComponent) {
@@ -389,8 +389,8 @@ public class PhysicsEngineTest {
                 return new AbstractMap.SimpleEntry<>(new Vector3d(0.0), new Vector3d(0.0, -2 * Math.PI, 0.0));
             }
         };
-        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, -10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.05, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, -10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.05, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
         Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp1});
         Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
@@ -427,7 +427,7 @@ public class PhysicsEngineTest {
      */
     @Test
     public void testSustainedContact() {
-        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, -10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, -10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp2 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(50, 0.05, 50), new Vector3d(100, 0.1, 100), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
         Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp1});
@@ -447,12 +447,12 @@ public class PhysicsEngineTest {
     }
 
     /**
-     * Test if a collision during sustained contact is performed correctly (both stay at the correct height and they do not go through each other)
+     * Test if a inelastic collision during sustained contact is performed correctly (both stay at the correct height and they do not go through each other)
      */
     @Test
     public void testCollisionDuringSustainedContact() {
-        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.0), new Vector3d(0.0, 0.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.04715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0), new Vector3d(0.0, 0.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.04715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp3 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(50, 0.05, 50), new Vector3d(100, 0.1, 100), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
         Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp1});
@@ -467,7 +467,7 @@ public class PhysicsEngineTest {
         Vector3d[] closestPoints = testPhysComp1.collisionShape.findClosestPoints(testPhysComp2.collisionShape);
         double initialPen = closestPoints[1].sub(closestPoints[0], new Vector3d()).length();
 
-
+        
         testEngine.update();
 
 
@@ -482,12 +482,60 @@ public class PhysicsEngineTest {
         assert initialPen > newPen;
         assertEquals(newPen, 0.9 * initialPen, epsilon);
 
-        // Similar to general inelastic collision the compensation velocity for the penetration (v = dx * dt) is split up
-        // between the two bodies: The rightmost one's velocity is increased while the other one's is reduced to ultimately reduce their penetration
+        // Similar to general inelastic collision the compensation velocity for the penetration (v = dx * dt) is split up between the two bodies:
+        // The rightmost one's velocity is increased while the other one's is reduced to ultimately reduce their penetration
         double vel = testPhysComp2.velocity.z + testPhysComp1.velocity.z;
         double velGap = 0.1 * initialPen / 0.01;
         assertEquals(testPhysComp2.velocity.z, (vel + velGap) / 2.0, epsilon);
         assertEquals(testPhysComp1.velocity.z, (vel - velGap) / 2.0, epsilon);
+    }
+    /**
+     *  Test if a timestep is performed correctly if there is one simple elastic collision
+     */
+    @Test
+    public void testSingleElasticCollision() {
+        Force torque = new Force() {
+            @Override
+            public boolean isFulfilled(PhysicsComponent physicsComponent) {
+                return true;
+            }
+
+            @Override
+            public Map.Entry<Vector3d, Vector3d> applyForce(PhysicsComponent physicsComponent) {
+                return new AbstractMap.SimpleEntry<>(new Vector3d(0.0), new Vector3d(0.0, -2 * Math.PI, 0.0));
+            }
+        };
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Elastic, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, -10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Elastic, new Vector3d(0.0, 0.05, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(0.0, 0.0, 0.0), new HashSet<>(Collections.singletonList(torque)), 0.163, 0.05715, false);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-15, 0.1) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        Contact contact = testEngine.getContacts().get(0);
+        double c = contact.penetration.length();
+
+        testEngine.update();
+
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.velocity).toArray(), new double[] {0.0, 0.1 * c / (0.01 * 2) + 10, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.angularVelocity).toArray(), new double[] {0.0, -295.05284265823724, 0.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp1.position).toArray(), new double[] {0.0, 0.10715 + 0.1 * c / 2 + 10 * 0.01, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp1.orientation).toArray(), new double[] {0.0, -0.8277551782105788, 0.0, 0.5610894446927096}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.10715 + 0.1 * c / 2 + 10 * 0.01, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp1.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
+
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.velocity).toArray(), new double[] {0.0, 0.1 * -c / (0.01 * 2) - 10, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.angularVelocity).toArray(), new double[] {0.0, -295.05284265823724, 0.0}, epsilon);
+        assertArrayEquals(Transforms.jomlVectorToJBLASVector(testPhysComp2.position).toArray(), new double[] {0.0, 0.05 - 0.1 * c / 2 - 10 * 0.01, -0.49}, epsilon);
+        assertArrayEquals(Transforms.jomlQuaternionToJBLASVector(testPhysComp2.orientation).toArray(), new double[] {0.0, -0.8277551782105788, 0.0, 0.5610894446927096}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.05 - 0.1 * c / 2 - 10 * 0.01, -0.49, 1.0}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
+        assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
     }
 
 }
