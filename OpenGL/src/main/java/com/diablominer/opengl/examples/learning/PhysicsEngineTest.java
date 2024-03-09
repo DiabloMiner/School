@@ -4,6 +4,7 @@ import com.diablominer.opengl.utils.Transforms;
 import org.jblas.DoubleMatrix;
 import org.jblas.exceptions.SizeException;
 import org.joml.Matrix4d;
+import org.joml.Matrix4f;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.junit.Test;
@@ -395,7 +396,7 @@ public class PhysicsEngineTest {
                 new Component[]{testPhysComp1});
         Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp2});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-15, 0.1) {
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-15, 0.1, 1e-5) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
@@ -433,7 +434,7 @@ public class PhysicsEngineTest {
                 new Component[]{testPhysComp1});
         Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp2});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-20, 0.1) {
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-20, 0.1, 1e-5) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
@@ -460,7 +461,7 @@ public class PhysicsEngineTest {
                 new Component[]{testPhysComp2});
         Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp3});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3), 0.0, 10e-20, 0.1) {
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3), 0.0, 10e-20, 0.1, 1e-5) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
@@ -489,6 +490,7 @@ public class PhysicsEngineTest {
         assertEquals(testPhysComp2.velocity.z, (vel + velGap) / 2.0, epsilon);
         assertEquals(testPhysComp1.velocity.z, (vel - velGap) / 2.0, epsilon);
     }
+
     /**
      *  Test if a timestep is performed correctly if there is one simple elastic collision
      */
@@ -511,7 +513,7 @@ public class PhysicsEngineTest {
                 new Component[]{testPhysComp1});
         Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp2});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-15, 0.1) {
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-15, 0.1, 1e-5) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
@@ -536,6 +538,48 @@ public class PhysicsEngineTest {
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldMatrix).toArray(), new double[] {-0.37035727010885355, 0.0, 0.9288893865673766, 0.0, -0.0, 0.9999999999999998, 0.0, 0.0, -0.9288893865673766, -0.0, -0.37035727010885355, 0.0, 0.0, 0.05 - 0.1 * c / 2 - 10 * 0.01, -0.49, 1.0}, epsilon);
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertia).toArray(), new double[] {2.1295118699999992E-4, -0.0, -1.3552527156068805E-20, 0.0, 2.1295118699999992E-4, 0.0, 1.3552527156068805E-20, 0.0, 2.1295118699999992E-4}, epsilon);
         assertArrayEquals(Transforms.jomlMatrixToJBLASMatrix(testPhysComp2.worldFrameInertiaInv).toArray(), new double[] {4695.911838237372, 0.0, 2.988547451027685E-13, 0.0, 4695.911838237372, -0.0, -2.988547451027685E-13, -0.0, 4695.911838237372}, epsilon);
+    }
+
+    /**
+     *  Test if a simple system with elastic collisions gains energy over time
+     */
+    @Test
+    public void testElasticCollisionsSystemEnergy() {
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 0.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        PhysicsComponent testPhysComp4 = new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, -2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        PhysicsComponent testPhysComp5 = new PhysicsBox(new Matrix4d().translate(0.0, 0.136 - 0.05, 2.594 / 2), new Vector3d(1.378 / 2, 0.036, 0.054 / 2), new Vector3d(0.054, 0.072, 1.378), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        PhysicsComponent testPhysComp6 = new PhysicsBox(new Matrix4d().translate(1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        PhysicsComponent testPhysComp7 = new PhysicsBox(new Matrix4d().translate(-1.324 / 2, 0.136 - 0.05, 0.0), new Vector3d(0.054 / 2, 0.036, 2.54 / 2), new Vector3d(2.54, 0.072, 0.054), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        Entity testEntity4 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp4});
+        Entity testEntity5 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp5});
+        Entity testEntity6 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp6});
+        Entity testEntity7 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp7});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3, testEntity4, testEntity5, testEntity6, testEntity7), 0.0, 10e-20, 0.05, 1e-5) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        double oldEnergy = testEngine.getEnergy();
+        for (int i = 0; i < 100; i++) {
+            testEngine.update();
+
+            double newEnergy = testEngine.getEnergy();
+            System.out.println(newEnergy + ", " + oldEnergy + ", " + (newEnergy - oldEnergy));
+            assert (newEnergy - oldEnergy) <= epsilon : "Test failed at iteration " + i;
+            oldEnergy = newEnergy;
+        }
     }
 
 }

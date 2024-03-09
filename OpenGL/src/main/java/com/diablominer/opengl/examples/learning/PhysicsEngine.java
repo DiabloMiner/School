@@ -21,7 +21,7 @@ public abstract class PhysicsEngine implements SubEngine {
 
     // public LCPSolverConfiguration solverConfig;
     public double simulationTimeStep;
-    protected double erp, cfm;
+    protected double erp, cfm, tol;
     protected List<Entity> entities;
     protected double leftOverTime;
 
@@ -34,6 +34,7 @@ public abstract class PhysicsEngine implements SubEngine {
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.erp = 0.1;
         this.cfm = 0.0001;
+        this.tol = 1e-5;
         this.leftOverTime = 0.0;
     }
     /**
@@ -46,6 +47,7 @@ public abstract class PhysicsEngine implements SubEngine {
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.erp = 0.1;
         this.cfm = 0.0001;
+        this.tol = 1e-5;
         this.leftOverTime = 0.0;
     }
 
@@ -53,13 +55,15 @@ public abstract class PhysicsEngine implements SubEngine {
      * @param simulationTimeStep - Simulation timestep
      * @param cfm - Constraint force mixing term (0 < cfm < 1): determines how much constraint force is mixed into the kinematic constraint in each timestep
      * @param erp - Error reduction parameter (0 < erp < 1): determines how much constraint error is reduced in each timestep
+     * @param tol - Tolerance parameter: all contacts with a relative velocity below this threshold are treated as perfectly inelastic
      */
-    public PhysicsEngine(double simulationTimeStep, double cfm, double erp) {
+    public PhysicsEngine(double simulationTimeStep, double cfm, double erp, double tol) {
         this.entities = new ArrayList<>();
         // this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.erp = erp;
         this.cfm = cfm;
+        this.tol = tol;
         this.leftOverTime = 0.0;
     }
 
@@ -68,13 +72,15 @@ public abstract class PhysicsEngine implements SubEngine {
      * @param simulationTimeStep - Simulation timestep
      * @param cfm - Constraint force mixing term (0 < cfm < 1): determines how much constraint force is mixed into the kinematic constraint in each timestep
      * @param erp - Error reduction parameter (0 < erp < 1): determines how much constraint error is reduced in each timestep
+     * @param tol - Tolerance parameter: all contacts with a relative velocity below this threshold are automatically treated as perfectly inelastic
      */
-    public PhysicsEngine(List<Entity> entities, double simulationTimeStep, double cfm, double erp) {
+    public PhysicsEngine(List<Entity> entities, double simulationTimeStep, double cfm, double erp, double tol) {
         this.entities = new ArrayList<>(entities);
         // this.solverConfig = solverConfig;
         this.simulationTimeStep = Math.min(Math.max(simulationTimeStep, Learning6.minTimeStep), Learning6.maxTimeStep);
         this.erp = erp;
         this.cfm = cfm;
+        this.tol = tol;
         this.leftOverTime = 0.0;
     }
 
@@ -127,13 +133,8 @@ public abstract class PhysicsEngine implements SubEngine {
 
         writeEntityData(dynamicEntities, uNext, qNext);
 
-        // TODO: Test more complicated collision scenarios & test multi body collision after that & implement elastic collisions & friction after that
-
-        /*Entity e0 = entities.get(0);
-        Entity e1 = entities.get(1);
-
-        System.out.println(i + ", " + e0.getPhysicsComponent().position.y + ", " + e1.getPhysicsComponent().position.y);
-        i++;*/
+        // TODO: Test more complicated collision scenarios (rail, queue) & test multi body collision after that & test elastic collisions & implement friction after that
+        // TODO: Implement minimum limit for elasticity / Investigate energy increase --> Choose lower erp parameter
     }
 
     protected List<Contact> getContacts() {
@@ -237,12 +238,22 @@ public abstract class PhysicsEngine implements SubEngine {
             DoubleMatrix c = new DoubleMatrix(3, 12);
             c.put(new int[]{0, 1, 2}, new int[]{0, 1, 2, 3, 4, 5}, constraints[0].getJacobian(contact.A).get());
             c.put(new int[]{0, 1, 2}, new int[]{6, 7, 8, 9, 10, 11}, constraints[1].getJacobian(contact.B).get());
-            bounce.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, 0, c.mmul(contact.getU()).mul(contact.cor));
+            bounce.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, 0, c.mmul(contact.getU()).mul(contact.cor).mul(contact.getRelVel() < tol ? 0 : 1));
         }
     }
 
     protected int key(Entity object1, Entity object2) {
         return Objects.hash(object1, object2);
+    }
+
+    public double getEnergy() {
+        double transE = 0.0, rotE = 0.0;
+        for (Entity entity : entities) {
+            PhysicsComponent physComp = entity.getPhysicsComponent();
+            transE += 0.5 * physComp.mass * physComp.velocity.lengthSquared();
+            rotE += 0.5 * Transforms.jomlVectorToJBLASVector(physComp.angularVelocity).transpose().mmul(Transforms.jomlMatrixToJBLASMatrix(physComp.worldFrameInertia)).mmul(Transforms.jomlVectorToJBLASVector(physComp.angularVelocity)).get(0);
+        }
+        return transE + rotE;
     }
 
     /*public void performTimeStep(double timeStep) {

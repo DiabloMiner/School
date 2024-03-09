@@ -39,4 +39,11 @@ public class Contact {
         return u;
     }
 
+    public double getRelVel() {
+        Vector3d vel = (B.velocity.add(B.angularVelocity.cross(point.sub(B.position, new Vector3d()), new Vector3d()), new Vector3d()))
+                .sub((A.velocity.add(A.angularVelocity.cross(point.sub(A.position, new Vector3d()), new Vector3d()), new Vector3d())), new Vector3d());
+        return vel.length();
+    }
+
+
 }

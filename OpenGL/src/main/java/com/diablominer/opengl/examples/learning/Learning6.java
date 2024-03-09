@@ -151,7 +151,7 @@ public class Learning6 extends Engine {
         List<Entity> renderedEntities = entities.stream().filter(entity -> entity.hasComponent(Component.Type.Render)).collect(Collectors.toList());
         List<Entity> physicsEntities = entities.stream().filter(entity -> entity.hasComponent(Component.Type.Physics)).collect(Collectors.toList());
         // mainPhysicsEngine = new MainPhysicsEngine(new MinMapNewtonConfiguration(25, 30, 10e-4, 0.5, 10e-10, 10e-50, 10e-20, false), physicsEntities, 0.01);
-        mainPhysicsEngine = new MainPhysicsEngine(physicsEntities, 0.01, 10e-20, 0.1);
+        mainPhysicsEngine = new MainPhysicsEngine(physicsEntities, 0.01, 10e-20, 0.05, 1e-10);
         mainRenderingEngine = new MainRenderingEngine(renderedEntities, window, camera);
         mainIOEngine = new MainIOEngine(new Window[]{window}, new Camera[]{camera}, new RenderingEngine[]{mainRenderingEngine});
 
@@ -162,11 +162,11 @@ public class Learning6 extends Engine {
         Entity physicsSphere1 = new Entity("1", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, -0.1143).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardBall1.obj", new Matrix4f().translate(0.0f, 0.10715f, -0.1143f).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 10.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, -0.5), new Vector3d(0.0, 0.0, 1.0),  new Quaterniond().identity(), new Vector3d(1 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity physicsSphere2 = new Entity("2", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(0.0, 0.10715, 0.0).scale(0.05715)),
                         new AssimpModel("./src/main/resources/models/HelloWorld/billiardBall2.obj", new Matrix4f().translate(0.0f, 0.10715f, 0.0f).scale(0.05715f), true),
-                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 10.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
+                        new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.5), new Vector3d(0.0, 0.0, -0.8),  new Quaterniond().identity(), new Vector3d(-0.8 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false)});
         Entity plate = new Entity("3", new Component.Type[]{Component.Type.Transform, Component.Type.Render, Component.Type.Physics},
                 new Component[]{new TransformComponent(new Matrix4d().translate(new Vector3d(0.0, 0.0, 0.0)).scale(0.5, 0.5, 0.5)),
                     new AssimpModel("./src/main/resources/models/HelloWorld/billardPlate.obj", new Matrix4f().translate(0.0f, 0.0f, 0.0f).scale(0.5f, 0.5f, 0.5f), true),
