@@ -582,4 +582,184 @@ public class PhysicsEngineTest {
         }
     }
 
+    /**
+     *  Test if a system of three touching spheres lying on the ground stays stable
+     */
+    @Test
+    public void testTouchingTriangle() {
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Ball, new Vector3d(0.0, 0.10715, 0.8), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Ball, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp4 = new PhysicsSphere(Material.Ball, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp5 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        Entity testEntity4 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp4});
+        Entity testEntity5 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp5});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3, testEntity4, testEntity5), 0.0, 10e-20, 0.05, 1e-5) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        for (int i = 0; i < 100; i++) {
+            testEngine.update();
+
+            assert (testPhysComp1.velocity.length() <= epsilon && testPhysComp1.velocity.length() >= -epsilon) : "Test failed at iteration " + i;
+            assert (testPhysComp2.velocity.length() <= epsilon && testPhysComp2.velocity.length() >= -epsilon) : "Test failed at iteration " + i;
+            assert (testPhysComp3.velocity.length() <= epsilon && testPhysComp3.velocity.length() >= -epsilon) : "Test failed at iteration " + i;
+            assert (testPhysComp4.velocity.length() <= epsilon && testPhysComp4.velocity.length() >= -epsilon) : "Test failed at iteration " + i;
+        }
+    }
+
+    /**
+     *  Test if the collision of a moving ball with two lined balls that are touching each other is simulated correctly
+     */
+    @Test
+    public void testCollisionWithLinedUpBalls() {
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, -0.05715 * 2.0), new Vector3d(0.0, 0.0, 0.8),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.05715 * 2.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp4 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        Entity testEntity4 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp4});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3, testEntity4), 0.0, 10e-20, 0.05, 1e-5) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        testEngine.update();
+
+        assertEquals(testPhysComp1.velocity.z, 4.0 / 15.0, epsilon);
+        assertEquals(testPhysComp2.velocity.z, 4.0 / 15.0, epsilon);
+        assertEquals(testPhysComp3.velocity.z, 4.0 / 15.0, epsilon);
+    }
+
+    /**
+     *  Test if the non central collision of a still ball and a ball moving with some velocity is simulated correctly
+     */
+    @Test
+    public void testNonCentralCollision() {
+        // TODO: Add gravity back in
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.4),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-20, 0.0, 1e-5) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        // TODO: Properly implement SIGGRAPH approach and see if problem persists (Implemented except for bounce and e)
+        // TODO: --> x velocity is generated now but sign seems to be wrong to some degree (check normal)
+        // TODO: Scenario is not correct, no velocity should be generated AT ALL, investigate
+
+        testEngine.update();
+
+        assertEquals(testPhysComp1.velocity.x, -0.05 * Math.sqrt(3.0), epsilon);
+        assertEquals(testPhysComp1.velocity.z, 0.25, epsilon);
+        assertEquals(testPhysComp2.velocity.x, 0.05 * Math.sqrt(3.0), epsilon);
+        assertEquals(testPhysComp2.velocity.z, 0.15, epsilon);
+    }
+
+    /**
+     *  Test if the contacts of a system comprised of three balls where one has some velocity is simulated correctly
+     */
+    @Test
+    public void testTriangleCollision() {
+        // TODO: Add gravity back in
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.4),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp4 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        Entity testEntity4 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp4});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3), 0.0, 10e-20, 0.0, 1e-5) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+
+        testEngine.update();
+        // TODO: Debug this first (if you don't progress introduce example without gravity)
+        // TODO: Required impulse can be computed, simplify example until you can compute factors relevant for inversion and find relevant factors
+        // TODO: Reduce scenario to two bodies for further debugging
+        // Seemingly only the collisions between the moving and non-moving balls are relevant for the error
+        // There doesnt seem to be a contribution of the x part, even in terms of the matrices,
+        // The normals generated for these collisions are false: The closest points are too close together and the difference between is only generated through arithmetic error
+        // --> r x n should be zero then which it isnt currently
+        // aybe try implementing SIGGRAPH J: Didn't work, no difference in result was observed
+
+        assertEquals(testPhysComp1.velocity.z, 4.0 / 15.0, epsilon);
+        assertEquals(testPhysComp2.velocity.x, -Math.sqrt(3.0) / 15.0, epsilon);
+        assertEquals(testPhysComp2.velocity.z, 3.0 / 15.0, epsilon);
+        assertEquals(testPhysComp3.velocity.x, Math.sqrt(3.0) / 15.0, epsilon);
+        assertEquals(testPhysComp3.velocity.z, 3.0 / 15.0, epsilon);
+    }
+
+    /**
+     *  Test if the collision of a moving ball with a system of three touching spheres is simulated correctly
+     */
+    @Test
+    public void testCollisionWithTouchingTriangle() {
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715 + 0.05715), new Vector3d(0.0, 0.0, 0.8),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp4 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp5 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp1});
+        Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp2});
+        Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp3});
+        Entity testEntity4 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp4});
+        Entity testEntity5 = new Entity("", new Component.Type[]{Component.Type.Physics},
+                new Component[]{testPhysComp5});
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3, testEntity4, testEntity5), 0.0, 10e-20, 0.0, 1e-5) {
+            @Override void update() { timeStep(0.01); }
+            @Override public void destroy() { }
+        };
+        Vector3d v0 = new Vector3d(testPhysComp2.velocity);
+        Vector3d n2 = new Vector3d(0.447213595499958, 0.0, -0.894427190999916);
+        Vector3d n3 = new Vector3d(-0.447213595499958, 0.0, -0.894427190999916);
+
+        testEngine.update();
+
+        // TODO: Find out why model doesnt work: Error correction plays a large role (Why? There shouldnt be error)
+        // Test inelastic first: Work out the expected response for inelastic (Shouldn't there be an x-component?), use normals from contacts for that
+        // Dig into concrete functioning of connected collisions in LCP & maybe retest model
+        // Interconnections in A seem to be correct, maybe test if there are too many (i.e. they are negating each other)
+
+        Vector3d vab = new Vector3d(v0).sub(n2.mul(v0.dot(n2), new Vector3d())).sub(n3.mul(v0.dot(n3), new Vector3d())).div(2.0, new Vector3d());
+        Vector3d vc = n2.mul(v0.dot(n2), new Vector3d());
+        Vector3d vd = n3.mul(v0.dot(n3), new Vector3d());
+        assertEquals(testPhysComp1.velocity.z, -0.0195, epsilon);
+        assertEquals(testPhysComp2.velocity.z, -0.02, epsilon);
+        assertEquals(testPhysComp3.velocity.z, 0.38025, epsilon);
+        assertEquals(testPhysComp4.velocity.z, 0.38025, epsilon);
+    }
+
 }

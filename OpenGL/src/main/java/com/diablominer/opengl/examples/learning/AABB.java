@@ -55,6 +55,19 @@ public class AABB implements CollisionShape {
     }
 
     @Override
+    public Vector3d findNormal(CollisionShape shape, Vector3d point) {
+        if (shape instanceof Sphere) {
+            return new Vector3d(0.0);
+        } else if (shape instanceof Polyhedron) {
+            return new Vector3d(0.0);
+        } else if (shape instanceof OBB) {
+            return new Vector3d(0.0);
+        } else {
+            return new Vector3d(0.0);
+        }
+    }
+
+    @Override
     public Vector3d findPenetrationDepth(CollisionShape shape) {
         return new Vector3d(Double.NaN);
     }

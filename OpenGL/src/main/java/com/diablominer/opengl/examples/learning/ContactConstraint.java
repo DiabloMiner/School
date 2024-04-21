@@ -22,9 +22,12 @@ public class ContactConstraint extends Constraint {
     @Override
     public Optional<DoubleMatrix> getJacobian(PhysicsComponent physicsComponent) {
         if (this.physicsComponent == physicsComponent) {
-            DoubleMatrix result = new DoubleMatrix(3, 6);
+            /*DoubleMatrix result = new DoubleMatrix(3, 6);
             result.put(new int[] {0, 1, 2}, new int[] {0, 1, 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(normal)));
-            result.put(new int[] {0, 1, 2}, new int[] {3, 4, 5}, Transforms.jomlMatrixToJBLASMatrix(Transforms.crossProductMatrix(r.cross(normal, new Vector3d()))));
+            result.put(new int[] {0, 1, 2}, new int[] {3, 4, 5}, Transforms.jomlMatrixToJBLASMatrix(Transforms.crossProductMatrix(r.cross(normal, new Vector3d()))));*/
+            DoubleMatrix result = new DoubleMatrix(1, 6);
+            result.put(new int[] {0}, new int[] {0, 1, 2}, Transforms.jomlVectorToJBLASVector(normal).transpose());
+            result.put(new int[] {0}, new int[] {3, 4, 5}, Transforms.jomlVectorToJBLASVector(r.cross(normal.negate(new Vector3d()), new Vector3d())).transpose());
             return Optional.of(result);
         } else {
             return Optional.empty();
@@ -33,8 +36,10 @@ public class ContactConstraint extends Constraint {
 
     public static ContactConstraint[] generateConstraints(Contact contact) {
         return new ContactConstraint[] {
-            new ContactConstraint(contact.A, contact.normal, contact.point.sub(contact.A.position, new Vector3d()), false),
-            new ContactConstraint(contact.B, contact.normal.negate(new Vector3d()), contact.point.sub(contact.B.position, new Vector3d()), false)
+            /*new ContactConstraint(contact.A, contact.normal, contact.point.sub(contact.A.position, new Vector3d()), false),
+            new ContactConstraint(contact.B, contact.normal.negate(new Vector3d()), contact.point.sub(contact.B.position, new Vector3d()), false)*/
+            new ContactConstraint(contact.A, contact.normal.negate(new Vector3d()), contact.point.sub(contact.A.position, new Vector3d()), false),
+            new ContactConstraint(contact.B, contact.normal, contact.point.sub(contact.B.position, new Vector3d()), false)
         };
     }
 

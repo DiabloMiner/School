@@ -58,6 +58,21 @@ public class Sphere implements CollisionShape {
     }
 
     @Override
+    public Vector3d findNormal(CollisionShape shape, Vector3d point) {
+        if (shape instanceof Sphere) {
+            return ((Sphere) shape).position.sub(this.position, new Vector3d()).normalize();
+        } else if (shape instanceof Polyhedron) {
+            return new Vector3d(0.0);
+        } else if (shape instanceof OBB) {
+            // As we can assume the two bodies are touching and point is the approximate point of collision we know it either is the closest point on the obb to the sphere
+            // or at least lies on the same line as the closest point which makes it possible to subtract it from the center of the sphere and receive the normal
+            return this.position.sub(point, new Vector3d()).normalize();
+        } else {
+            return new Vector3d(0.0);
+        }
+    }
+
+    @Override
     public Vector3d[] findClosestPoints(CollisionShape shape) {
         if (shape instanceof Sphere) {
             return getNearestPoints((Sphere) shape);
