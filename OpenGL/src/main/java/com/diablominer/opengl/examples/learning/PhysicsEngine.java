@@ -2,7 +2,6 @@ package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.Transforms;
 import org.jblas.DoubleMatrix;
-import org.jblas.Solve;
 import org.joml.Math;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
@@ -88,20 +87,19 @@ public abstract class PhysicsEngine implements SubEngine {
     public void timeStep(double dt) {
         // TODO: Currently assuming all constraints are contact constraints, adjust row sizes for J and e accordingly
         List<Entity> dynamicEntities = entities.stream().filter(entity -> !entity.getPhysicsComponent().isStatic()).collect(Collectors.toList());
-        List<Contact> contacts = getContacts();
+        List<Contact> contacts = getContacts(dt);
         int nBodies = dynamicEntities.size();
         int nContacts = contacts.size();
-        contacts.get(0).getRelVel();
 
         // -------------------------------------------------------------------------------------------------------------
         // Step 1: Construct the matrices that describe the system
         // -------------------------------------------------------------------------------------------------------------
 
         DoubleMatrix MInv = new DoubleMatrix(nBodies * 6, nBodies * 6), q = new DoubleMatrix(nBodies * 7, 1), u = new DoubleMatrix(nBodies * 6, 1),
-                // qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies),
-                // e = new DoubleMatrix(3 * nContacts, 1), epsilon = Transforms.identity(3 * nContacts, 3 * nContacts), bounce = new DoubleMatrix(3 * nContacts, 1);
-                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(nContacts, 6 * nBodies),
-                e = new DoubleMatrix(nContacts, 1), epsilon = Transforms.identity(nContacts, nContacts), bounce = new DoubleMatrix(nContacts, 1);
+                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies),
+                e = new DoubleMatrix(3 * nContacts, 1), epsilon = Transforms.identity(3 * nContacts, 3 * nContacts), bounce = new DoubleMatrix(3 * nContacts, 1);
+                // qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(nContacts, 6 * nBodies),
+               //  e = new DoubleMatrix(nContacts, 1), epsilon = Transforms.identity(nContacts, nContacts), bounce = new DoubleMatrix(nContacts, 1);
         if (nContacts == 0) {
             J = new DoubleMatrix(3, 6 * nBodies).fill(0.0);
             e = new DoubleMatrix(3, 1).fill(0.0);
@@ -123,7 +121,7 @@ public abstract class PhysicsEngine implements SubEngine {
         DoubleMatrix A = J.mmul(MInv).mmul(Jt).add(epsilon.mul(cfm));
         DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(erp / dt)).add(bounce);
         DoubleMatrix x = new DoubleMatrix(A.getRows(), b.getColumns()).fill(0.0);
-        DoubleMatrix lo = new DoubleMatrix(0, 0), hi = new DoubleMatrix(0, 0);
+        DoubleMatrix lo = new DoubleMatrix(0), hi = new DoubleMatrix(0);
 
         // Solve for x
         LCPSolver.gaussSeidel(A, b, x, lo, hi, maxIter);
@@ -142,7 +140,7 @@ public abstract class PhysicsEngine implements SubEngine {
         // TODO: add method to test with different erp, cfm, tolerance and other parameters
     }
 
-    protected List<Contact> getContacts() {
+    protected List<Contact> getContacts(double timeStep) {
         Set<Contact> contacts = new HashSet<>();
         Map<Integer, Boolean> alreadySearched = new HashMap<>();
         for (Entity e1 : entities) {
@@ -152,7 +150,8 @@ public abstract class PhysicsEngine implements SubEngine {
             for (Entity e2 : toBeSearched) {
                 if (!e1.getPhysicsComponent().isStatic() || !e2.getPhysicsComponent().isStatic()) {
                     if (!alreadySearched.containsKey(key(e1, e2))) {
-                        e1.getPhysicsComponent().getContact(e2.getPhysicsComponent()).ifPresent(contacts::add);
+                        Optional<Contact> contact = e1.getPhysicsComponent().getContact(e2.getPhysicsComponent());
+                        if (contact.isPresent() && contact.get().projectRelVel(timeStep) <= epsilon) contacts.add(contact.get());
                     }
                     alreadySearched.putIfAbsent(key(e1, e2), true);
                     alreadySearched.putIfAbsent(key(e2, e1), true);
@@ -234,19 +233,19 @@ public abstract class PhysicsEngine implements SubEngine {
                 PhysicsComponent physComp = entity.getPhysicsComponent();
                 for (Constraint constraint : constraints) {
                     if (constraint.getJacobian(physComp).isPresent()) {
-                        // J.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
-                        J.put(new int[]{i}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
+                        J.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
+                        // J.put(new int[]{i}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
                     }
                 }
             }
-            // e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)));
-            e.fill(0.0);
+            e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)));
+            // e.fill(0.0);
 
-            /*DoubleMatrix c = new DoubleMatrix(3, 12);
+            DoubleMatrix c = new DoubleMatrix(3, 12);
             c.put(new int[]{0, 1, 2}, new int[]{0, 1, 2, 3, 4, 5}, constraints[0].getJacobian(contact.A).get());
             c.put(new int[]{0, 1, 2}, new int[]{6, 7, 8, 9, 10, 11}, constraints[1].getJacobian(contact.B).get());
-            bounce.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, 0, c.mmul(contact.getU()).mul(contact.cor).mul(contact.getRelVel() < tol ? 0 : 1));*/
-            bounce.fill(0.0);
+            bounce.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, 0, c.mmul(contact.getU()).mul(contact.cor).mul(contact.getURelVel() < tol ? 0 : 1));
+            // bounce.fill(0.0);
         }
     }
 

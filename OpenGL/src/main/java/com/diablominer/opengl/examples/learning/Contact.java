@@ -39,10 +39,25 @@ public class Contact {
         return u;
     }
 
-    public double getRelVel() {
+    /**
+     * Get unsigned relative velocity
+     */
+    public double getURelVel() {
         Vector3d vel = (B.velocity.add(B.angularVelocity.cross(point.sub(B.position, new Vector3d()), new Vector3d()), new Vector3d()))
                 .sub((A.velocity.add(A.angularVelocity.cross(point.sub(A.position, new Vector3d()), new Vector3d()), new Vector3d())), new Vector3d());
         return vel.length();
+    }
+
+    /**
+     * Get signed projected relative velocity (based on current forces and torques)
+     */
+    public double projectRelVel(double timeStep) {
+        Vector3d vA = A.velocity.add(new Vector3d(A.force).mul(timeStep / A.mass), new Vector3d());
+        Vector3d vB = B.velocity.add(new Vector3d(B.force).mul(timeStep / B.mass), new Vector3d());
+        Vector3d omegaA = A.angularVelocity.add(new Vector3d(A.torque).mul(timeStep).mul(A.worldFrameInertiaInv), new Vector3d());
+        Vector3d omegaB = B.angularVelocity.add(new Vector3d(B.torque).mul(timeStep).mul(B.worldFrameInertiaInv), new Vector3d());
+        Vector3d v = (vB.add(omegaB.cross(point.sub(B.position, new Vector3d()), new Vector3d()), new Vector3d())).sub(vA.add(omegaA.cross(point.sub(A.position, new Vector3d()), new Vector3d()), new Vector3d()));
+        return normal.dot(v);
     }
 
 

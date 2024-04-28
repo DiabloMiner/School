@@ -1,6 +1,7 @@
 package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.Transforms;
+import org.jblas.Decompose;
 import org.jblas.DoubleMatrix;
 import org.jblas.Solve;
 import org.joml.Matrix3d;
@@ -18,7 +19,16 @@ public class LCPSolver {
         int n = x.getRows();
 
         double sum;
+        // double sum, theta, gamma = Double.MAX_VALUE;
         while (iter > 0) {
+            // Check if x has already converged and if so prematurely abort the solver
+            /*theta = Math.abs(x.transpose().mmul((A.mmul(x).add(b))).get(0));
+            if (theta < absEpsilon) break;
+            if (Math.abs(theta - gamma) / gamma < relEpsilon) break;
+            gamma = theta;
+            theta = 0;*/
+
+
             for (int i = 0; i < n; i++) {
                 sum = b.get(i);
                 for (int j = 0; j < n; j++) {
