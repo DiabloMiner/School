@@ -355,18 +355,18 @@ public class PhysicsEngineTest {
                 List<Entity> dynamicEntities = entities.stream().filter(entity -> !entity.getPhysicsComponent().isStatic()).collect(Collectors.toList());
                 List<Contact> contacts = getContacts(0.01);
 
-                DoubleMatrix J = new DoubleMatrix(3, 6 * 2), e = new DoubleMatrix(3, 1), bounce = new DoubleMatrix(3, 1);
+                DoubleMatrix J = new DoubleMatrix(1, 6 * 2), e = new DoubleMatrix(1, 1), bounce = new DoubleMatrix(3, 1);
                 computeConstraints(dynamicEntities, contacts, J, e, bounce);
                 Contact contact = contacts.get(0);
                 Vector3d rA = contact.point.sub(contact.A.position, new Vector3d()), rB = contact.point.sub(contact.B.position, new Vector3d());
-                Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal.negate(new Vector3d()));
+                Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal, new Vector3d());
 
 
                 assertArrayEquals(J.toArray(), new double[] {
-                        contact.normal.x, 0.0, 0.0, 0.0, contact.normal.y, 0.0, 0.0, 0.0, contact.normal.z, 0.0, -aA.z, aA.y, aA.z, 0.0, -aA.x, -aA.y, aA.x, 0.0,
-                        -contact.normal.x, 0.0, 0.0, 0.0, -contact.normal.y, 0.0, 0.0, 0.0, -contact.normal.z, 0.0, aB.z, -aB.y, -aB.z, 0.0, aB.x, aB.y, -aB.x, 0.0,
+                        -contact.normal.x, -contact.normal.y, -contact.normal.z, aA.x, aA.y, aA.z,
+                        contact.normal.x, contact.normal.y, contact.normal.z, -aB.x, -aB.y, -aB.z,
                 }, epsilon);
-                assertArrayEquals(e.toArray(), Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)).toArray(), epsilon);
+                assertArrayEquals(e.toArray(), new DoubleMatrix(new double[] {-Math.abs(contact.penetration.dot(contact.normal))}).toArray(), epsilon);
             }
             @Override public void destroy() { }
         };
@@ -481,7 +481,7 @@ public class PhysicsEngineTest {
         double newPen = closestPoints[1].sub(closestPoints[0], new Vector3d()).length();
         assert testPhysComp1.position.z < testPhysComp2.position.z;
         assert initialPen > newPen;
-        assertEquals(newPen, 0.9 * initialPen, epsilon);
+        assertEquals(newPen, (1.0 - testEngine.erp) * initialPen, epsilon);
 
         // Similar to general inelastic collision the compensation velocity for the penetration (v = dx * dt) is split up between the two bodies:
         // The rightmost one's velocity is increased while the other one's is reduced to ultimately reduce their penetration
@@ -662,8 +662,6 @@ public class PhysicsEngineTest {
             @Override public void destroy() { }
         };
 
-        // TODO: Add in old tests again and formulate them correctly
-
         testEngine.update();
 
         assertEquals(testPhysComp1.velocity.x, 0.0, epsilon);
@@ -675,37 +673,30 @@ public class PhysicsEngineTest {
     /**
      *  Test if the non central collision of a still ball and a ball moving with some velocity is simulated correctly
      */
-    /*@Test
+    @Test
     public void testNonCentralCollision() {
-        // TODO: Add gravity back in
-        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.4),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, -0.4),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp3 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
+        PhysicsComponent testPhysComp3 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(Collections.singletonList(new Gravity())), 5.97219e24, true);
         Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp1});
         Entity testEntity2 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp2});
         Entity testEntity3 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp3});
-        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2), 0.0, 10e-20, 0.0, 1e-5) {
+        PhysicsEngine testEngine = new PhysicsEngine(Arrays.asList(testEntity1, testEntity2, testEntity3), 0.0, 10e-20, 0.0, 1e-5) {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
 
-        // TODO: Properly implement SIGGRAPH approach and see if problem persists (Implemented except for bounce and e)
-        // TODO: --> x velocity is generated now but sign seems to be wrong to some degree (check normal)
-        // TODO: Scenario is not correct, no velocity should be generated AT ALL, investigate (Check sovler)
-
-        // TODO: Revert to old solver -> new has errors
-        // TODO: Write test for simpler case (two balls with one w/ vel sitting next to one another)
 
         testEngine.update();
 
         assertEquals(testPhysComp1.velocity.x, -0.05 * Math.sqrt(3.0), epsilon);
-        assertEquals(testPhysComp1.velocity.z, 0.25, epsilon);
+        assertEquals(testPhysComp1.velocity.z, -0.25, epsilon);
         assertEquals(testPhysComp2.velocity.x, 0.05 * Math.sqrt(3.0), epsilon);
-        assertEquals(testPhysComp2.velocity.z, 0.15, epsilon);
-    }*/
+        assertEquals(testPhysComp2.velocity.z, -0.15, epsilon);
+    }
 
     /**
      *  Test if the contacts of a system comprised of three balls where one has some velocity is simulated correctly

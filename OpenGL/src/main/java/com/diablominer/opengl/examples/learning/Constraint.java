@@ -12,7 +12,11 @@ public abstract class Constraint {
         this.equality = equality;
     }
 
-    public abstract Optional<DoubleMatrix> getJacobian(PhysicsComponent physicsComponent);
+    public abstract DoubleMatrix getJacobian();
+
+    public abstract DoubleMatrix getErrorCorrection();
+
+    public abstract DoubleMatrix getBounce();
 
     public boolean isEquality() {
         return equality;

@@ -8,6 +8,7 @@ import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public abstract class PhysicsEngine implements SubEngine {
@@ -96,10 +97,8 @@ public abstract class PhysicsEngine implements SubEngine {
         // -------------------------------------------------------------------------------------------------------------
 
         DoubleMatrix MInv = new DoubleMatrix(nBodies * 6, nBodies * 6), q = new DoubleMatrix(nBodies * 7, 1), u = new DoubleMatrix(nBodies * 6, 1),
-                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(3 * nContacts, 6 * nBodies),
-                e = new DoubleMatrix(3 * nContacts, 1), epsilon = Transforms.identity(3 * nContacts, 3 * nContacts), bounce = new DoubleMatrix(3 * nContacts, 1);
-                // qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(nContacts, 6 * nBodies),
-               //  e = new DoubleMatrix(nContacts, 1), epsilon = Transforms.identity(nContacts, nContacts), bounce = new DoubleMatrix(nContacts, 1);
+                qNext, uNext, fExt = new DoubleMatrix(nBodies * 6, 1), H = new DoubleMatrix(nBodies * 7, nBodies * 6), J = new DoubleMatrix(nContacts, 6 * nBodies),
+                e = new DoubleMatrix(nContacts, 1), epsilon = Transforms.identity(nContacts, nContacts), bounce = new DoubleMatrix(nContacts, 1);
         if (nContacts == 0) {
             J = new DoubleMatrix(3, 6 * nBodies).fill(0.0);
             e = new DoubleMatrix(3, 1).fill(0.0);
@@ -135,6 +134,7 @@ public abstract class PhysicsEngine implements SubEngine {
 
         writeEntityData(dynamicEntities, uNext, qNext);
 
+        // TODO: implement generalized jacobians & a more generalized solver
         // TODO: test multi body collision (elastic and inelastic) after that & implement friction and queue & optimize matrix math
         // TODO: write triangle billiard setup test colliding with moving ball (unequal velocities afterwards)
         // TODO: add method to test with different erp, cfm, tolerance and other parameters
@@ -226,26 +226,18 @@ public abstract class PhysicsEngine implements SubEngine {
         // TODO: This function implicitly assumes only contact constraints are used
         for (int i = 0; i < contacts.size(); i++) {
             Contact contact = contacts.get(i);
-            Constraint[] constraints = ContactConstraint.generateConstraints(contact);
+            ContactConstraint constraint = new ContactConstraint(contact, tol);
 
             for (int j = 0; j < entities.size(); j++) {
                 Entity entity = entities.get(j);
                 PhysicsComponent physComp = entity.getPhysicsComponent();
-                for (Constraint constraint : constraints) {
-                    if (constraint.getJacobian(physComp).isPresent()) {
-                        J.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
-                        // J.put(new int[]{i}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
-                    }
+                if (constraint.getJacobian(physComp).isPresent()) {
+                    J.put(new int[]{i}, new int[]{6 * j, 6 * j + 1, 6 * j + 2, 6 * j + 3, 6 * j + 4, 6 * j + 5}, constraint.getJacobian(physComp).get());
                 }
             }
-            e.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, new int[]{0}, Transforms.jomlVectorToJBLASVector(new Vector3d(contact.penetration)));
-            // e.fill(0.0);
+            e.put(new int[]{i}, new int[]{0}, constraint.getErrorCorrection());
 
-            DoubleMatrix c = new DoubleMatrix(3, 12);
-            c.put(new int[]{0, 1, 2}, new int[]{0, 1, 2, 3, 4, 5}, constraints[0].getJacobian(contact.A).get());
-            c.put(new int[]{0, 1, 2}, new int[]{6, 7, 8, 9, 10, 11}, constraints[1].getJacobian(contact.B).get());
-            bounce.put(new int[]{3 * i, 3 * i + 1, 3 * i + 2}, 0, c.mmul(contact.getU()).mul(contact.cor).mul(contact.getURelVel() < tol ? 0 : 1));
-            // bounce.fill(0.0);
+            bounce.put(new int[]{i}, 0, constraint.getBounce());
         }
     }
 
