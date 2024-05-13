@@ -8,6 +8,7 @@ import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -107,6 +108,7 @@ public abstract class PhysicsEngine implements SubEngine {
         }
 
         readEntityData(dynamicEntities, u, q, fExt, MInv, H);
+        // readEntityData(contacts, u, q, fExt, MInv, H);
         computeConstraints(dynamicEntities, contacts, J, e, bounce);
 
         // -------------------------------------------------------------------------------------------------------------
@@ -133,6 +135,7 @@ public abstract class PhysicsEngine implements SubEngine {
         // -------------------------------------------------------------------------------------------------------------
 
         writeEntityData(dynamicEntities, uNext, qNext);
+        // writeEntityData(contacts, uNext, qNext);
 
         // TODO: implement generalized jacobians & a more generalized solver
         // TODO: test multi body collision (elastic and inelastic) after that & implement friction and queue & optimize matrix math
@@ -198,6 +201,55 @@ public abstract class PhysicsEngine implements SubEngine {
         }
     }
 
+    /*public void readEntityData(List<Contact> contacts, DoubleMatrix u, DoubleMatrix q, DoubleMatrix fExt, DoubleMatrix MInv, DoubleMatrix H) {
+        List<PhysicsComponent> physComps = new ArrayList<>();
+        // Optimize that with maybe map or sth
+        contacts.forEach(contact -> {
+            if (!physComps.contains(contact.A) && !contact.A.isStatic()) {
+                physComps.add(contact.A);
+            }
+            if (!physComps.contains(contact.B) && !contact.B.isStatic()) {
+                physComps.add(contact.B);
+            }
+        });
+        if (physComps.size() == 0) {
+            entities.forEach(entity -> physComps.add(entity.getPhysicsComponent()));
+        }
+        int n = physComps.size();
+
+        u.assertSameSize(new DoubleMatrix(n * 6, 1));
+        q.assertSameSize(new DoubleMatrix(n * 7, 1));
+        fExt.assertSameSize(new DoubleMatrix(n * 6, 1));
+        MInv.assertSameSize(new DoubleMatrix(n * 6, n * 6));
+        H.assertSameSize(new DoubleMatrix(n * 7, n * 6));
+
+        for (int i = 0; i < n; i++) {
+            PhysicsComponent physComp = physComps.get(i);
+            physComp.determineForceAndTorque();
+            physComp.assertCorrectValues();
+
+            MInv.put(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, new int[] {6 * i, 6 * i + 1, 6 * i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(physComp.massInv)));
+            MInv.put(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, Transforms.jomlMatrixToJBLASMatrix(physComp.worldFrameInertiaInv));
+
+            u.put(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.velocity));
+            u.put(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, 0, Transforms.jomlVectorToJBLASVector(physComp.angularVelocity));
+
+            fExt.put(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.force));
+            // Formula is given in 'Contact and Friction Simulation for Computer Graphics' (SIGGRAPH 2022), p. 37
+            Vector3d torque = new Vector3d(physComp.torque).sub(physComp.angularVelocity.cross(physComp.angularVelocity.mul(physComp.worldFrameInertia, new Vector3d()), new Vector3d()));
+            fExt.put(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, 0, Transforms.jomlVectorToJBLASVector(torque));
+
+            q.put(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, 0, Transforms.jomlVectorToJBLASVector(physComp.position));
+            q.put(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, 0, Transforms.jomlQuaternionToJBLASVector(physComp.orientation));
+
+            // Computing the change of orientation via the H-matrix uses an approximation
+            // whose error is dependent on the timestep (See 'Foundations of Physically Based Modeling and Animation' p. 200)
+            DoubleMatrix Hi = Transforms.createHMatrix(physComp.orientation);
+            H.put(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, new int[] {6 * i, 6 * i + 1, 6 * i + 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity()));
+            H.put(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, Hi);
+        }
+    }*/
+
     public void writeEntityData(List<Entity> entities, DoubleMatrix uNext, DoubleMatrix qNext) {
         int n = entities.size();
 
@@ -222,6 +274,41 @@ public abstract class PhysicsEngine implements SubEngine {
         }
     }
 
+    /*public void writeEntityData(List<Contact> contacts, DoubleMatrix uNext, DoubleMatrix qNext) {
+        List<PhysicsComponent> physComps = new ArrayList<>();
+        contacts.forEach(contact -> {
+            if (!physComps.contains(contact.A) && !contact.A.isStatic()) {
+                physComps.add(contact.A);
+            }
+            if (!physComps.contains(contact.B) && !contact.B.isStatic()) {
+                physComps.add(contact.B);
+            }
+        });
+        if (physComps.size() == 0) {
+            entities.forEach(entity -> physComps.add(entity.getPhysicsComponent()));
+        }
+        int n = physComps.size();
+
+        uNext.assertSameSize(new DoubleMatrix(n * 6, 1));
+        qNext.assertSameSize(new DoubleMatrix(n * 7, 1));
+
+        for (int i = 0; i < n; i++) {
+            PhysicsComponent physComp = physComps.get(i);
+
+            physComp.velocity.set(Transforms.jblasVectorToJomlVector(uNext.get(new int[] {6 * i, 6 * i + 1, 6 * i + 2}, 0)));
+            physComp.angularVelocity.set(Transforms.jblasVectorToJomlVector(uNext.get(new int[] {6 * i + 3, 6 * i + 4, 6 * i + 5}, 0)));
+
+            physComp.position.set(Transforms.jblasVectorToJomlVector(qNext.get(new int[] {7 * i, 7 * i + 1, 7 * i + 2}, 0)));
+            physComp.orientation.set(Transforms.jblasVectorToJomlQuaternion(qNext.get(new int[] {7 * i + 3, 7 * i + 4, 7 * i + 5, 7 * i + 6}, 0))).normalize();
+
+            physComp.worldMatrix.set(new Matrix4d().identity().translate(physComp.position).rotate(physComp.orientation));
+            physComp.computeWorldFrameInertia(physComp.worldMatrix);
+            physComp.collisionShape.update(physComp.worldMatrix);
+
+            physComp.assertCorrectValues();
+        }
+    }*/
+
     public void computeConstraints(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix e, DoubleMatrix bounce) {
         // TODO: This function implicitly assumes only contact constraints are used
         for (int i = 0; i < contacts.size(); i++) {
@@ -236,7 +323,6 @@ public abstract class PhysicsEngine implements SubEngine {
                 }
             }
             e.put(new int[]{i}, new int[]{0}, constraint.getErrorCorrection());
-
             bounce.put(new int[]{i}, 0, constraint.getBounce());
         }
     }
