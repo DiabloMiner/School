@@ -362,7 +362,7 @@ public class PhysicsEngineTest {
                 List<Contact> contacts = getContacts(0.01);
 
                 DoubleMatrix J = new DoubleMatrix(1, 6 * 2), e = new DoubleMatrix(1, 1), bounce = new DoubleMatrix(3, 1);
-                computeConstraints(dynamicEntities, contacts, J, e, bounce);
+                // computeConstraints(dynamicEntities, contacts, J, e, bounce);
                 Contact contact = contacts.get(0);
                 Vector3d rA = contact.point.sub(contact.A.position, new Vector3d()), rB = contact.point.sub(contact.B.position, new Vector3d());
                 Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal, new Vector3d());
@@ -732,6 +732,12 @@ public class PhysicsEngineTest {
         // TODO: Order velocity in order of contact, change force and mass matrix (A always comes before B)
         // TODO: For J put all Ji beside each other  (in horizontal direction)
         // TODO: Removing the x collision leads to interesting results (recalculate expected results)
+        // TODO: Find out why x collision changes results so much / how to alleviate that
+        // Seems similar to previous problem with resting collision (i.e. it tries to solve it even though no solution is needed)
+        // Removing all resting collisions solves the problem for this test but creates a new one in another place
+        // TODO: Try to test if a solution is good enough: Didnt work because the solution for the first component is negative i.e. it induces a negative x velocity
+        // The results are always negative; Can this be correct? (Seems to be correct in this case)
+        // TODO: Test SIGGRAPH implementation: Implement gen mass matrix per body; To test move constraint into contact
 
         assertEquals(testPhysComp1.velocity.z, -0.16, epsilon);
         assertEquals(testPhysComp2.velocity.x, -0.25 * Math.sqrt(3) * 0.16, epsilon);

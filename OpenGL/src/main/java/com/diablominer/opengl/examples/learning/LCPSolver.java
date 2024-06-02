@@ -4,10 +4,13 @@ import com.diablominer.opengl.utils.Transforms;
 import org.jblas.Decompose;
 import org.jblas.DoubleMatrix;
 import org.jblas.Solve;
+import org.jblas.ranges.Range;
 import org.joml.Matrix3d;
 import org.joml.Vector3d;
+import org.lwjgl.system.CallbackI;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class LCPSolver {
 
@@ -15,21 +18,19 @@ public class LCPSolver {
 
     private LCPSolver() {}
 
-    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, int iter) {
+    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, DoubleMatrix J, DoubleMatrix uRest, DoubleMatrix MJt, double epsilon, int iter) {
         int n = x.getRows();
 
         double sum;
-        // double sum, theta, gamma = Double.MAX_VALUE;
         while (iter > 0) {
-            // Check if x has already converged and if so prematurely abort the solver
-            /*theta = Math.abs(x.transpose().mmul((A.mmul(x).add(b))).get(0));
-            if (theta < absEpsilon) break;
-            if (Math.abs(theta - gamma) / gamma < relEpsilon) break;
-            gamma = theta;
-            theta = 0;*/
-
 
             for (int i = 0; i < n; i++) {
+                // Check if solution is already good enough
+                DoubleMatrix u = uRest.add(MJt.mmul(x));
+                if (J.mmul(u).get(i) >= -epsilon) {
+                    continue;
+                }
+
                 sum = b.get(i);
                 for (int j = 0; j < n; j++) {
                     if (i != j) {
@@ -57,6 +58,59 @@ public class LCPSolver {
             iter--;
         }
     }
+
+    public static void blockedGaussSeidel(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix AInv, DoubleMatrix b, DoubleMatrix x0, DoubleMatrix lo, DoubleMatrix hi, double epsilon, int iter) {
+        List<PhysicsComponent> physComps = new ArrayList<>();
+        entities.forEach(entity -> physComps.add(entity.getPhysicsComponent()));
+        int n = b.getRows();
+        DoubleMatrix x = new DoubleMatrix(n, 1);
+
+        // TODO: Currently all solution code here assumes that no friction dirs are used (i.e. xi has a size of 1), this would have to be changed in a real implementation
+        while (iter > 0) {
+            for (int i = 0; i < n; i++) {
+                List<Contact> toBeSearched = new ArrayList<>(contacts);
+                DoubleMatrix xi = new DoubleMatrix(1, 1);
+                xi.put(0, b.get(i, 0));
+
+                // Accumulate coupled contacts for A
+                accumulateContacts(toBeSearched, physComps, toBeSearched.get(i).A, J, xi, i, true);
+
+                // Accumulate coupled contacts for B
+                accumulateContacts(toBeSearched, physComps, toBeSearched.get(i).B, J, xi, i, false);
+
+                // Solve
+                DoubleMatrix bi = new DoubleMatrix(1, 1, b.get(i) - xi.get(0));
+                double result = AInv.get(i, i) * bi.get(0);
+
+                x.put(i, result);
+                contacts.get(i).setX(new DoubleMatrix(1, 1, result));
+            }
+            iter--;
+        }
+    }
+
+    protected static void accumulateContacts(List<Contact> toBeSearched, List<PhysicsComponent> physComps, PhysicsComponent physComp, DoubleMatrix J, DoubleMatrix x, int i, boolean useA) {
+        DoubleMatrix JMinv = toBeSearched.get(i).getJMinv(physComp);
+        for (int j = 0; j < toBeSearched.size(); j++) {
+            if (j == i) { continue; }
+            Contact contact = toBeSearched.get(j);
+            DoubleMatrix xOther = contact.getX(), JAother;
+            int k;
+
+            if (useA) { k = physComps.indexOf(contact.A); } else { k = physComps.indexOf(contact.B); }
+            JAother = J.get(j, new int[] {k * 6, k * 6 + 1, k * 6 + 2, k * 6 + 3, k * 6 + 4, k * 6 + 5});
+            /*if (useA) { JAother = J.get(j, new int[] {k * 12, k * 12 + 1, k * 12 + 2, k * 12 + 3, k * 12 + 4, k * 12 + 5}); }
+            else { JAother = J.get(j, new int[] {k * 12 + 6, k * 12 + 7, k * 12 + 8, k * 12 + 9, k * 12 + 10, k * 12 + 11}); }*/
+
+            x.subi((JMinv.mmul(JAother.transpose())).mmul(xOther));
+        }
+    }
+
+    /*protected static void accumulateCoupledContacts(List<Contact> contacts, DoubleMatrix JMInv, DoubleMatrix x) {
+        for (Contact contact : contacts) {
+            x.subi(JMInv.mmul(contact.A.));
+        }
+    }*/
 
     /*private DoubleMatrix initializeX(int rows) {
         DoubleMatrix x0 = new DoubleMatrix(rows, 1);

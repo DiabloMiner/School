@@ -1,5 +1,7 @@
 package com.diablominer.opengl.examples.learning;
 
+import com.diablominer.opengl.utils.Transforms;
+import org.jblas.DoubleMatrix;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Quaterniond;
@@ -82,6 +84,20 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
     @Override
     public Matrix4d predictTimeStep(double timeStep) {
         return predictEulerTimeStep(timeStep);
+    }
+
+    public DoubleMatrix getM() {
+        DoubleMatrix M = new DoubleMatrix(6, 6);
+        M.put(new int[] {0, 1, 2}, new int[] {0, 1, 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(mass)));
+        M.put(new int[] {3, 4, 5}, new int[] {3, 4, 5}, Transforms.jomlMatrixToJBLASMatrix(worldFrameInertia));
+        return M;
+    }
+
+    public DoubleMatrix getMInv() {
+        DoubleMatrix M = new DoubleMatrix(6, 6);
+        M.put(new int[] {0, 1, 2}, new int[] {0, 1, 2}, Transforms.jomlMatrixToJBLASMatrix(new Matrix3d().identity().scale(massInv)));
+        M.put(new int[] {3, 4, 5}, new int[] {3, 4, 5}, Transforms.jomlMatrixToJBLASMatrix(worldFrameInertiaInv));
+        return M;
     }
 
 }
