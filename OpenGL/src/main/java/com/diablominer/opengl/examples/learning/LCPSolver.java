@@ -62,8 +62,12 @@ public class LCPSolver {
     public static void blockedGaussSeidel(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix AInv, DoubleMatrix b, DoubleMatrix x0, DoubleMatrix lo, DoubleMatrix hi, double epsilon, int iter) {
         List<PhysicsComponent> physComps = new ArrayList<>();
         entities.forEach(entity -> physComps.add(entity.getPhysicsComponent()));
+        DoubleMatrix x = new DoubleMatrix(b.getRows(), 1);
         int n = b.getRows();
-        DoubleMatrix x = new DoubleMatrix(n, 1);
+
+        for (int i = 0; i < n; i++) {
+            contacts.get(i).setX(b.get(new int[] {i}));
+        }
 
         // TODO: Currently all solution code here assumes that no friction dirs are used (i.e. xi has a size of 1), this would have to be changed in a real implementation
         while (iter > 0) {
@@ -99,8 +103,6 @@ public class LCPSolver {
 
             if (useA) { k = physComps.indexOf(contact.A); } else { k = physComps.indexOf(contact.B); }
             JAother = J.get(j, new int[] {k * 6, k * 6 + 1, k * 6 + 2, k * 6 + 3, k * 6 + 4, k * 6 + 5});
-            /*if (useA) { JAother = J.get(j, new int[] {k * 12, k * 12 + 1, k * 12 + 2, k * 12 + 3, k * 12 + 4, k * 12 + 5}); }
-            else { JAother = J.get(j, new int[] {k * 12 + 6, k * 12 + 7, k * 12 + 8, k * 12 + 9, k * 12 + 10, k * 12 + 11}); }*/
 
             x.subi((JMinv.mmul(JAother.transpose())).mmul(xOther));
         }
