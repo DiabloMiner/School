@@ -738,6 +738,9 @@ public class PhysicsEngineTest {
         // TODO: Try to test if a solution is good enough: Didnt work because the solution for the first component is negative i.e. it induces a negative x velocity
         // The results are always negative; Can this be correct? (Seems to be correct in this case)
         // TODO: Test SIGGRAPH implementation: Implement gen mass matrix per body; To test move constraint into contact
+        // Without the middle collision the LCPSolver with "good-enough checking" returns x velocities (though they have the false sign and the false magnitude)
+        // and different z velocities (that also have a false magnitude); The normal LCPSolver without the middle collision just splits up the vel evenly in the z direction
+        // And currently the SIGGRAPH solver doesn't change anything from the initial scenario
 
         assertEquals(testPhysComp1.velocity.z, -0.16, epsilon);
         assertEquals(testPhysComp2.velocity.x, -0.25 * Math.sqrt(3) * 0.16, epsilon);

@@ -70,6 +70,9 @@ public class LCPSolver {
         }
 
         // TODO: Currently all solution code here assumes that no friction dirs are used (i.e. xi has a size of 1), this would have to be changed in a real implementation
+        // TODO: Compare implementation to github from paper: Clamp original solution; check if collisions/bodies arent mixed up in current implementation compared to paper
+        // TODO: Clamping solution doesn't work: Should it work?
+        // TODO: Maybe test for relative convergence to abort unnecessary iterations
         while (iter > 0) {
             for (int i = 0; i < n; i++) {
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
@@ -102,7 +105,11 @@ public class LCPSolver {
             int k;
 
             if (useA) { k = physComps.indexOf(contact.A); } else { k = physComps.indexOf(contact.B); }
-            JAother = J.get(j, new int[] {k * 6, k * 6 + 1, k * 6 + 2, k * 6 + 3, k * 6 + 4, k * 6 + 5});
+            if (k == -1) {
+                JAother = new DoubleMatrix(1, 6);
+            } else {
+                JAother = J.get(j, new int[] {k * 6, k * 6 + 1, k * 6 + 2, k * 6 + 3, k * 6 + 4, k * 6 + 5});
+            }
 
             x.subi((JMinv.mmul(JAother.transpose())).mmul(xOther));
         }
