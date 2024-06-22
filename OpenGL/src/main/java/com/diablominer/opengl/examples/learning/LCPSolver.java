@@ -76,7 +76,6 @@ public class LCPSolver {
             for (int i = 0; i < n; i++) {
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
                 DoubleMatrix xi = new DoubleMatrix(1, 1);
-                // xi.put(0, b.get(i, 0));
 
                 // Accumulate coupled contacts for A
                 accumulateContacts(toBeSearched, physComps, toBeSearched.get(i).A, J, xi, i, true);
@@ -101,9 +100,8 @@ public class LCPSolver {
             if (j == i) { continue; }
             Contact contact = toBeSearched.get(j);
             DoubleMatrix xOther = contact.getX(), JAother;
-            int k;
+            int k = physComps.indexOf(physComp);
 
-            if (useA) { k = physComps.indexOf(contact.A); } else { k = physComps.indexOf(contact.B); }
             if (k == -1) {
                 JAother = new DoubleMatrix(1, 6);
             } else {
