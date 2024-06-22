@@ -362,7 +362,7 @@ public class PhysicsEngineTest {
                 List<Contact> contacts = getContacts(0.01);
 
                 DoubleMatrix J = new DoubleMatrix(1, 6 * 2), e = new DoubleMatrix(1, 1), bounce = new DoubleMatrix(3, 1);
-                // computeConstraints(dynamicEntities, contacts, J, e, bounce);
+                computeConstraints(dynamicEntities, contacts, J, e, bounce);
                 Contact contact = contacts.get(0);
                 Vector3d rA = contact.point.sub(contact.A.position, new Vector3d()), rB = contact.point.sub(contact.B.position, new Vector3d());
                 Vector3d aA = rA.cross(contact.normal, new Vector3d()), aB = rB.cross(contact.normal, new Vector3d());
@@ -741,6 +741,7 @@ public class PhysicsEngineTest {
         // Without the middle collision the LCPSolver with "good-enough checking" returns x velocities (though they have the false sign and the false magnitude)
         // and different z velocities (that also have a false magnitude); The normal LCPSolver without the middle collision just splits up the vel evenly in the z direction
         // And currently the SIGGRAPH solver doesn't change anything from the initial scenario
+        // TODO: Work through single collision problem to fix SIGGRAPH solver
 
         assertEquals(testPhysComp1.velocity.z, -0.16, epsilon);
         assertEquals(testPhysComp2.velocity.x, -0.25 * Math.sqrt(3) * 0.16, epsilon);

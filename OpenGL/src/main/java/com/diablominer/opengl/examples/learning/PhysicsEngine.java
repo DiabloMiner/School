@@ -129,7 +129,7 @@ public abstract class PhysicsEngine implements SubEngine {
         // DoubleMatrix uRest = u.add(MInv.mmul(fExt).mul(dt)), MJt = MInv.mmul(Jt).mul(dt);
         // LCPSolver.gaussSeidel(A, b, x, lo, hi, J, uRest, MJt, PhysicsEngine.epsilon, maxIter);
         DoubleMatrix AInv = Solve.pinv(A);
-        LCPSolver.blockedGaussSeidel(dynamicEntities, contacts, J, AInv, b, x, lo, hi, PhysicsEngine.epsilon, maxIter);
+        LCPSolver.blockedGaussSeidel(dynamicEntities, contacts, J, AInv, b, x, maxIter);
 
         uNext = u.subi(MInv.mmul(Jt).mmul(x)).addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(nBodies * 6, 1));
         qNext = q.addi(H.mmul(uNext).mul(dt), new DoubleMatrix(nBodies * 7, 1));

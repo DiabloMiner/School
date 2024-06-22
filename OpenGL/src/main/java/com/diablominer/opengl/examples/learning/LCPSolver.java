@@ -59,10 +59,9 @@ public class LCPSolver {
         }
     }
 
-    public static void blockedGaussSeidel(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix AInv, DoubleMatrix b, DoubleMatrix x0, DoubleMatrix lo, DoubleMatrix hi, double epsilon, int iter) {
+    public static void blockedGaussSeidel(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix AInv, DoubleMatrix b, DoubleMatrix x, int iter) {
         List<PhysicsComponent> physComps = new ArrayList<>();
         entities.forEach(entity -> physComps.add(entity.getPhysicsComponent()));
-        DoubleMatrix x = new DoubleMatrix(b.getRows(), 1);
         int n = b.getRows();
 
         for (int i = 0; i < n; i++) {
@@ -77,7 +76,7 @@ public class LCPSolver {
             for (int i = 0; i < n; i++) {
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
                 DoubleMatrix xi = new DoubleMatrix(1, 1);
-                xi.put(0, b.get(i, 0));
+                // xi.put(0, b.get(i, 0));
 
                 // Accumulate coupled contacts for A
                 accumulateContacts(toBeSearched, physComps, toBeSearched.get(i).A, J, xi, i, true);
