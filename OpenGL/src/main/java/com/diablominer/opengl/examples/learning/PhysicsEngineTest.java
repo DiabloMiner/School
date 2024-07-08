@@ -712,8 +712,8 @@ public class PhysicsEngineTest {
     public void testTriangleCollision() {
         // TODO: Add gravity back in
         PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, -0.4),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715 + 1e-14, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715 - 1e-14, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp4 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
         Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp1});

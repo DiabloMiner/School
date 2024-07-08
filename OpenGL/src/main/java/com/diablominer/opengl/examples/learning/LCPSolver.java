@@ -1,16 +1,12 @@
 package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.Transforms;
-import org.jblas.Decompose;
 import org.jblas.DoubleMatrix;
 import org.jblas.Solve;
-import org.jblas.ranges.Range;
 import org.joml.Matrix3d;
 import org.joml.Vector3d;
-import org.lwjgl.system.CallbackI;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class LCPSolver {
 
@@ -26,10 +22,10 @@ public class LCPSolver {
 
             for (int i = 0; i < n; i++) {
                 // Check if solution is already good enough
-                DoubleMatrix u = uRest.add(MJt.mmul(x));
+                /*DoubleMatrix u = uRest.add(MJt.mmul(x));
                 if (J.mmul(u).get(i) >= -epsilon) {
                     continue;
-                }
+                }*/
 
                 sum = b.get(i);
                 for (int j = 0; j < n; j++) {
@@ -38,7 +34,7 @@ public class LCPSolver {
                     }
                 }
                 assert A.get(i, i) != 0.0;
-                x.put(i, sum / A.get(i, i));
+                x.put(i, -sum / A.get(i, i));
             }
 
             for (int i = 0; i < n; i++) {
@@ -74,6 +70,15 @@ public class LCPSolver {
         // TODO: Maybe test for relative convergence to abort unnecessary iterations
         while (iter > 0) {
             for (int i = 0; i < n; i++) {
+                // Seems like result for index 0 collision is too high leading to index 3 coll result being false
+                // Compute comparison values via eqs (for index 0 first) and see if they match up
+                // TODO: Just implement a data structure for a bunch of touching objects and all collisions in directions non parallel (and with > 0 relvel) to the coll affecting the whole structure are thrown away
+                // TODO: Test if other solvers i.e. newton have the same problem as PGS: Newton seems to be pretty correct, though one result doesnt seem right:
+                // TODO: newton puts out higher post vel than pre vel: Newton has an almost correct magnitude but its pos. instead of neg. (Maybe false coll. formulation?)
+                // TODO: Fischer Newton does not work yet, try to debug it: Seems like the solution is currently only updated because it is not between l and u and not because a suitable descent dir has been found
+                // TODO: For Fischer to work u has to be continously adjusted so it doesnt result in 0 in the fischer function and the projected line search seems to fail because of some reason
+                // TODO: Without line search fischer works ok currently, find out why line search doesnt work, why there are size errors in the test cases and find improved solution for variable bounds of u
+
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
                 DoubleMatrix xi = new DoubleMatrix(1, 1);
 
@@ -118,7 +123,111 @@ public class LCPSolver {
         }
     }*/
 
-    /*private DoubleMatrix initializeX(int rows) {
+    protected static double newtonMeritValue(DoubleMatrix H) {
+        return H.dot(H) * 0.5;
+    }
+
+    protected static double fischerMeritValue(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x) {
+        DoubleMatrix y = A.mmul(x).add(b);
+        for (int i = 0; i < y.getLength(); i++) {
+            y.put(i, Math.abs(y.get(i)));
+        }
+        return Math.abs(x.mmul(y).get(0));
+    }
+
+    protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, double factor) {
+        DoubleMatrix uNew = u.dup();
+        double min = Math.min(Math.abs(x.min()), Math.abs(y.min()));
+        uNew.fill(min * factor);
+        return uNew;
+    }
+
+    protected static double fischerFunction(double xi, double yi) {
+        return Math.sqrt(xi * xi + yi * yi) - (xi + yi);
+    }
+
+    protected static DoubleMatrix fischerMeritValueGradient(DoubleMatrix H, DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, DoubleMatrix l) {
+        return H.transpose().mmul(fischerFunction(x, y, u, l));
+    }
+
+    protected static DoubleMatrix fischerFunction(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, DoubleMatrix l) {
+        int n = x.getLength();
+        DoubleMatrix f = new DoubleMatrix(n, 1);
+        for (int i = 0; i < n; i++) {
+            double xi = x.get(i), yi = y.get(i), ui = u.get(i), li = l.get(i);
+            f.put(i, fischerFunction(xi - li, fischerFunction(-yi, ui - xi)));
+        }
+        return f;
+    }
+
+    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix y, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, int iterations) {
+        double meritValue0 = fischerMeritValue(A, b, x);
+        DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, x, y, u, l);
+        double tau = 1;
+        DoubleMatrix xTau = new DoubleMatrix(x.rows, 1);
+        for (int j = 0; j < iterations; j++) {
+            DoubleMatrix precomputedX = x.dup().add(deltaX.dup().mul(tau));
+            for (int i = 0; i < xTau.rows; i++) {
+                xTau.put(i, Math.max(0.0, precomputedX.get(i)));
+            }
+            double meritValue = fischerMeritValue(A, b, xTau);
+            if (meritValue <= (meritValue0 + alpha * tau * meritValueGradient0.dot(deltaX))) {
+                break;
+            }
+            if (tau <= delta) {
+                break;
+            }
+            tau *= beta;
+        }
+        return tau;
+    }
+
+    protected static DoubleMatrix constructFischerH(DoubleMatrix A, DoubleMatrix x, DoubleMatrix y) {
+        int n = x.getLength();
+        DoubleMatrix p  = new DoubleMatrix(n), q = new DoubleMatrix(n);
+        for (int i = 0; i < n; i++) {
+            double xi = x.get(i), yi = y.get(i), xynorm = Math.sqrt(xi * xi + yi * yi), pi, qi;
+            if (!(xi == 0 && yi == 0)) {
+                pi = (xi / xynorm) - 1;
+                qi = (yi / xynorm) - 1;
+            } else  {
+                double ai = 0, bi = 0;
+                pi = ai - 1;
+                qi = bi - 1;
+            }
+            p.put(i, pi);
+            q.put(i, qi);
+        }
+        DoubleMatrix Dp = DoubleMatrix.diag(p), Dq = DoubleMatrix.diag(q);
+        return Dp.add(Dq.mmul(A));
+    }
+
+    public static void fischerNewton(DoubleMatrix x, DoubleMatrix A, DoubleMatrix b, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, double boundAdjustment, int iterations, int lineSearchIterations) {
+        DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f, y = A.mmul(x).add(b);
+        double currentMeritValue, previousMeritValue = fischerMeritValue(A, b, x);
+        for (int i = 0; i < iterations; i++) {
+            u = adjustBounds(x, y, u, boundAdjustment);
+            f = fischerFunction(x, y, u, l);
+            deltaX = Solve.solve(H, f.neg());
+
+            // double tau = armijoLineSearch(A, b, H, x, y, deltaX, u, l, alpha, beta, delta, lineSearchIterations);
+            double tau = 1;
+            x.addi(deltaX.dup().mul(tau));
+
+            y = A.mmul(x).add(b);
+            H = constructFischerH(A, x, y);
+            currentMeritValue = fischerMeritValue(A, b, x);
+            if (currentMeritValue < epsilonAbsolute) {
+                break;
+            }
+            /*if (Math.abs(currentMeritValue - previousMeritValue) < epsilonRelative * Math.abs(previousMeritValue)) {
+                break;
+            }*/
+            previousMeritValue = currentMeritValue;
+        }
+    }
+
+    private DoubleMatrix initializeX(int rows) {
         DoubleMatrix x0 = new DoubleMatrix(rows, 1);
         for (int i = 0; i < rows; i++) {
             x0.put(i, 0, Math.random() * 10.0);
@@ -241,8 +350,8 @@ public class LCPSolver {
     }
 
     private double projectedLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix deltaX, double alpha, double beta, double delta, int iterations) {
-        double meritValue0 = computePhi(H);
-        double deltaMeritValue0 = computeDeltaPhi(H);
+        double meritVal0 = computePhi(H);
+        double meritValGradient0 = computeDeltaPhi(H);
         double tau = 1;
         DoubleMatrix xTau = new DoubleMatrix(x.rows, 1);
         for (int j = 0; j < iterations; j++) {
@@ -251,7 +360,7 @@ public class LCPSolver {
                 xTau.put(i, Math.max(0.0, precomputedX.get(i)));
             }
             double meritValue = computePhi(A, b, xTau);
-            if (meritValue <= (meritValue0 + alpha * tau * deltaMeritValue0)) {
+            if (meritValue <= (meritVal0 + alpha * tau * meritValGradient0)) {
                 break;
             }
             if (tau <= delta) {
@@ -262,10 +371,10 @@ public class LCPSolver {
         return tau;
     }
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     private double projectedLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double mu, double muR, double alpha, double beta, double delta, int iterations) {
         double meritValue0 = computePhi(H);
         double deltaMeritValue0 = computeDeltaPhi(H);
@@ -275,7 +384,7 @@ public class LCPSolver {
             for (int i = 0; i < xTau.rows; i++) {
                 xTau.put(i, Math.max(0.0, precomputedX.get(i) - (1 - tau) * deltaX.get(i)));
             }
-            setBounds(uTau, lTau, xTau.get(0), mu, muR);
+            // setBounds(uTau, lTau, xTau.get(0), mu, muR);
             double meritValue = computePhi(A, b, xTau, uTau, lTau);
             if (meritValue <= (meritValue0 + alpha * tau * deltaMeritValue0)) {
                 break;
@@ -288,9 +397,9 @@ public class LCPSolver {
         return tau;
     }
 
-    private double computeNewtonMeritValue(DoubleMatrix H) {
+    /*private double computeNewtonMeritValue(DoubleMatrix H) {
         return H.dot(H) * 0.5;
-    }
+    }*/
 
     public LCPSolverResult solveLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
         return solveLCPWithMinimumMapNewton(new DoubleMatrix(b.rows, 1).fill(0.0), A, b, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
@@ -300,7 +409,7 @@ public class LCPSolver {
         DoubleMatrix x = x0.dup();
         DoubleMatrix y, H = constructH(x, A.mmul(x).add(b)), deltaX = new DoubleMatrix(b.rows, 1);
         List<Integer> setA = new ArrayList<>(), setF = new ArrayList<>();
-        double currentMeritValue, previousMeritValue = computeNewtonMeritValue(H);
+        double currentMeritValue, previousMeritValue = newtonMeritValue(H);
         for (int i = 0; i < iterations; i++) {
             // y is rounded to prevent numerical imprecision from changing the result
             y = Transforms.round(A.mmul(x).add(b), roundingDigit);
@@ -313,7 +422,7 @@ public class LCPSolver {
             double tau = projectedLineSearch(A, b, H, x, deltaX, alpha, beta, delta, lineSearchIterations);
             x.addi(deltaX.dup().mul(tau));
 
-            currentMeritValue = computeNewtonMeritValue(H);
+            currentMeritValue = newtonMeritValue(H);
             if (currentMeritValue < epsilonAbsolute) {
                 return new LCPSolverResult(x, LCPResultFlag.ABSOLUTE_CONVERGENCE);
             }
@@ -327,10 +436,10 @@ public class LCPSolver {
         return new LCPSolverResult(x, LCPResultFlag.MAX_ITERATIONS_REACHED);
     }
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     private void setBounds(DoubleMatrix u, DoubleMatrix l, double normalImpulse, double mu, double muR) {
         u.put(new int[] {1, 2}, new int[] {0}, mu * Math.abs(normalImpulse));
         u.put(new int[] {3, 4, 5}, new int[] {0}, muR * Math.abs(normalImpulse));
@@ -339,25 +448,25 @@ public class LCPSolver {
     }
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
         return solveBLCPWithMinimumMapNewton(solveBLCPWithPGS(A, b, mu, muR, epsilonRelative, 2, roundingDigit).x, A, b, mu, muR, alpha, beta, delta, epsilonAbsolute, epsilonRelative, iterations, lineSearchIterations, roundingDigit);
     }
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     public LCPSolverResult solveBLCPWithMinimumMapNewton(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations, int roundingDigit) {
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(b.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(b.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0), mu, muR);
+        // setBounds(u, l, x.get(0), mu, muR);
         List<Integer> setA = new ArrayList<>(), setJ = new ArrayList<>();
         DoubleMatrix y = Transforms.round(A.mmul(x).add(b), roundingDigit), H = constructHAndIntegerSets(x, y, u, l, setA, setJ), deltaX = new DoubleMatrix(b.rows, 1);
-        double currentMeritValue = computeNewtonMeritValue(H), previousMeritValue = 0.0;
+        double currentMeritValue = newtonMeritValue(H), previousMeritValue = 0.0;
 
         if (currentMeritValue < epsilonAbsolute) { return new LCPSolverResult(x, LCPResultFlag.ABSOLUTE_CONVERGENCE); }
         if (Math.abs(currentMeritValue - previousMeritValue) < epsilonRelative * Math.abs(previousMeritValue)) { return new LCPSolverResult(x, LCPResultFlag.RELATIVE_CONVERGENCE); }
@@ -389,9 +498,9 @@ public class LCPSolver {
             double tau = projectedLineSearch(A, b, H, x, deltaX, u, l, mu, muR, alpha, beta, delta, lineSearchIterations);
             // x is rounded to prevent numerical imprecision from changing the result
             Transforms.round(x.addi(deltaX.dup().mul(tau)), roundingDigit);
-            setBounds(u, l, x.get(0), mu, muR);
+            // setBounds(u, l, x.get(0), mu, muR);
 
-            currentMeritValue = computeNewtonMeritValue(H);
+            currentMeritValue = newtonMeritValue(H);
             if (currentMeritValue < epsilonAbsolute) {
                 return new LCPSolverResult(x, LCPResultFlag.ABSOLUTE_CONVERGENCE);
             }
@@ -406,20 +515,20 @@ public class LCPSolver {
     }
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
-    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
+     */
+    /*public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
         return solveBLCPWithNNCG(initializeX(b), A, b, mu, muR, iterations, roundingDigit);
-    }
+    }*/
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
-    public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
+     */
+    /*public LCPSolverResult solveBLCPWithNNCG(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
         DoubleMatrix x1 = solveBLCPWithPGS(APrime, bPrime, b, mu, muR, 10e-10, 1).x;
         DoubleMatrix grad0 = x1.sub(x0.dup()).neg(), p0 = grad0.neg();
@@ -443,11 +552,11 @@ public class LCPSolver {
             gradOld = gradNew.dup();
         }
         return new LCPSolverResult(xNew, LCPResultFlag.MAX_ITERATIONS_REACHED);
-    }
+    }*/
 
     public LCPSolverResult solveBLCPWithPGS(DoubleMatrix APrime, DoubleMatrix bPrime, DoubleMatrix b, double mu, double muR, double epsilon, int iterations) {
         DoubleMatrix x = initializeX(b), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0), mu, muR);
+        // setBounds(u, l, x.get(0), mu, muR);
         double gamma, delta = Double.POSITIVE_INFINITY;
 
         for (int j = 0; j < iterations; j++) {
@@ -455,7 +564,7 @@ public class LCPSolver {
             delta = 0;
 
             x.subi(bPrime.add(APrime.mmul(x)));
-            setBounds(u, l, x.get(0), mu, muR);
+            // setBounds(u, l, x.get(0), mu, muR);
             x = u.min(l.max(x));
             delta = Math.max(delta, x.max());
 
@@ -474,14 +583,14 @@ public class LCPSolver {
     }
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     public LCPSolverResult solveBLCPWithPGS(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix APrime = computeAPrime(A, roundingDigit), bPrime = computeBPrime(A, b, roundingDigit);
         DoubleMatrix x = x0.dup(), u = new DoubleMatrix(x.rows, 1).fill(Double.POSITIVE_INFINITY), l = new DoubleMatrix(x.rows, 1).fill(0.0);
-        setBounds(u, l, x.get(0), mu, muR);
+        // setBounds(u, l, x.get(0), mu, muR);
         double gamma, delta = Double.POSITIVE_INFINITY;
 
         for (int j = 0; j < iterations; j++) {
@@ -489,7 +598,7 @@ public class LCPSolver {
             delta = 0;
 
             x.subi(bPrime.add(APrime.mmul(x)));
-            setBounds(u, l, x.get(0), mu, muR);
+            // setBounds(u, l, x.get(0), mu, muR);
             x = u.min(l.max(x));
             delta = Math.max(delta, x.max());
 
@@ -520,19 +629,19 @@ public class LCPSolver {
     }
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix A, DoubleMatrix b, double mu, double muR, double omega, double epsilon, int iterations, int roundingDigit) {
         return solveBLCPWithPSOR(initializeX(b), A, b, mu, muR, omega, epsilon, iterations, roundingDigit);
     }
 
 
-    *//**
+    /**
      * @param mu The "normal"/Coulomb friction coefficient
      * @param muR The rolling friction coefficient
-     *//*
+     */
     public LCPSolverResult solveBLCPWithPSOR(DoubleMatrix x0, DoubleMatrix A, DoubleMatrix b, double mu, double muR, double omega, double epsilon, int iterations, int roundingDigit) {
         DoubleMatrix U = Transforms.strictUpperTriangular(A), L = Transforms.strictLowerTriangular(A), D = DoubleMatrix.diag(A.diag());
 
@@ -909,6 +1018,6 @@ public class LCPSolver {
 
     public static void addSolvedCollision(Collision collision, DoubleMatrix result) {
         solvedCollisions.put(collision.hashCode(), result);
-    }*/
+    }
 
 }
