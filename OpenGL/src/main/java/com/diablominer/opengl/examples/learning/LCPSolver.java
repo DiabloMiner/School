@@ -77,7 +77,8 @@ public class LCPSolver {
                 // TODO: newton puts out higher post vel than pre vel: Newton has an almost correct magnitude but its pos. instead of neg. (Maybe false coll. formulation?)
                 // TODO: Fischer Newton does not work yet, try to debug it: Seems like the solution is currently only updated because it is not between l and u and not because a suitable descent dir has been found
                 // TODO: For Fischer to work u has to be continously adjusted so it doesnt result in 0 in the fischer function and the projected line search seems to fail because of some reason
-                // TODO: Without line search fischer works ok currently, find out why line search doesnt work, why there are size errors in the test cases and find improved solution for variable bounds of u
+                // TODO: Without line search fischer works ok currently, find out why line search doesnt work, why there are size errors in the test cases
+                // TODO: and find improved solution for variable bounds of u (get float bits and apply mask to get exponent)
 
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
                 DoubleMatrix xi = new DoubleMatrix(1, 1);
@@ -127,7 +128,7 @@ public class LCPSolver {
         return H.dot(H) * 0.5;
     }
 
-    protected static double fischerMeritValue(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x) {
+    protected static double qpMeritValue(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x) {
         DoubleMatrix y = A.mmul(x).add(b);
         for (int i = 0; i < y.getLength(); i++) {
             y.put(i, Math.abs(y.get(i)));
@@ -138,7 +139,10 @@ public class LCPSolver {
     protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, double factor) {
         DoubleMatrix uNew = u.dup();
         double min = Math.min(Math.abs(x.min()), Math.abs(y.min()));
-        uNew.fill(min * factor);
+        long bits = Double.doubleToLongBits(min);
+        bits = (bits >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111;
+        int exp = Integer.parseUnsignedInt(Long.toUnsignedString(bits)) - 1023;
+        uNew.fill(Math.pow(2, exp) * factor);
         return uNew;
     }
 
@@ -161,7 +165,7 @@ public class LCPSolver {
     }
 
     protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix y, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, int iterations) {
-        double meritValue0 = fischerMeritValue(A, b, x);
+        double meritValue0 = qpMeritValue(A, b, x);
         DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, x, y, u, l);
         double tau = 1;
         DoubleMatrix xTau = new DoubleMatrix(x.rows, 1);
@@ -170,7 +174,7 @@ public class LCPSolver {
             for (int i = 0; i < xTau.rows; i++) {
                 xTau.put(i, Math.max(0.0, precomputedX.get(i)));
             }
-            double meritValue = fischerMeritValue(A, b, xTau);
+            double meritValue = qpMeritValue(A, b, xTau);
             if (meritValue <= (meritValue0 + alpha * tau * meritValueGradient0.dot(deltaX))) {
                 break;
             }
@@ -204,7 +208,7 @@ public class LCPSolver {
 
     public static void fischerNewton(DoubleMatrix x, DoubleMatrix A, DoubleMatrix b, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, double boundAdjustment, int iterations, int lineSearchIterations) {
         DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f, y = A.mmul(x).add(b);
-        double currentMeritValue, previousMeritValue = fischerMeritValue(A, b, x);
+        double currentMeritValue, previousMeritValue = qpMeritValue(A, b, x);
         for (int i = 0; i < iterations; i++) {
             u = adjustBounds(x, y, u, boundAdjustment);
             f = fischerFunction(x, y, u, l);
@@ -216,7 +220,7 @@ public class LCPSolver {
 
             y = A.mmul(x).add(b);
             H = constructFischerH(A, x, y);
-            currentMeritValue = fischerMeritValue(A, b, x);
+            currentMeritValue = qpMeritValue(A, b, x);
             if (currentMeritValue < epsilonAbsolute) {
                 break;
             }
