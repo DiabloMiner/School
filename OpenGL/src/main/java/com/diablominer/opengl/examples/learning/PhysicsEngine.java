@@ -137,7 +137,7 @@ public abstract class PhysicsEngine implements SubEngine {
         DoubleMatrix uRest = u.add(MInv.mmul(fExt).mul(dt)), MJt = MInv.mmul(Jt).mul(dt);
         LCPSolver.gaussSeidel(A, b, x, lo, hi, J, uRest, MJt, PhysicsEngine.epsilon, 2);
         x = b.dup().neg();
-        LCPSolver.fischerNewton(x, A, b, hi, lo,10e-4, 0.75, 0.00001, 10e-50, 10e-20, 1e10, 30, 20);
+        LCPSolver.fischerNewton(x, A, b, hi, lo,10e-4, 0.75, 0.00001, 10e-50, 10e-20, 1e16, 30, 20);
 
         uNext = u.addi(MInv.mmul(Jt).mmul(x)).addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(nBodies * 6, 1));
         qNext = q.addi(H.mmul(uNext).mul(dt), new DoubleMatrix(nBodies * 7, 1));

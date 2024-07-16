@@ -130,8 +130,7 @@ public class LCPSolver {
         return H.dot(H) * 0.5;
     }
 
-    protected static double fischerMeritValue(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, DoubleMatrix l) {
-        DoubleMatrix f = fischerFunction(x, y, u, l);
+    protected static double fischerMeritValue(DoubleMatrix f) {
         return Math.abs(f.dot(f)) * 0.5;
     }
 
@@ -145,11 +144,13 @@ public class LCPSolver {
 
     protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, double factor) {
         DoubleMatrix uNew = u.dup();
-        double min = Math.min(Math.abs(x.min()), Math.abs(y.min()));
-        long bits = Double.doubleToLongBits(min);
-        bits = (bits >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111;
-        int exp = (int) (bits - 1023L);
-        uNew.fill(Math.pow(2, exp) * factor);
+        double min1 = Math.min(Math.abs(x.min()), Math.abs(y.min()));
+        double min2 = Math.min(Math.abs(x.min() * x.min()), Math.abs(y.min() * y.min()));
+        double min = Math.min(min1, min2);
+        if (min == 0) { min = Math.sqrt(Double.MAX_VALUE / 1e50); }
+
+        long bits = ((Double.doubleToLongBits(min) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
+        uNew.fill(Math.pow(2, bits) * factor);
         return uNew;
     }
 
@@ -157,8 +158,8 @@ public class LCPSolver {
         return Math.sqrt(xi * xi + yi * yi) - (xi + yi);
     }
 
-    protected static DoubleMatrix fischerMeritValueGradient(DoubleMatrix H, DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, DoubleMatrix l) {
-        return H.transpose().mmul(fischerFunction(x, y, u, l));
+    protected static DoubleMatrix fischerMeritValueGradient(DoubleMatrix H, DoubleMatrix f) {
+        return H.transpose().mmul(f);
     }
 
     protected static DoubleMatrix fischerFunction(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, DoubleMatrix l) {
@@ -171,9 +172,9 @@ public class LCPSolver {
         return f;
     }
 
-    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix x, DoubleMatrix y, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, int iterations) {
-        double meritValue0 = fischerMeritValue(x, y, u, l);
-        DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, x, y, u, l);
+    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix y, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, int iterations) {
+        double meritValue0 = fischerMeritValue(f);
+        DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, f);
         double tau = 1;
         DoubleMatrix xTau = new DoubleMatrix(x.rows, 1);
         for (int j = 0; j < iterations; j++) {
@@ -181,7 +182,7 @@ public class LCPSolver {
             for (int i = 0; i < xTau.rows; i++) {
                 xTau.put(i, Math.max(0.0, precomputedX.get(i)));
             }
-            double meritValue = fischerMeritValue(xTau, A.mmul(xTau).add(b), u, l);
+            double meritValue = fischerMeritValue(fischerFunction(xTau, A.mmul(xTau).add(b), u, l));
             if (meritValue <= (meritValue0 + alpha * tau * meritValueGradient0.dot(deltaX))) {
                 break;
             }
@@ -214,20 +215,24 @@ public class LCPSolver {
     }
 
     public static void fischerNewton(DoubleMatrix x, DoubleMatrix A, DoubleMatrix b, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, double boundAdjustment, int iterations, int lineSearchIterations) {
-        DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f, y = A.mmul(x).add(b);
-        double currentMeritValue, previousMeritValue = fischerMeritValue(x, y, u, l);
+        DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f = new DoubleMatrix(x.getRows(), 1), y = A.mmul(x).add(b);
+        double currentMeritValue, previousMeritValue = fischerMeritValue(fischerFunction(x, y, u, l));
         for (int i = 0; i < iterations; i++) {
-            u = adjustBounds(x, y, u, boundAdjustment);
-            f = fischerFunction(x, y, u, l);
+            if (i == 0) {
+                u = adjustBounds(x, y, u, boundAdjustment);
+                f = fischerFunction(x, y, u, l);
+            }
             deltaX = Solve.solve(H, f.neg());
 
-            double tau = armijoLineSearch(A, b, H, x, y, deltaX, u, l, alpha, beta, delta, lineSearchIterations);
+            double tau = armijoLineSearch(A, b, H, f, x, y, deltaX, u, l, alpha, beta, delta, lineSearchIterations);
             // double tau = 1;
             x.addi(deltaX.dup().mul(tau));
 
             y = A.mmul(x).add(b);
             H = constructFischerH(A, x, y);
-            currentMeritValue = fischerMeritValue(x, y, u, l);
+            u = adjustBounds(x, y, u, boundAdjustment);
+            f = fischerFunction(x, y, u, l);
+            currentMeritValue = fischerMeritValue(f);
             if (currentMeritValue < epsilonAbsolute) {
                 break;
             }
