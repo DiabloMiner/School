@@ -79,8 +79,9 @@ public class LCPSolver {
                 // TODO: For Fischer to work u has to be continously adjusted so it doesnt result in 0 in the fischer function and the projected line search seems to fail because of some reason
                 // TODO: Without line search fischer works ok currently, find out why line search doesnt work, why there are size errors in the test cases
                 // TODO: and find improved solution for variable bounds of u (get float bits and apply mask to get exponent)
-                // Changed adjustBounds to work without strings & fixed size error (no transpose in value computation)
-                // Implemented new merit value, test to see if it can solve singleCollision (Seems to be connected with bounds or gradient for armijo line search)
+                // TODO: Compare new changed solver with different gradient computation/merit value definitions and find a way to circumvent hack for adjustBounds' min
+                // Made bound computation per line and not generally ; Different merit val defs dont change anything currently
+                // Adjusted hack to work for an epsilon range instead of just 0 (The value of highEpsilon is a strong factor for the success of several tests)
 
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
                 DoubleMatrix xi = new DoubleMatrix(1, 1);
@@ -144,13 +145,16 @@ public class LCPSolver {
 
     protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, double factor) {
         DoubleMatrix uNew = u.dup();
-        double min1 = Math.min(Math.abs(x.min()), Math.abs(y.min()));
-        double min2 = Math.min(Math.abs(x.min() * x.min()), Math.abs(y.min() * y.min()));
-        double min = Math.min(min1, min2);
-        if (min == 0) { min = Math.sqrt(Double.MAX_VALUE / 1e50); }
+        for (int i = 0; i < u.getRows(); i++) {
+            double min1 = Math.min(Math.abs(x.get(i)), Math.abs(y.get(i)));
+            double min2 = Math.min(Math.abs(x.get(i) * x.get(i)), Math.abs(y.get(i) * y.get(i)));
+            double min = Math.min(min1, min2);
+            // TODO: Hack, replace
+            if (min >= -PhysicsEngine.highEpsilon && min <= PhysicsEngine.highEpsilon) { min = Math.sqrt(Double.MAX_VALUE / 1e50); }
 
-        long bits = ((Double.doubleToLongBits(min) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
-        uNew.fill(Math.pow(2, bits) * factor);
+            long bits = ((Double.doubleToLongBits(min) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
+            uNew.put(i, Math.pow(2, bits) * factor);
+        }
         return uNew;
     }
 

@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public abstract class PhysicsEngine implements SubEngine {
 
     public static double epsilon = 1e-15;
+    public static double highEpsilon = 1e-20;
     // public static double collisionTimeEpsilon = 10e-50;
     // public static final int roundingDigit = 20;
 
