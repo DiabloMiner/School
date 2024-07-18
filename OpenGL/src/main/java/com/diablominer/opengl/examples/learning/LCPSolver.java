@@ -151,7 +151,11 @@ public class LCPSolver {
             double min2 = Math.min(Math.abs(x.get(i) * x.get(i)), Math.abs(y.get(i) * y.get(i)));
             double min = Math.min(min1, min2);
             // TODO: Hack, replace
-            if (min >= -PhysicsEngine.highEpsilon && min <= PhysicsEngine.highEpsilon) { min = Math.sqrt(Double.MAX_VALUE / 1e50); }
+            // if (min >= -PhysicsEngine.highEpsilon && min <= PhysicsEngine.highEpsilon) { min = Math.sqrt(Double.MAX_VALUE / 1e50); }
+            if (Math.abs(y.get(i)) <= 1e-12) { min = Math.sqrt(Double.MAX_VALUE / 1e50); }
+            // TODO: This is a viable alternative although some further testing is required why it doesnt work in some cases
+            // TODO: A lot of problems seem to have some threshold they can optimize their y to and then they loop back to worse merit values
+            // TODO: This needs to be investigated as it should also be possible to solve the triangle problem then
 
             long bits = ((Double.doubleToLongBits(min) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
             uNew.put(i, Math.pow(2, bits) * factor);
