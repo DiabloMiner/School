@@ -80,8 +80,9 @@ public class LCPSolver {
                 // TODO: Without line search fischer works ok currently, find out why line search doesnt work, why there are size errors in the test cases
                 // TODO: and find improved solution for variable bounds of u (get float bits and apply mask to get exponent)
                 // TODO: Compare new changed solver with different gradient computation/merit value definitions and find a way to circumvent hack for adjustBounds' min
-                // Made bound computation per line and not generally ; Different merit val defs dont change anything currently
-                // Adjusted hack to work for an epsilon range instead of just 0 (The value of highEpsilon is a strong factor for the success of several tests)
+                // Adjusted hack to work for an epsilon range instead of just 0 (The value of highEpsilon is a strong factor for the success of several tests --> Investigate)
+                // TODO: Hypothesis: x is not needed in the min calc for u (y is almost always smaller and x is not relevant for a correct result of the fischer function)
+                // Maybe replace the min test for the u bound with a check if y is below a certain threshold (1e-15) to determine if the bound does not have to be updated anymore
 
                 List<Contact> toBeSearched = new ArrayList<>(contacts);
                 DoubleMatrix xi = new DoubleMatrix(1, 1);
@@ -240,9 +241,9 @@ public class LCPSolver {
             if (currentMeritValue < epsilonAbsolute) {
                 break;
             }
-            /*if (Math.abs(currentMeritValue - previousMeritValue) < epsilonRelative * Math.abs(previousMeritValue)) {
+            if (Math.abs(currentMeritValue - previousMeritValue) < epsilonRelative * Math.abs(previousMeritValue)) {
                 break;
-            }*/
+            }
             previousMeritValue = currentMeritValue;
         }
     }

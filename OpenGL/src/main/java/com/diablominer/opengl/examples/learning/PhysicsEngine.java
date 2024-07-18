@@ -2,16 +2,12 @@ package com.diablominer.opengl.examples.learning;
 
 import com.diablominer.opengl.utils.Transforms;
 import org.jblas.DoubleMatrix;
-import org.jblas.Solve;
 import org.joml.Math;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
-import org.lwjgl.system.CallbackI;
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public abstract class PhysicsEngine implements SubEngine {
