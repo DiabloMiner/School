@@ -59,7 +59,7 @@ public abstract class StandardPhysicsComponent extends PhysicsComponent {
 
             Vector3d point = closestPoints[0].add(closestPoints[1], new Vector3d()).mul(0.5);
             Vector3d normal = closestPoints[1].sub(closestPoints[0], new Vector3d()).normalize();
-            if (diff.length() >= -PhysicsEngine.epsilon && diff.length() <= PhysicsEngine.epsilon) {
+            if (diff.length() >= -PhysicsEngine.lowEpsilon && diff.length() <= PhysicsEngine.lowEpsilon) {
                 normal = collisionShape.findNormal(physicsComponent.collisionShape, point);
             }
             Vector3d penetration = closestPoints[1].sub(closestPoints[0], new Vector3d());
