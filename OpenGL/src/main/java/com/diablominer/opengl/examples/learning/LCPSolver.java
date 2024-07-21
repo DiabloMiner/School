@@ -14,19 +14,12 @@ public class LCPSolver {
 
     private LCPSolver() {}
 
-    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, DoubleMatrix J, DoubleMatrix uRest, DoubleMatrix MJt, double epsilon, int iter) {
+    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, int iter) {
         int n = x.getRows();
 
         double sum;
         while (iter > 0) {
-
             for (int i = 0; i < n; i++) {
-                // Check if solution is already good enough
-                /*DoubleMatrix u = uRest.add(MJt.mmul(x));
-                if (J.mmul(u).get(i) >= -epsilon) {
-                    continue;
-                }*/
-
                 sum = b.get(i);
                 for (int j = 0; j < n; j++) {
                     if (i != j) {
@@ -150,7 +143,7 @@ public class LCPSolver {
         DoubleMatrix uNew = u.dup();
         for (int i = 0; i < u.getRows(); i++) {
             // TODO: This should work with PhysicsEngine.epsilon
-            if (Math.abs(y.get(i)) <= 1e-12) {
+            if (Math.abs(y.get(i)) <= 1e-15) {
                 // This checks if y has dropped below a predetermined epsilon threshold and then sets the appropriate bound
                 // ('infinity' i.e. a very high value that results in the fischer function returning 0 but not NaN) so the algorithm can halt.
                 uNew.put(i, infValue);

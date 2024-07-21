@@ -121,21 +121,12 @@ public abstract class PhysicsEngine implements SubEngine {
         DoubleMatrix A = J.mmul(MInv).mmul(Jt).add(epsilon.mul(cfm));
         DoubleMatrix b = J.mmul(u.add(MInv.mmul(fExt).mul(dt))).add(e.mul(erp / dt)).add(bounce);
         DoubleMatrix x = new DoubleMatrix(A.getRows(), b.getColumns()).fill(0.0);
-        DoubleMatrix lo = new DoubleMatrix(x.getRows()), hi = new DoubleMatrix(x.getRows());
-        lo.fill(-0);
-        hi.fill(1e15);
+        DoubleMatrix lo = new DoubleMatrix(x.getRows()).fill(0.0), hi = new DoubleMatrix(x.getRows()).fill(1e15);
 
         // Solve for x
-        // DoubleMatrix uRest = u.add(MInv.mmul(fExt).mul(dt)), MJt = MInv.mmul(Jt).mul(dt);
-        // LCPSolver.gaussSeidel(A, b, x, lo, hi, J, uRest, MJt, PhysicsEngine.epsilon, maxIter);
-        // x = LCPSolver.getInstance().solveBLCPWithPGS(A, b, 0, 0, 10e-20, 2, 20).x;
-        // DoubleMatrix AInv = Solve.pinv(A);
-        // LCPSolver.blockedGaussSeidel(dynamicEntities, contacts, J, AInv, b, x, 1);
-        // x = LCPSolver.getInstance().solveBLCPWithMinimumMapNewton(A, b, 0, 0, 10e-4, 0.5, 0.0001, 10e-50, 10e-40, 20, 20, 50).x;
-        DoubleMatrix uRest = u.add(MInv.mmul(fExt).mul(dt)), MJt = MInv.mmul(Jt).mul(dt);
-        LCPSolver.gaussSeidel(A, b, x, lo, hi, J, uRest, MJt, PhysicsEngine.epsilon, 2);
-        // TODO: Remove that and test
-        x = b.dup().neg();
+        LCPSolver.gaussSeidel(A, b, x, lo, hi, 2);
+        // TODO: Remove that and test ; Just putting the result of 2 gauss seidel iters leads to a correct starting point
+        // TODO: (also allows putting down the abs bound in the solver to 1e-15)
         LCPSolver.fischerNewton(x, A, b, hi, lo,10e-4, 0.75, 0.00001, 10e-50, 10e-20, 1e16, Math.sqrt(1e100), 30, 20);
 
         uNext = u.addi(MInv.mmul(Jt).mmul(x)).addi(MInv.mmul(fExt).mul(dt), new DoubleMatrix(nBodies * 6, 1));
