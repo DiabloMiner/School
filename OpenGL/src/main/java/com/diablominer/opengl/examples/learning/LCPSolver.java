@@ -14,7 +14,7 @@ public class LCPSolver {
 
     private LCPSolver() {}
 
-    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix lo, DoubleMatrix hi, int iter) {
+    public static void gaussSeidel(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix hi, DoubleMatrix lo, int iter) {
         int n = x.getRows();
 
         double sum;
@@ -48,81 +48,6 @@ public class LCPSolver {
         }
     }
 
-    public static void blockedGaussSeidel(List<Entity> entities, List<Contact> contacts, DoubleMatrix J, DoubleMatrix AInv, DoubleMatrix b, DoubleMatrix x, int iter) {
-        List<PhysicsComponent> physComps = new ArrayList<>();
-        entities.forEach(entity -> physComps.add(entity.getPhysicsComponent()));
-        int n = b.getRows();
-
-        for (int i = 0; i < n; i++) {
-            contacts.get(i).setX(b.get(new int[] {i}));
-        }
-
-        // TODO: Currently all solution code here assumes that no friction dirs are used (i.e. xi has a size of 1), this would have to be changed in a real implementation
-        // TODO: Compare implementation to github from paper: Clamp original solution; check if collisions/bodies arent mixed up in current implementation compared to paper
-        // TODO: Clamping solution doesn't work: Should it work?
-        // TODO: Maybe test for relative convergence to abort unnecessary iterations
-        while (iter > 0) {
-            for (int i = 0; i < n; i++) {
-                // Seems like result for index 0 collision is too high leading to index 3 coll result being false
-                // Compute comparison values via eqs (for index 0 first) and see if they match up
-                // TODO: Just implement a data structure for a bunch of touching objects and all collisions in directions non parallel (and with > 0 relvel) to the coll affecting the whole structure are thrown away
-                // TODO: Test if other solvers i.e. newton have the same problem as PGS: Newton seems to be pretty correct, though one result doesnt seem right:
-                // TODO: newton puts out higher post vel than pre vel: Newton has an almost correct magnitude but its pos. instead of neg. (Maybe false coll. formulation?)
-                // TODO: Fischer Newton does not work yet, try to debug it: Seems like the solution is currently only updated because it is not between l and u and not because a suitable descent dir has been found
-                // TODO: For Fischer to work u has to be continously adjusted so it doesnt result in 0 in the fischer function and the projected line search seems to fail because of some reason
-                // TODO: Without line search fischer works ok currently, find out why line search doesnt work, why there are size errors in the test cases
-                // TODO: and find improved solution for variable bounds of u (get float bits and apply mask to get exponent)
-                // TODO: Compare new changed solver with different gradient computation/merit value definitions and find a way to circumvent hack for adjustBounds' min
-                // Maybe replace the min test for the u bound with a check if y is below a certain threshold (1e-15) to determine if the bound does not have to be updated anymore
-                // Fixed a problem with the normal computing process by imposing a higher epsilon threshold at which point it has to be calculated differently
-                // TODO: A lot of problems seem to have some threshold they can optimize their y to and then they loop back to worse merit values
-                // TODO: Improve solver to be more robust and cleanup code
-
-
-                List<Contact> toBeSearched = new ArrayList<>(contacts);
-                DoubleMatrix xi = new DoubleMatrix(1, 1);
-
-                // Accumulate coupled contacts for A
-                accumulateContacts(toBeSearched, physComps, toBeSearched.get(i).A, J, xi, i, true);
-
-                // Accumulate coupled contacts for B
-                accumulateContacts(toBeSearched, physComps, toBeSearched.get(i).B, J, xi, i, false);
-
-                // Solve
-                DoubleMatrix bi = new DoubleMatrix(1, 1, b.get(i) - xi.get(0));
-                double result = AInv.get(i, i) * bi.get(0);
-
-                x.put(i, result);
-                contacts.get(i).setX(new DoubleMatrix(1, 1, result));
-            }
-            iter--;
-        }
-    }
-
-    protected static void accumulateContacts(List<Contact> toBeSearched, List<PhysicsComponent> physComps, PhysicsComponent physComp, DoubleMatrix J, DoubleMatrix x, int i, boolean useA) {
-        DoubleMatrix JMinv = toBeSearched.get(i).getJMinv(physComp);
-        for (int j = 0; j < toBeSearched.size(); j++) {
-            if (j == i) { continue; }
-            Contact contact = toBeSearched.get(j);
-            DoubleMatrix xOther = contact.getX(), JAother;
-            int k = physComps.indexOf(physComp);
-
-            if (k == -1) {
-                JAother = new DoubleMatrix(1, 6);
-            } else {
-                JAother = J.get(j, new int[] {k * 6, k * 6 + 1, k * 6 + 2, k * 6 + 3, k * 6 + 4, k * 6 + 5});
-            }
-
-            x.subi((JMinv.mmul(JAother.transpose())).mmul(xOther));
-        }
-    }
-
-    /*protected static void accumulateCoupledContacts(List<Contact> contacts, DoubleMatrix JMInv, DoubleMatrix x) {
-        for (Contact contact : contacts) {
-            x.subi(JMInv.mmul(contact.A.));
-        }
-    }*/
-
     protected static double newtonMeritValue(DoubleMatrix H) {
         return H.dot(H) * 0.5;
     }
@@ -139,23 +64,23 @@ public class LCPSolver {
         return Math.abs(x.transpose().mmul(y).get(0));
     }
 
-    protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, double boundAdjustment, double infValue) {
-        DoubleMatrix uNew = u.dup();
-        for (int i = 0; i < u.getRows(); i++) {
+    protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix hi, double boundAdjustment, double infValue) {
+        DoubleMatrix hiNew = hi.dup();
+        for (int i = 0; i < hi.getRows(); i++) {
             // TODO: This should work with PhysicsEngine.epsilon
             if (Math.abs(y.get(i)) <= 1e-15) {
-                // This checks if y has dropped below a predetermined epsilon threshold and then sets the appropriate bound
-                // ('infinity' i.e. a very high value that results in the fischer function returning 0 but not NaN) so the algorithm can halt.
-                uNew.put(i, infValue);
+                // This checks if y has dropped below a predetermined epsilon threshold and then sets the appropriate bound 'infinity'
+                // (i.e. a very high value that results in the fischer function returning 0 but not NaN) so the algorithm can halt.
+                hiNew.put(i, infValue);
             } else {
                 double min1 = Math.min(Math.abs(x.get(i)), Math.abs(y.get(i)));
                 double min2 = Math.min(Math.abs(x.get(i) * x.get(i)), Math.abs(y.get(i) * y.get(i)));
                 double min = Math.min(min1, min2);
                 long bits = ((Double.doubleToLongBits(min) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
-                uNew.put(i, Math.pow(2, bits) * boundAdjustment);
+                hiNew.put(i, Math.pow(2, bits) * boundAdjustment);
             }
         }
-        return uNew;
+        return hiNew;
     }
 
     protected static double fischerFunction(double xi, double yi) {
@@ -166,42 +91,44 @@ public class LCPSolver {
         return H.transpose().mmul(f);
     }
 
-    protected static DoubleMatrix fischerFunction(DoubleMatrix x, DoubleMatrix y, DoubleMatrix u, DoubleMatrix l) {
+    protected static DoubleMatrix fischerFunction(DoubleMatrix x, DoubleMatrix y, DoubleMatrix hi, DoubleMatrix lo) {
         int n = x.getLength();
         DoubleMatrix f = new DoubleMatrix(n, 1);
         for (int i = 0; i < n; i++) {
-            double xi = x.get(i), yi = y.get(i), ui = u.get(i), li = l.get(i);
+            double xi = x.get(i), yi = y.get(i), ui = hi.get(i), li = lo.get(i);
             f.put(i, fischerFunction(xi - li, fischerFunction(-yi, ui - xi)));
         }
         return f;
     }
 
-    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix y, DoubleMatrix deltaX, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, double boundAdjustment, double infValue, int iterations) {
-        double meritValue0 = fischerMeritValue(f);
+    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundAdjustment, double infValue, int iterations) {
+        double meritValue0 = fischerMeritValue(f), tau = 1;
         DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, f);
-        double tau = 1;
-        DoubleMatrix xTau = new DoubleMatrix(x.rows, 1), uTau, yTau;
-        for (int j = 0; j < iterations; j++) {
-            DoubleMatrix precomputedX = x.dup().add(deltaX.dup().mul(tau));
-            for (int i = 0; i < xTau.rows; i++) {xTau.put(i, Math.max(0.0, precomputedX.get(i)));}
-            yTau = A.mmul(xTau).add(b);
-            uTau = adjustBounds(xTau, yTau, u, boundAdjustment, infValue);
+        DoubleMatrix xTau, hiTau, yTau;
 
-            double meritValue = fischerMeritValue(fischerFunction(xTau, yTau, uTau, l));
+        for (int j = 0; j < iterations; j++) {
+            xTau = x.add(deltaX.mul(tau)).max(0.0);
+            yTau = A.mmul(xTau).add(b);
+            hiTau = adjustBounds(xTau, yTau, hi, boundAdjustment, infValue);
+
+            double meritValue = fischerMeritValue(fischerFunction(xTau, yTau, hiTau, lo));
             if (meritValue <= (meritValue0 + alpha * tau * meritValueGradient0.dot(deltaX))) {
                 break;
             }
             if (tau <= delta) {
                 break;
             }
+
             tau *= beta;
         }
+
         return tau;
     }
 
     protected static DoubleMatrix constructFischerH(DoubleMatrix A, DoubleMatrix x, DoubleMatrix y) {
         int n = x.getLength();
         DoubleMatrix p  = new DoubleMatrix(n), q = new DoubleMatrix(n);
+
         for (int i = 0; i < n; i++) {
             double xi = x.get(i), yi = y.get(i), xynorm = Math.sqrt(xi * xi + yi * yi), pi, qi;
             if (!(xi == 0 && yi == 0)) {
@@ -215,27 +142,48 @@ public class LCPSolver {
             p.put(i, pi);
             q.put(i, qi);
         }
+
         DoubleMatrix Dp = DoubleMatrix.diag(p), Dq = DoubleMatrix.diag(q);
         return Dp.add(Dq.mmul(A));
     }
 
-    public static void fischerNewton(DoubleMatrix x, DoubleMatrix A, DoubleMatrix b, DoubleMatrix u, DoubleMatrix l, double alpha, double beta, double delta, double epsilonAbsolute, double epsilonRelative, double boundAdjustment, double infValue, int iterations, int lineSearchIterations) {
+    /**
+     * This method perturbs an element xi of x by adding a small perturbation factor,
+     * if the corresponding element yi of y is smaller than 0 and xi is 0.
+     * The perturbation should be chosen large enough to get the algorithm out of local minima.
+     */
+    public static DoubleMatrix perturbX(DoubleMatrix x, DoubleMatrix y, double perturbation) {
+        for (int i = 0; i < x.getLength(); i++) {
+            if (y.get(i) < -PhysicsEngine.epsilon && (x.get(i) >= -PhysicsEngine.epsilon && x.get(i) <= PhysicsEngine.epsilon)) {
+                x.put(i, perturbation);
+            }
+        }
+        return x;
+    }
+
+    public static DoubleMatrix fischerNewton(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundAdjustment, double infValue, double perturbation, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations) {
+        // Fixed a problem with the normal computing process by imposing a higher epsilon threshold at which point it has to be calculated differently
+        // TODO: A lot of problems seem to have some threshold they can optimize their y to and then they loop back to worse merit values
+        // TODO: Improve solver to be more robust and cleanup code
+
         DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f = new DoubleMatrix(x.getRows(), 1), y = A.mmul(x).add(b);
-        double currentMeritValue, previousMeritValue = fischerMeritValue(fischerFunction(x, y, u, l));
+        perturbX(x, y, perturbation);
+        double currentMeritValue, previousMeritValue = fischerMeritValue(fischerFunction(x, y, hi, lo));
+
         for (int i = 0; i < iterations; i++) {
             if (i == 0) {
-                u = adjustBounds(x, y, u, boundAdjustment, infValue);
-                f = fischerFunction(x, y, u, l);
+                hi = adjustBounds(x, y, hi, boundAdjustment, infValue);
+                f = fischerFunction(x, y, hi, lo);
             }
             deltaX = Solve.solve(H, f.neg());
 
-            double tau = armijoLineSearch(A, b, H, f, x, y, deltaX, u, l, alpha, beta, delta, boundAdjustment, infValue, lineSearchIterations);
+            double tau = armijoLineSearch(A, b, H, f, x, deltaX, hi, lo, alpha, beta, delta, boundAdjustment, infValue, lineSearchIterations);
             x.addi(deltaX.dup().mul(tau));
 
             y = A.mmul(x).add(b);
             H = constructFischerH(A, x, y);
-            u = adjustBounds(x, y, u, boundAdjustment, infValue);
-            f = fischerFunction(x, y, u, l);
+            hi = adjustBounds(x, y, hi, boundAdjustment, infValue);
+            f = fischerFunction(x, y, hi, lo);
             currentMeritValue = fischerMeritValue(f);
             if (currentMeritValue < epsilonAbsolute) {
                 break;
@@ -245,6 +193,8 @@ public class LCPSolver {
             }
             previousMeritValue = currentMeritValue;
         }
+
+        return x;
     }
 
     private DoubleMatrix initializeX(int rows) {
