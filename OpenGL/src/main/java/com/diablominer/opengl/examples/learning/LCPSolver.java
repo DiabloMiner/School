@@ -64,6 +64,10 @@ public class LCPSolver {
         return Math.abs(x.transpose().mmul(y).get(0));
     }
 
+    protected static double yMeritValue(DoubleMatrix y) {
+        return Math.abs(y.dot(y));
+    }
+
     /**
      * This method returns the minimum of the numbers a,b, a^2 and b^2.
      */
@@ -74,11 +78,11 @@ public class LCPSolver {
     }
 
     /**
-     * This function gets the nearest power of 2 to some number a and multiplies it with a factor f.
+     * This function gets the nearest power of 2 to some number a.
      */
-    protected static double nearestPower(double a, double f) {
+    protected static double nearestPower(double a) {
         long bits = ((Double.doubleToLongBits(a) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
-        return Math.pow(2, bits) * f;
+        return Math.pow(2, bits);
     }
 
     protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix hi, double boundAdjustment, double infValue) {
@@ -90,19 +94,7 @@ public class LCPSolver {
                 // (i.e. a very high value that results in the fischer function returning 0 but not NaN) so the algorithm can halt.
                 hiNew.put(i, infValue);
             } else {
-                hiNew.put(i, nearestPower(min(x.get(i), y.get(i)), boundAdjustment));
-            }
-        }
-        return hiNew;
-    }
-
-    protected static DoubleMatrix adjustArmijoBounds(DoubleMatrix x, DoubleMatrix yOld, DoubleMatrix y, DoubleMatrix hi, double boundAdjustment, double infValue) {
-        DoubleMatrix hiNew = hi.dup();
-        for (int i = 0; i < hi.getRows(); i++) {
-            if (Math.abs(y.get(i)) <= Math.max(Math.abs(yOld.get(i)), 1e-15)) {
-                hiNew.put(i, infValue);
-            } else {
-                hiNew.put(i, nearestPower(min(x.get(i), y.get(i)), boundAdjustment));
+                hiNew.put(i, nearestPower(min(x.get(i), y.get(i)) * boundAdjustment));
             }
         }
         return hiNew;
@@ -126,7 +118,7 @@ public class LCPSolver {
         return f;
     }
 
-    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix y, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundAdjustment, double infValue, int iterations) {
+    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundAdjustment, double infValue, int iterations) {
         double meritValue0 = fischerMeritValue(f), tau = 1;
         DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, f);
         DoubleMatrix xTau, hiTau, yTau;
@@ -134,7 +126,7 @@ public class LCPSolver {
         for (int j = 0; j < iterations; j++) {
             xTau = x.add(deltaX.mul(tau)).max(0.0);
             yTau = A.mmul(xTau).add(b);
-            hiTau = adjustArmijoBounds(xTau, y, yTau, hi, boundAdjustment, infValue);
+            hiTau = adjustBounds(xTau, yTau, hi, boundAdjustment, infValue);
 
             double meritValue = fischerMeritValue(fischerFunction(xTau, yTau, hiTau, lo));
             if (meritValue <= (meritValue0 + alpha * tau * meritValueGradient0.dot(deltaX))) {
@@ -193,10 +185,13 @@ public class LCPSolver {
         // TODO: Maybe implement a second adjustBounds just for the projected line search which uses the inf value if the new y value is lower than the previous ones
         // Leads to the problem that because of adjustBounds that iteration is then held for less merit value than it has
         // Think about maybe using the absolute value of y as a merit value ( with an or including the absval of x)
+        // Note: The higher u gets the lower f gets (nonlinear behavior)
+        // One solution might be to use a y-based merit value and use a higher boundAdjustment value if the adjusted bound would end up below 100
 
         DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f = new DoubleMatrix(x.getRows(), 1), y = A.mmul(x).add(b);
         perturbX(x, y, perturbation);
         double currentMeritValue, previousMeritValue = fischerMeritValue(fischerFunction(x, y, hi, lo));
+        // double currentMeritValue, previousMeritValue = yMeritValue(y);
 
         for (int i = 0; i < iterations; i++) {
             if (i == 0) {
@@ -213,6 +208,7 @@ public class LCPSolver {
             hi = adjustBounds(x, y, hi, boundAdjustment, infValue);
             f = fischerFunction(x, y, hi, lo);
             currentMeritValue = fischerMeritValue(f);
+            // currentMeritValue = yMeritValue(y);
             if (currentMeritValue < epsilonAbsolute) {
                 break;
             }
