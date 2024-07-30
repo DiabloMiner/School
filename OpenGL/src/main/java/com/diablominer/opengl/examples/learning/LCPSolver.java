@@ -200,7 +200,7 @@ public class LCPSolver {
             }
             deltaX = Solve.solve(H, f.neg());
 
-            double tau = armijoLineSearch(A, b, H, f, x, deltaX, y, hi, lo, alpha, beta, delta, boundAdjustment, infValue, lineSearchIterations);
+            double tau = armijoLineSearch(A, b, H, f, x, deltaX, hi, lo, alpha, beta, delta, boundAdjustment, infValue, lineSearchIterations);
             x.addi(deltaX.dup().mul(tau));
 
             y = A.mmul(x).add(b);
