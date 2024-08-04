@@ -728,19 +728,6 @@ public class PhysicsEngineTest {
         };
 
         testEngine.update();
-        // TODO: Order velocity in order of contact, change force and mass matrix (A always comes before B)
-        // TODO: For J put all Ji beside each other  (in horizontal direction)
-        // TODO: Removing the x collision leads to interesting results (recalculate expected results)
-        // TODO: Find out why x collision changes results so much / how to alleviate that
-        // Seems similar to previous problem with resting collision (i.e. it tries to solve it even though no solution is needed)
-        // Removing all resting collisions solves the problem for this test but creates a new one in another place
-        // TODO: Try to test if a solution is good enough: Didnt work because the solution for the first component is negative i.e. it induces a negative x velocity
-        // The results are always negative; Can this be correct? (Seems to be correct in this case)
-        // TODO: Test SIGGRAPH implementation: Implement gen mass matrix per body; To test move constraint into contact
-        // Without the middle collision the LCPSolver with "good-enough checking" returns x velocities (though they have the false sign and the false magnitude)
-        // and different z velocities (that also have a false magnitude); The normal LCPSolver without the middle collision just splits up the vel evenly in the z direction
-        // And currently the SIGGRAPH solver doesn't change anything from the initial scenario
-        // TODO: Work through single collision problem to fix SIGGRAPH solver
 
         assertEquals(testPhysComp1.velocity.z, -0.16, epsilon);
         assertEquals(testPhysComp2.velocity.x, -0.25 * Math.sqrt(3) * 0.16, epsilon);

@@ -65,7 +65,7 @@ public class LCPSolver {
     }
 
     /**
-     * This method returns the minimum of the numbers a,b, a^2 and b^2.
+     * This method returns the minimum of the numbers a,b, a^2 and b^2
      */
     protected static double min(double a, double b) {
         double min1 = Math.min(Math.abs(a), Math.abs(b));
@@ -74,7 +74,7 @@ public class LCPSolver {
     }
 
     /**
-     * This function gets the nearest power of 2 to some number a.
+     * This function gets the nearest power of 2 to some number a
      */
     protected static double nearestPower(double a) {
         long bits = ((Double.doubleToLongBits(a) >>> 52) & 0b0000000000000000000000000000000000000000000000000000011111111111) - 1023L;
@@ -202,16 +202,13 @@ public class LCPSolver {
             f = fischerFunction(x, y, hi, lo);
             currentMeritValue = fischerMeritValue(f);
             if (currentMeritValue < epsilonAbsolute) {
-                System.out.println(i + 1);
-                return x;
+                break;
             }
             if (Math.abs(currentMeritValue - previousMeritValue) < epsilonRelative * Math.abs(previousMeritValue)) {
-                System.out.println(i + 1);
-                return x;
+                break;
             }
             previousMeritValue = currentMeritValue;
         }
-        System.out.println(iterations);
 
         return x;
     }
