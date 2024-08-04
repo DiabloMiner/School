@@ -64,10 +64,6 @@ public class LCPSolver {
         return Math.abs(x.transpose().mmul(y).get(0));
     }
 
-    protected static double yMeritValue(DoubleMatrix y) {
-        return Math.abs(y.dot(y));
-    }
-
     /**
      * This method returns the minimum of the numbers a,b, a^2 and b^2.
      */
@@ -85,16 +81,23 @@ public class LCPSolver {
         return Math.pow(2, bits);
     }
 
-    protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix hi, double boundAdjustment, double infValue) {
+    protected static DoubleMatrix adjustBounds(DoubleMatrix x, DoubleMatrix y, DoubleMatrix hi, double relMinValue, double minValueBound, double boundAdjustment, double infValue) {
         DoubleMatrix hiNew = hi.dup();
         for (int i = 0; i < hi.getRows(); i++) {
-            // TODO: This should work with PhysicsEngine.epsilon
-            if (Math.abs(y.get(i)) <= 1e-15) {
+            if (Math.abs(y.get(i)) <= PhysicsEngine.epsilon) {
                 // This checks if y has dropped below a predetermined epsilon threshold and then sets the appropriate bound 'infinity'
                 // (i.e. a very high value that results in the fischer function returning 0 but not NaN) so the algorithm can halt.
                 hiNew.put(i, infValue);
             } else {
-                hiNew.put(i, nearestPower(min(x.get(i), y.get(i)) * boundAdjustment));
+                double bound = nearestPower(min(x.get(i), y.get(i)) * boundAdjustment);
+
+                // If y is below a bounding value and the adjusted bound is smaller than the difference between y and x multiplied
+                // by the relative min value constant, then the bound is set to that
+                if (hiNew.get(i) < relMinValue * Math.abs(x.get(i) - y.get(i)) && Math.abs(y.get(i)) <= minValueBound) {
+                    bound = 100 * Math.abs(x.get(i) - y.get(i));
+                }
+
+                hiNew.put(i, bound);
             }
         }
         return hiNew;
@@ -118,7 +121,7 @@ public class LCPSolver {
         return f;
     }
 
-    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundAdjustment, double infValue, int iterations) {
+    protected static double armijoLineSearch(DoubleMatrix A, DoubleMatrix b, DoubleMatrix H, DoubleMatrix f, DoubleMatrix x, DoubleMatrix deltaX, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundMinValue, double minValueBound, double boundAdjustment, double infValue, int iterations) {
         double meritValue0 = fischerMeritValue(f), tau = 1;
         DoubleMatrix meritValueGradient0 = fischerMeritValueGradient(H, f);
         DoubleMatrix xTau, hiTau, yTau;
@@ -126,7 +129,7 @@ public class LCPSolver {
         for (int j = 0; j < iterations; j++) {
             xTau = x.add(deltaX.mul(tau)).max(0.0);
             yTau = A.mmul(xTau).add(b);
-            hiTau = adjustBounds(xTau, yTau, hi, boundAdjustment, infValue);
+            hiTau = adjustBounds(xTau, yTau, hi, boundMinValue, minValueBound, boundAdjustment, infValue);
 
             double meritValue = fischerMeritValue(fischerFunction(xTau, yTau, hiTau, lo));
             if (meritValue <= (meritValue0 + alpha * tau * meritValueGradient0.dot(deltaX))) {
@@ -178,45 +181,37 @@ public class LCPSolver {
         return x;
     }
 
-    public static DoubleMatrix fischerNewton(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundAdjustment, double infValue, double perturbation, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations) {
-        // Fixed a problem with the normal computing process by imposing a higher epsilon threshold at which point it has to be calculated differently
-        // TODO: A lot of problems seem to have some threshold they can optimize their y to and then they loop back to worse merit values
-        // TODO: Improve solver to be more robust and cleanup code: higher abs threshold in adjustBounds & look at normal computation again
-        // TODO: Maybe implement a second adjustBounds just for the projected line search which uses the inf value if the new y value is lower than the previous ones
-        // Leads to the problem that because of adjustBounds that iteration is then held for less merit value than it has
-        // Think about maybe using the absolute value of y as a merit value ( with an or including the absval of x)
-        // Note: The higher u gets the lower f gets (nonlinear behavior)
-        // One solution might be to use a y-based merit value and use a higher boundAdjustment value if the adjusted bound would end up below 100
-
+    public static DoubleMatrix fischerNewton(DoubleMatrix A, DoubleMatrix b, DoubleMatrix x, DoubleMatrix hi, DoubleMatrix lo, double alpha, double beta, double delta, double boundMinValue, double minValueBound, double boundAdjustment, double infValue, double perturbation, double epsilonAbsolute, double epsilonRelative, int iterations, int lineSearchIterations) {
         DoubleMatrix H = constructFischerH(A, x, A.mmul(x).add(b)), deltaX, f = new DoubleMatrix(x.getRows(), 1), y = A.mmul(x).add(b);
         perturbX(x, y, perturbation);
         double currentMeritValue, previousMeritValue = fischerMeritValue(fischerFunction(x, y, hi, lo));
-        // double currentMeritValue, previousMeritValue = yMeritValue(y);
 
         for (int i = 0; i < iterations; i++) {
             if (i == 0) {
-                hi = adjustBounds(x, y, hi, boundAdjustment, infValue);
+                hi = adjustBounds(x, y, hi, boundMinValue, minValueBound, boundAdjustment, infValue);
                 f = fischerFunction(x, y, hi, lo);
             }
             deltaX = Solve.solve(H, f.neg());
 
-            double tau = armijoLineSearch(A, b, H, f, x, deltaX, hi, lo, alpha, beta, delta, boundAdjustment, infValue, lineSearchIterations);
+            double tau = armijoLineSearch(A, b, H, f, x, deltaX, hi, lo, alpha, beta, delta, boundMinValue, minValueBound, boundAdjustment, infValue, lineSearchIterations);
             x.addi(deltaX.dup().mul(tau));
 
             y = A.mmul(x).add(b);
             H = constructFischerH(A, x, y);
-            hi = adjustBounds(x, y, hi, boundAdjustment, infValue);
+            hi = adjustBounds(x, y, hi, boundMinValue, minValueBound, boundAdjustment, infValue);
             f = fischerFunction(x, y, hi, lo);
             currentMeritValue = fischerMeritValue(f);
-            // currentMeritValue = yMeritValue(y);
             if (currentMeritValue < epsilonAbsolute) {
-                break;
+                System.out.println(i + 1);
+                return x;
             }
             if (Math.abs(currentMeritValue - previousMeritValue) < epsilonRelative * Math.abs(previousMeritValue)) {
-                break;
+                System.out.println(i + 1);
+                return x;
             }
             previousMeritValue = currentMeritValue;
         }
+        System.out.println(iterations);
 
         return x;
     }
