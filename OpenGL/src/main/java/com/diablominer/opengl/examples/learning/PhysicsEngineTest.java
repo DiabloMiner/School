@@ -739,7 +739,7 @@ public class PhysicsEngineTest {
     /**
      *  Test if the collision of a moving ball with a system of three touching spheres is simulated correctly
      */
-    /*@Test
+    @Test
     public void testCollisionWithTouchingTriangle() {
         PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715 + 0.05715), new Vector3d(0.0, 0.0, 0.8),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
@@ -778,6 +778,6 @@ public class PhysicsEngineTest {
         assertEquals(testPhysComp2.velocity.z, -0.02, epsilon);
         assertEquals(testPhysComp3.velocity.z, 0.38025, epsilon);
         assertEquals(testPhysComp4.velocity.z, 0.38025, epsilon);
-    }*/
+    }
 
 }
