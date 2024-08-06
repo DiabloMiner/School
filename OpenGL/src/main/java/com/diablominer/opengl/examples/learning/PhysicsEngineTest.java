@@ -766,10 +766,8 @@ public class PhysicsEngineTest {
 
         testEngine.update();
 
-        // TODO: Find out why model doesnt work: Error correction plays a large role (Why? There shouldnt be error)
-        // Test inelastic first: Work out the expected response for inelastic (Shouldn't there be an x-component?), use normals from contacts for that
-        // Dig into concrete functioning of connected collisions in LCP & maybe retest model
-        // Interconnections in A seem to be correct, maybe test if there are too many (i.e. they are negating each other)
+        // TODO: Test why this doesnt work
+        // Because of some reason the collision in x direction instead of z direction
 
         Vector3d vab = new Vector3d(v0).sub(n2.mul(v0.dot(n2), new Vector3d())).sub(n3.mul(v0.dot(n3), new Vector3d())).div(2.0, new Vector3d());
         Vector3d vc = n2.mul(v0.dot(n2), new Vector3d());
