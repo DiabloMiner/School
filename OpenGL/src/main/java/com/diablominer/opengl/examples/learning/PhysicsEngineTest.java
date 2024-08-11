@@ -742,7 +742,7 @@ public class PhysicsEngineTest {
     @Test
     public void testCollisionWithTouchingTriangle() {
         PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715 + 0.05715), new Vector3d(0.0, 0.0, 0.8),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715 + 0.05715 * 2), new Vector3d(0.0, 0.0, -0.8),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp4 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp5 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
@@ -760,18 +760,12 @@ public class PhysicsEngineTest {
             @Override void update() { timeStep(0.01); }
             @Override public void destroy() { }
         };
-        Vector3d v0 = new Vector3d(testPhysComp2.velocity);
-        Vector3d n2 = new Vector3d(0.447213595499958, 0.0, -0.894427190999916);
-        Vector3d n3 = new Vector3d(-0.447213595499958, 0.0, -0.894427190999916);
 
         testEngine.update();
 
         // TODO: Test why this doesnt work
-        // Because of some reason the collision in x direction instead of z direction
+        // Some wrong optimization occurs: One y error isnt really optimized but the other answers also seem strange
 
-        Vector3d vab = new Vector3d(v0).sub(n2.mul(v0.dot(n2), new Vector3d())).sub(n3.mul(v0.dot(n3), new Vector3d())).div(2.0, new Vector3d());
-        Vector3d vc = n2.mul(v0.dot(n2), new Vector3d());
-        Vector3d vd = n3.mul(v0.dot(n3), new Vector3d());
         assertEquals(testPhysComp1.velocity.z, -0.0195, epsilon);
         assertEquals(testPhysComp2.velocity.z, -0.02, epsilon);
         assertEquals(testPhysComp3.velocity.z, 0.38025, epsilon);
