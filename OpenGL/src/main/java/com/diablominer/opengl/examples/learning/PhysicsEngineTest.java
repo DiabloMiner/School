@@ -743,8 +743,8 @@ public class PhysicsEngineTest {
     public void testCollisionWithTouchingTriangle() {
         PhysicsComponent testPhysComp1 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp2 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.0, 0.10715, 0.0 + Math.sqrt(3) * 0.05715 + 0.05715 * 2), new Vector3d(0.0, 0.0, -0.8),  new Quaterniond().identity(), new Vector3d(0.0 * (3.0/ 0.05715), 0.0, 0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
-        PhysicsComponent testPhysComp4 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp3 = new PhysicsSphere(Material.Inelastic, new Vector3d(0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
+        PhysicsComponent testPhysComp4 = new PhysicsSphere(Material.Inelastic, new Vector3d(-0.05715, 0.10715, 0.0), new Vector3d(0.0, 0.0, 0.0),  new Quaterniond().identity(), new Vector3d(0.0), new HashSet<>(Collections.singletonList(new Gravity())), 0.163, 0.05715, false);
         PhysicsComponent testPhysComp5 = new PhysicsBox(new Matrix4d().translate(0.0, 0.0, 0.0), new Vector3d(1.378 / 2, 0.05, 2.648 / 2), new Vector3d(1.378, 0.1, 2.648), Material.Rail, new Vector3d(), new Vector3d(), new HashSet<>(), 5.97219e24, true);
         Entity testEntity1 = new Entity("", new Component.Type[]{Component.Type.Physics},
                 new Component[]{testPhysComp1});
@@ -766,10 +766,12 @@ public class PhysicsEngineTest {
         // TODO: Test why this doesnt work
         // Some wrong optimization occurs: One y error isnt really optimized but the other answers also seem strange
 
-        assertEquals(testPhysComp1.velocity.z, -0.0195, epsilon);
-        assertEquals(testPhysComp2.velocity.z, -0.02, epsilon);
-        assertEquals(testPhysComp3.velocity.z, 0.38025, epsilon);
-        assertEquals(testPhysComp4.velocity.z, 0.38025, epsilon);
+        assertEquals(testPhysComp1.velocity.z, -0.2, epsilon);
+        assertEquals(testPhysComp2.velocity.z, -0.2, epsilon);
+        assertEquals(testPhysComp3.velocity.x, (2.0 / 30.0) * Math.sqrt(3), epsilon);
+        assertEquals(testPhysComp3.velocity.z, -0.2, epsilon);
+        assertEquals(testPhysComp3.velocity.x, -(2.0 / 30.0) * Math.sqrt(3), epsilon);
+        assertEquals(testPhysComp4.velocity.z, -0.2, epsilon);
     }
 
 }
